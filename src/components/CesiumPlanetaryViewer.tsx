@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Artifact, CelestialBody, PlanetaryLandmark } from '../types/space';
-import { playRadarPing, playTelemetryBeep } from '../utils/audio';
+import { playArtifactRememberingWhoosh, playWhooshSound } from '../utils/audio';
 import { Key, Check } from 'lucide-react';
 
 declare const Cesium: any;
@@ -241,12 +241,12 @@ export const CesiumPlanetaryViewer: React.FC<CesiumPlanetaryViewerProps> = ({
         const picked = viewer.scene.pick(movement.position);
         if (Cesium.defined(picked) && picked.id) {
           if (picked.id.artifactData) {
-            playRadarPing();
+            playArtifactRememberingWhoosh();
             onSelectArtifact(picked.id.artifactData);
             return;
           }
           if (picked.id.landmarkData) {
-            playRadarPing();
+            playWhooshSound('in');
             onSelectLandmark?.(picked.id.landmarkData);
             return;
           }
@@ -520,7 +520,7 @@ export const CesiumPlanetaryViewer: React.FC<CesiumPlanetaryViewerProps> = ({
   const handleSaveToken = () => {
     localStorage.setItem('cesium_ion_token', ionToken.trim());
     setIsTokenModalOpen(false);
-    playTelemetryBeep(880, 0.08);
+    playWhooshSound('ui');
   };
 
   return (
@@ -610,7 +610,7 @@ export const CesiumPlanetaryViewer: React.FC<CesiumPlanetaryViewerProps> = ({
           onClick={() => {
             const viewer = viewerRef.current;
             if (viewer) {
-              playTelemetryBeep(520, 0.05);
+              playWhooshSound('ui');
               const alt = body === 'mars' ? 9500000 : 5200000;
               viewer.camera.flyTo({
                 destination: Cesium.Cartesian3.fromDegrees(
@@ -639,7 +639,7 @@ export const CesiumPlanetaryViewer: React.FC<CesiumPlanetaryViewerProps> = ({
               onClick={() => {
                 const viewer = viewerRef.current;
                 if (viewer) {
-                  playTelemetryBeep(620, 0.05);
+                  playWhooshSound('ui');
                   viewer.camera.flyTo({
                     destination: Cesium.Cartesian3.fromDegrees(23.47, 0.67, 140000),
                     orientation: {
@@ -660,7 +660,7 @@ export const CesiumPlanetaryViewer: React.FC<CesiumPlanetaryViewerProps> = ({
               onClick={() => {
                 const viewer = viewerRef.current;
                 if (viewer) {
-                  playTelemetryBeep(680, 0.05);
+                  playWhooshSound('ui');
                   viewer.camera.flyTo({
                     destination: Cesium.Cartesian3.fromDegrees(-48.7, -84.7, 180000),
                     orientation: {
@@ -684,7 +684,7 @@ export const CesiumPlanetaryViewer: React.FC<CesiumPlanetaryViewerProps> = ({
               onClick={() => {
                 const viewer = viewerRef.current;
                 if (viewer) {
-                  playTelemetryBeep(620, 0.05);
+                  playWhooshSound('ui');
                   viewer.camera.flyTo({
                     destination: Cesium.Cartesian3.fromDegrees(-133.8, 18.65, 320000),
                     orientation: {
@@ -705,7 +705,7 @@ export const CesiumPlanetaryViewer: React.FC<CesiumPlanetaryViewerProps> = ({
               onClick={() => {
                 const viewer = viewerRef.current;
                 if (viewer) {
-                  playTelemetryBeep(660, 0.05);
+                  playWhooshSound('ui');
                   viewer.camera.flyTo({
                     destination: Cesium.Cartesian3.fromDegrees(-59.2, -14.0, 420000),
                     orientation: {
@@ -726,7 +726,7 @@ export const CesiumPlanetaryViewer: React.FC<CesiumPlanetaryViewerProps> = ({
               onClick={() => {
                 const viewer = viewerRef.current;
                 if (viewer) {
-                  playTelemetryBeep(700, 0.05);
+                  playWhooshSound('ui');
                   viewer.camera.flyTo({
                     destination: Cesium.Cartesian3.fromDegrees(77.58, 18.38, 160000),
                     orientation: {
@@ -756,11 +756,11 @@ export const CesiumPlanetaryViewer: React.FC<CesiumPlanetaryViewerProps> = ({
           <h4 className="text-sm font-bold text-[#F8FAFC] font-telemetry">
             {hoveredArtifact.name}
           </h4>
-          <p className="text-xs text-[#E0F2FE]/85 mt-1 line-clamp-1 italic">
-            "{hoveredArtifact.story.headline}"
+          <p className="text-xs text-[#E0F2FE]/85 mt-1 line-clamp-2 italic">
+            “{hoveredArtifact.story.forSchoolKids}”
           </p>
-          <span className="text-[10px] font-mono text-[#38BDF8] block mt-1">
-            Click to open mission dossier
+          <span className="text-[10px] font-sans text-[#38BDF8] block mt-1">
+            Click to hear my story
           </span>
         </div>
       )}

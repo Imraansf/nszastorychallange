@@ -65,19 +65,19 @@ export const MOON_ARTIFACTS: Artifact[] = [
       summary: 'Launched: April 17, 1967 | Landed: April 20, 1967 | Last Contact: May 4, 1967',
     },
     plannedVsActual:
-      'Operated through its primary lunar day until 2 days after lunar night fell (May 4, 1967); revisited in person by Apollo 12 in November 1969.',
+      'I worked hard through my primary lunar day until two days after the freezing lunar night fell on May 4, 1967—then 31 months later, Apollo 12 astronauts visited me in person.',
     specs:
-      'Mass: 997.9 kg (2,200 lbs) at launch. Equipped with a deployable surface-sampler arm reaching 1.5 m (5 ft) and digging 18 cm (7 in) deep.',
+      'I weighed 997.9 kg (2,200 lbs) at launch, and I carried a fold-out surface-sampler arm that could reach 1.5 m (5 ft) and dig 18 cm (7 in) deep.',
     instruments: [
       'Surveillance TV Camera (25 mm and 100 mm lenses beneath a movable mirror)',
       'Robotic Surface Sampler Scoop',
     ],
     scientificDiscoveries:
-      'Transmitted 6,326 television images and used its robotic claw to dig four trenches and perform 13 impact tests, proving lunar soil had the firmness of wet sand (~10 psi) and could safely support the weight of an Apollo Lunar Module.',
+      'I beamed home 6,326 television pictures and used my robotic claw to dig four trenches and make 13 impact tests, proving Moon dust felt like damp sand (~10 psi) and could safely hold the weight of an Apollo Lunar Module.',
     storytellingHook:
-      "During landing, bright lunar rocks confused Surveyor 3's radar, causing its engines to keep firing so it bounced twice on the Moon—once 10 meters into the air!—before settling safely, only to be visited by human astronauts 31 months later.",
+      'When I came down to land, bright lunar rocks confused my radar and kept my engines firing—so I bounced twice on the Moon, once 10 meters high into the sky, before settling inside a crater where humans later walked right up to me.',
     firstPersonMonologue:
-      'When I arrived at the Ocean of Storms in April 1967, bright lunar rocks confused my radar and tricked my engines into keeping their fire going, causing me to bounce twice on the Moon—once jumping 10 meters high into the air!—before finally settling safely in the dust. For 31 months I sat completely silent, taking photos and digging trenches with my mechanical arm, until two human astronauts from Apollo 12 walked right up to my metallic frame in November 1969. They unbolted my television camera and soil scoop to bring back to Earth, making me the first and only robot on another world to ever be visited face-to-face by people.',
+      'When I arrived at the Ocean of Storms in April 1967, bright lunar rocks confused my radar and tricked my engines into firing too long, causing me to bounce twice on the Moon—once jumping 10 meters high!—before settling safely in the dust. For 31 months I stood completely silent after digging trenches and taking 6,326 photos, until two human astronauts from Apollo 12 walked right down the crater slope to my frame in November 1969. Pete Conrad and Alan Bean unbolted my television camera and soil scoop to carry back to Earth, making me the first robot on another world ever visited face-to-face by people.',
     officialSource: 'https://science.nasa.gov/mission/surveyor-3/',
     nssdcaId: '1967-035A',
     catalogRef: 'NSSDCA ID 1967-035A',
@@ -85,20 +85,20 @@ export const MOON_ARTIFACTS: Artifact[] = [
     story: {
       headline: 'The Only Robot on Another World Visited Face-to-Face by Humans',
       introduction:
-        "During landing, bright lunar rocks confused Surveyor 3's radar, causing its engines to keep firing so it bounced twice on the Moon—once 10 meters into the air!—before settling safely, only to be visited by human astronauts 31 months later.",
+        'I arrived on the Moon two years before any human, bouncing twice like a kangaroo when rocks tricked my radar—before sitting quietly in a crater waiting for Apollo 12 astronauts to come say hello.',
       theScience:
-        'Transmitted 6,326 television images and used its robotic claw to dig four trenches and perform 13 impact tests, proving lunar soil had the firmness of wet sand (~10 psi) and could safely support the weight of an Apollo Lunar Module.',
+        'I snapped 6,326 television images and dug four trenches with my robotic claw, proving lunar regolith could support an Apollo crewed lander (~10 psi) without sinking into deep dust.',
       whyLeftBehind:
-        'Designed as a one-way robotic lunar scout, Surveyor 3 entered hibernation in May 1967 and remained in Oceanus Procellarum, where Apollo 12 astronauts Pete Conrad and Alan Bean visited it in November 1969.',
+        'Built as a one-way robotic scout, I went to sleep in May 1967 and stayed on duty as a monument in Oceanus Procellarum, where Pete Conrad and Alan Bean inspected me in November 1969.',
       forSchoolKids:
-        'Surveyor 3 tested whether Moon dust was solid enough for astronauts to walk on—and two years later, Apollo 12 astronauts walked right up to it and brought its camera home!',
+        'I checked whether Moon dust was solid enough for astronauts to walk on—and 31 months later, Apollo 12 astronauts walked right up to me and brought my camera back to Earth!',
     },
     famousQuote:
-      'Making me the first and only robot on another world to ever be visited face-to-face by people.',
+      'I became the only robot on another world ever visited face-to-face by human astronauts.',
     funFacts: [
-      'Bounced twice during touchdown—once rising 10 meters high—before coming to rest inside a small crater.',
-      'Transmitted 6,326 television images and dug four soil trenches.',
-      'Apollo 12 astronauts retrieved its TV camera and soil scoop 31 months later.',
+      'I bounced twice during touchdown—once rising 10 meters high—before settling inside a small crater.',
+      'I transmitted 6,326 television pictures and dug four soil trenches with my scoop arm.',
+      'Apollo 12 astronauts retrieved my TV camera and soil scoop 31 months later to study how hardware survives in space.',
     ],
     keyComponents: [
       'Surveillance TV Camera (25 mm and 100 mm lenses beneath a movable mirror)',
@@ -142,9 +142,9 @@ export const MOON_ARTIFACTS: Artifact[] = [
         'Launched: July 16, 1969 | Landed: July 20, 1969 | Ascent Liftoff: July 21, 1969 (21h 36m on surface) | EASEP Ended: Aug 27, 1969',
     },
     plannedVsActual:
-      'EASEP designed for 1 lunar day (~14 Earth days); survived into its 2nd lunar day despite temperatures 30°C above max design limit. Laser retroreflector remains active today.',
+      'My EASEP science station was built for one lunar day (~14 Earth days), yet it survived into a second day despite heat 30°C hotter than designed—and my laser mirror is still working today.',
     specs:
-      'Total LM Mass: 15,103 kg (Descent dry mass: 2,034 kg; 4.2 m octagonal prism, 9.4 m across footpads). EASEP: 48 kg, powered by 2 solar panels + isotope heater.',
+      'My full Lunar Module weighed 15,103 kg (my lower descent stage is 2,034 kg dry, 9.4 m across my footpads). My 48 kg EASEP science package ran on two solar panels and an isotope heater.',
     instruments: [
       'Passive Seismometer',
       'Lunar Dust Detector',
@@ -152,11 +152,11 @@ export const MOON_ARTIFACTS: Artifact[] = [
       'Solar Wind Composition Foil Collector',
     ],
     scientificDiscoveries:
-      "Achieved humanity's first crewed landing on another celestial body and returned 21.55 kg of lunar rock and soil. EASEP recorded the first lunar seismic data, while the power-free LRRR mirror still bounces laser beams from Earth to measure the Moon's distance to millimeter precision.",
+      'I helped astronauts achieve humanity’s first Moon landing and bring home 21.55 kg of lunar rocks. My EASEP recorded the first moonquakes, and Earth telescopes still bounce lasers off my power-free mirror to measure the Moon drifting away at 3.8 cm every year.',
     storytellingHook:
-      "The lower descent stage of 'Eagle' still stands upright at Tranquility Base as a silent launch pad, bearing a stainless-steel plaque signed by the crew and President Nixon: 'Here men from the planet Earth first set foot upon the Moon July 1969, A.D. We came in peace for all mankind.'",
+      "My golden lower half still stands upright at Tranquility Base as a silent launch pad, wearing a stainless-steel plaque on my front leg that reads: 'Here men from the planet Earth first set foot upon the Moon July 1969, A.D. We came in peace for all mankind.'",
     firstPersonMonologue:
-      "In July 1969, my golden four-legged base settled gently into the gray dust of Tranquility Base, carrying the very first humans to walk on the Moon. After 21 hours and 36 minutes on the surface, my top half blasted off to carry the crew back to Earth, leaving my lower frame standing upright in the quiet dust like a silent launch pad. Attached to my front leg is a shiny stainless-steel plaque signed by the astronauts and President Nixon that still reads: 'Here men from the planet Earth first set foot upon the Moon July 1969, A.D. We came in peace for all mankind.'",
+      "In July 1969, my golden four-legged base settled gently into the gray dust of Tranquility Base, carrying the very first humans to walk on the Moon. After 21 hours and 36 minutes on the surface, my top half blasted off to carry Neil Armstrong and Buzz Aldrin back to orbit, leaving my lower frame standing upright like a silent launch pad. Attached to my front leg is a stainless-steel plaque signed by the crew and President Nixon that still reads: 'Here men from the planet Earth first set foot upon the Moon July 1969, A.D. We came in peace for all mankind.'",
     youtubeUrl: 'https://www.youtube.com/watch?v=nOcDftgR5UQ',
     officialSource: 'https://nssdc.gsfc.nasa.gov/nmc/spacecraft/display.action?id=1969-059C',
     nssdcaId: '1969-059C',
@@ -165,19 +165,19 @@ export const MOON_ARTIFACTS: Artifact[] = [
     story: {
       headline: 'The First Crewed Landing Site on Another World',
       introduction:
-        "The lower descent stage of 'Eagle' still stands upright at Tranquility Base as a silent launch pad, bearing a stainless-steel plaque signed by the crew and President Nixon: 'Here men from the planet Earth first set foot upon the Moon July 1969, A.D. We came in peace for all mankind.'",
+        "I am Eagle's golden descent stage, standing silently upright at Tranquility Base where Neil Armstrong and Buzz Aldrin took humanity's first steps on the Moon in July 1969.",
       theScience:
-        "Achieved humanity's first crewed landing on another celestial body and returned 21.55 kg of lunar rock and soil. EASEP recorded the first lunar seismic data, while the power-free LRRR mirror still bounces laser beams from Earth to measure the Moon's distance to millimeter precision.",
+        'Beside my 21.55 kg rock-collection mission, I left behind a seismometer to listen inside the Moon and a 100-prism laser mirror that scientists on Earth still bounce light off today.',
       whyLeftBehind:
-        'The descent stage acted as a stationary launch platform so the ascent stage could lift Neil Armstrong and Buzz Aldrin back to lunar orbit with minimum weight, while EASEP continued gathering surface data.',
+        'To save precious fuel for the trip home, my lower stage acted as a stationary launch pad while the top ascent cabin carried the astronauts safely back into lunar orbit.',
       forSchoolKids:
-        'The Eagle descent stage is still standing upright on the Moon today, and astronomers still bounce lasers off its mirror array to measure the Moon moving away by 3.8 centimeters every year!',
+        'My golden lower stage is still standing upright on the Moon today, and astronomers still shine lasers at my mirror array to watch the Moon move away by 3.8 centimeters every year!',
     },
-    famousQuote: 'The Eagle has landed.',
+    famousQuote: 'Houston, Tranquility Base here. The Eagle has landed.',
     funFacts: [
-      'Returned 21.55 kg of lunar rock and soil to Earth.',
-      'The power-free LRRR mirror array still reflects Earth laser pulses more than 55 years later.',
-      'EASEP survived into a second lunar day despite extreme temperatures 30°C above its design limit.',
+      'My crew brought back 21.55 kg of Moon rocks and soil for scientists on Earth.',
+      'My power-free LRRR mirror array still reflects Earth laser pulses more than 55 years later.',
+      'My EASEP science station survived into a second lunar day despite extreme heat 30°C over its design limit.',
     ],
     keyComponents: [
       'Passive Seismometer',
@@ -225,9 +225,9 @@ export const MOON_ARTIFACTS: Artifact[] = [
         'Launched: Nov 14, 1969 | Landed: Nov 19, 1969 | Ascent Liftoff: Nov 20, 1969 (31h 31m on surface) | ALSEP Shutdown: Sept 30, 1977',
     },
     plannedVsActual:
-      'ALSEP operated for nearly 8 full years (Nov 1969 – Sept 1977), making it one of the longest-running surface stations on the Moon.',
+      'My nuclear-powered ALSEP station operated nonstop for nearly eight full years—from November 1969 until September 1977—making it one of the longest-working weather and quake outposts on the Moon.',
     specs:
-      'Total LM Mass: 15,235 kg (Descent dry mass: 2,118 kg). ALSEP Central Station: 25 kg + SNAP-27 Plutonium-238 RTG (17 kg, ~70 W DC).',
+      'My full Lunar Module weighed 15,235 kg (my descent stage is 2,118 kg dry). My 25 kg ALSEP Central Station was powered by a 17 kg SNAP-27 Plutonium-238 nuclear generator (~70 W DC).',
     instruments: [
       'Passive Seismometer',
       'Suprathermal Ion Detector',
@@ -237,11 +237,11 @@ export const MOON_ARTIFACTS: Artifact[] = [
       'Solar Wind Spectrometer',
     ],
     scientificDiscoveries:
-      'Demonstrated pinpoint landing accuracy by touching down within walking distance of Surveyor 3, returning 34.35 kg of lunar rocks plus 10 kg of Surveyor 3 hardware. When the empty ascent stage was crashed 60 km away, the ALSEP seismometer recorded the Moon vibrating like a bell for nearly an hour.',
+      'I proved pinpoint planetary landing works by touching down only 180 meters from Surveyor 3, helping collect 34.35 kg of Moon rocks plus 10 kg of Surveyor parts. When my empty ascent stage crashed 60 km away, my seismometer heard the Moon ring like a giant bell for nearly an hour.',
     storytellingHook:
-      'Astronauts Pete Conrad and Alan Bean strolled right up to the robotic Surveyor 3 lander—which had sat silent in the lunar dust for two and a half years—snapped photos beside it, and unbolted its camera and soil scoop to bring home to Earth.',
+      'My astronauts Pete Conrad and Alan Bean strolled right down a crater wall to visit the quiet Surveyor 3 robot—which had slept in the dust for 2.5 years—snapping selfies beside it and unbolting its camera to carry home.',
     firstPersonMonologue:
-      "I pulled off history's very first pinpoint landing in the Ocean of Storms in November 1969, touching down just 180 meters away from a quiet robot named Surveyor 3. Astronauts Pete Conrad and Alan Bean strolled right up to that old lander—which had sat silent in the lunar dust for two and a half years—snapped photos beside it, and unbolted its camera and soil scoop to bring home to Earth. Along with those robot parts and 34.35 kilograms of moon rocks, I left behind a science station and an empty top stage that later crashed into the Moon, making it ring like a giant bell for nearly an hour.",
+      "I pulled off history's very first pinpoint landing in the Ocean of Storms in November 1969, touching down just 180 meters away from a quiet robot named Surveyor 3. Astronauts Pete Conrad and Alan Bean strolled right up to that old lander—which had sat silent in the lunar dust for two and a half years—snapped photos beside it, and unbolted its camera and soil scoop to bring home to Earth. Along with those robot parts and 34.35 kilograms of Moon rocks, I left behind a nuclear science station, and my empty top stage later crashed into the Moon, making it ring like a giant bell for nearly an hour.",
     youtubeUrl: 'https://www.youtube.com/watch?v=l11sW5KOi_g',
     officialSource: 'https://nssdc.gsfc.nasa.gov/nmc/spacecraft/display.action?id=1969-099C',
     nssdcaId: '1969-099C',
@@ -250,20 +250,20 @@ export const MOON_ARTIFACTS: Artifact[] = [
     story: {
       headline: 'Pinpoint Touchdown Beside Surveyor 3 & Eight Years of ALSEP Science',
       introduction:
-        'Astronauts Pete Conrad and Alan Bean strolled right up to the robotic Surveyor 3 lander—which had sat silent in the lunar dust for two and a half years—snapped photos beside it, and unbolted its camera and soil scoop to bring home to Earth.',
+        'I am Intrepid, and in November 1969 I proved NASA could aim a spaceship with laser-like precision—landing within walking distance of Surveyor 3 on a crater rim.',
       theScience:
-        'Demonstrated pinpoint landing accuracy by touching down within walking distance of Surveyor 3, returning 34.35 kg of lunar rocks plus 10 kg of Surveyor 3 hardware. When the empty ascent stage was crashed 60 km away, the ALSEP seismometer recorded the Moon vibrating like a bell for nearly an hour.',
+        'Besides helping gather 34.35 kg of rocks and 10 kg of Surveyor 3 parts, my ALSEP science station ran for nearly eight years and heard the Moon vibrate for almost an hour after my empty ascent cabin crashed nearby.',
       whyLeftBehind:
-        'Intrepid’s descent stage served as the launch platform for the crew’s departure, while its nuclear-powered ALSEP science station stayed behind to transmit data until September 1977.',
+        'My lower stage stayed behind as Pete and Alan’s launch pad back to orbit, while my nuclear-powered ALSEP station stayed awake transmitting lunar science until September 1977.',
       forSchoolKids:
-        'Apollo 12 landed so accurately that the astronauts walked down a crater slope straight to Surveyor 3—and when their empty top stage crashed on the Moon, the Moon rang like a bell for nearly an hour!',
+        'I landed so accurately that my astronauts walked down a crater slope straight to Surveyor 3—and when my empty top half crashed on the Moon, the Moon rang like a bell for nearly an hour!',
     },
     famousQuote:
       'Whoopee! Man, that may have been a small one for Neil, but that’s a long one for me!',
     funFacts: [
-      'Landed just 180 meters from Surveyor 3 in Oceanus Procellarum.',
-      'Its SNAP-27 nuclear ALSEP station operated continuously for nearly eight years.',
-      'Returned 34.35 kg of lunar samples plus 10 kg of Surveyor 3 hardware.',
+      'I landed just 180 meters from the Surveyor 3 robot in Oceanus Procellarum.',
+      'My SNAP-27 nuclear ALSEP station stayed awake for nearly eight years.',
+      'My crew brought home 34.35 kg of lunar rocks plus 10 kg of Surveyor 3 hardware.',
     ],
     keyComponents: [
       'Passive Seismometer',
@@ -320,9 +320,9 @@ export const MOON_ARTIFACTS: Artifact[] = [
         'Launched: July 26, 1971 | Landed: July 30, 1971 | Ascent Liftoff: Aug 2, 1971 (66h 55m on surface) | ALSEP Shutdown: Sept 30, 1977',
     },
     plannedVsActual:
-      'ALSEP operated continuously for over 6 years (July 1971 – Sept 1977), transmitting lunar interior and space environment data back to Earth.',
+      'My nuclear-powered ALSEP science station ran nonstop for over six years (July 1971 – September 1977), sending measurements from deep inside the Moon back to Earth.',
     specs:
-      'Total LM Mass: 16,430 kg (Descent dry mass: 2,797 kg). ALSEP Central Station: 25 kg, powered by a 17 kg SNAP-27 Plutonium-238 RTG (~70 W DC). LRV: electric 4-wheel rover.',
+      'My full spacecraft weighed 16,430 kg (my descent stage is 2,797 kg dry). My 25 kg ALSEP Central Station ran on a 17 kg SNAP-27 RTG (~70 W DC), and my electric LRV-1 rover carried two 36-volt batteries.',
     instruments: [
       'Lunar Roving Vehicle (LRV-1)',
       'Passive Seismometer',
@@ -334,11 +334,11 @@ export const MOON_ARTIFACTS: Artifact[] = [
       'Heat Flow Experiment',
     ],
     scientificDiscoveries:
-      "First mission to drive an electric 'moon buggy' (covering 27.9 km across three EVAs and venturing up to 5 km from the lander) and collected 77.31 kg of samples, including the ancient 'Genesis Rock.' ALSEP measured moonquakes and heat escaping from the Moon's core.",
+      'I carried the very first electric Moon buggy—driving 27.9 km across three moonwalks—and helped gather 77.31 kg of rocks, including the 4.1-billion-year-old Genesis Rock. My ALSEP also measured moonquakes and heat leaking from the Moon’s core.',
     storytellingHook:
-      "Before blasting off, Commander David Scott dropped a geologist's hammer and a falcon feather at the same time in the airless lunar vacuum—proving Galileo right as both hit the dust simultaneously. The crew also left a small aluminum figurine ('Fallen Astronaut') honoring 14 deceased American and Soviet space explorers.",
+      'Before my crew blasted back to orbit, Commander David Scott dropped a heavy hammer and a falcon feather at the same time in front of my TV camera—proving Galileo right as both hit the dust together.',
     firstPersonMonologue:
-      "After launching from Earth in July 1971, I touched down at the foot of the Apennine Mountains on July 30, 1971, bringing the first electric moon buggy to drive 27.9 kilometers across the craters. Near the end of our 66-hour and 55-minute visit, Commander David Scott dropped a heavy hammer and a falcon feather at the exact same time in the airless space around me, proving Galileo right as both hit the dust together. Before lifting off on August 2, 1971, the crew also placed a small aluminum figurine called 'Fallen Astronaut' in the ground to remember 14 American and Soviet space explorers, while my science station stayed awake collecting data until September 1977.",
+      "I touched down at the foot of the towering Apennine Mountains on July 30, 1971, unfolding the very first electric Moon buggy so my crew could drive 27.9 kilometers across Hadley-Apennine. Near the end of our 66-hour and 55-minute stay, Commander David Scott dropped a heavy geology hammer and a falcon feather at the exact same instant in the airless vacuum around me, proving Galileo's law of gravity live on television as both landed side by side. Before lifting off on August 2, 1971, my crew also placed the small 'Fallen Astronaut' figurine in the dust to honor 14 space explorers, while my science station kept working until September 1977.",
     youtubeUrl: 'https://www.youtube.com/watch?v=oYEgdZ3iEKA',
     officialSource: 'https://nssdc.gsfc.nasa.gov/nmc/spacecraft/display.action?id=1971-063C',
     nssdcaId: '1971-063C',
@@ -347,20 +347,20 @@ export const MOON_ARTIFACTS: Artifact[] = [
     story: {
       headline: 'First Electric Moon Buggy & Galileo’s Hammer-and-Feather Test',
       introduction:
-        "Before blasting off, Commander David Scott dropped a geologist's hammer and a falcon feather at the same time in the airless lunar vacuum—proving Galileo right as both hit the dust simultaneously. The crew also left a small aluminum figurine ('Fallen Astronaut') honoring 14 deceased American and Soviet space explorers.",
+        'I am Falcon, and I brought the first electric car to the Moon—plus a geology hammer and a falcon feather that proved an iconic 400-year-old science experiment.',
       theScience:
-        "First mission to drive an electric 'moon buggy' (covering 27.9 km across three EVAs and venturing up to 5 km from the lander) and collected 77.31 kg of samples, including the ancient 'Genesis Rock.' ALSEP measured moonquakes and heat escaping from the Moon's core.",
+        'My LRV-1 Moon buggy let astronauts drive 27.9 kilometers and collect 77.31 kg of samples like the ancient Genesis Rock, while my ALSEP measured moonquakes and interior heat until 1977.',
       whyLeftBehind:
-        'Falcon’s descent stage remained as the crew’s surface launch pad while LRV-1 was parked beside Hadley-Apennine and the nuclear ALSEP station ran continuously for over six years.',
+        'My lower stage remained as Falcon’s launch platform, my LRV-1 stayed parked 100 meters away so its camera could film our liftoff, and my ALSEP station kept working for six more years.',
       forSchoolKids:
-        'Apollo 15 brought the first electric car to the Moon and proved Galileo’s gravity law live on television using a hammer and a falcon feather!',
+        'I carried the very first electric car to drive on the Moon—and right beside me, my commander dropped a hammer and a feather that hit the ground at the exact same moment!',
     },
     famousQuote:
       'How about that! Mr. Galileo was correct in his findings.',
     funFacts: [
-      'LRV-1 drove 27.9 kilometers across three moonwalks.',
-      'Collected 77.31 kg of samples including the 4.1-billion-year-old Genesis Rock.',
-      'Left the Fallen Astronaut memorial sculpture honoring 14 space explorers.',
+      'My electric LRV-1 Moon buggy drove 27.9 kilometers across three moonwalks.',
+      'My astronauts collected 77.31 kg of samples including the 4.1-billion-year-old Genesis Rock.',
+      'My crew left the Fallen Astronaut sculpture honoring 14 space explorers beside my landing site.',
     ],
     keyComponents: [
       'Lunar Roving Vehicle (LRV-1)',
@@ -429,9 +429,9 @@ export const MARS_ARTIFACTS: Artifact[] = [
         'Launched: Aug 20, 1975 | Entered Orbit: June 19, 1976 | Landed: July 20, 1976 | Last Contact: Nov 11, 1982',
     },
     plannedVsActual:
-      'Planned for a 90-day primary surface mission; operated for over 6 years on Mars (1976–1982) before an accidental command interruption.',
+      'I was only expected to last 90 days on Mars—instead I stayed awake and sent science home for over six years (1976–1982) before an accidental software update cut off my signal.',
     specs:
-      'Total Spacecraft: 3,527 kg (7,776 lbs); Lander: 978 kg (2,156 lbs), powered by two SNAP-19 Plutonium-238 RTG nuclear generators.',
+      'My full spacecraft weighed 3,527 kg (7,776 lbs), and my lander body weighs 978 kg (2,156 lbs), powered by two SNAP-19 Plutonium-238 nuclear batteries.',
     instruments: [
       '2 Facsimile Color Cameras',
       'Gas Chromatograph Mass Spectrometer (GCMS)',
@@ -441,11 +441,11 @@ export const MARS_ARTIFACTS: Artifact[] = [
       'Weather Package',
     ],
     scientificDiscoveries:
-      'First spacecraft to successfully land and operate on Mars; captured the very first high-resolution color photographs from the Martian surface; conducted the first soil biology experiments and recorded 6+ years of Martian weather (-86°C pre-dawn to -33°C afternoon).',
+      'I became the first spacecraft to successfully land and operate on Mars! I snapped the first clear color photos from the Red Planet, tested Martian dirt in my biology lab, and tracked over six years of Martian weather (-86°C pre-dawn to -33°C afternoon).',
     storytellingHook:
-      'Renamed the Thomas Mutch Memorial Station in 1982, Viking 1 faithfully beamed back weekly weather reports for over six years until a routine software update sent from Earth accidentally pointed its antenna away from home.',
+      'Renamed the Thomas Mutch Memorial Station in 1982, I faithfully beamed home weekly Mars weather reports for over six years until a routine software command from Earth accidentally turned my antenna away.',
     firstPersonMonologue:
-      'After I touched down on the rusty red plains of Mars in July 1976, my mission was renamed the Thomas Mutch Memorial Station in 1982 to honor a great scientist. For more than six years, I faithfully beamed back weekly weather reports and panoramic pictures of my rocky home, until a routine software update sent from Earth accidentally turned my dish antenna away from home, cutting off our connection forever. My whole journey had started back in August 1975 when I launched from Earth, landing on July 20, 1976, for a mission planned to last just 90 days. Instead, I kept working until November 1982, turning a three-month trip into a six-year adventure on the Red Planet.',
+      'I touched down safely on the rusty red plains of Mars on July 20, 1976, after launching back in August 1975—becoming the first robot in history to work long-term on the Red Planet. My mission was planned to last just 90 days, yet my nuclear batteries kept me sending weather reports and panoramic photos for over six years! Later renamed the Thomas Mutch Memorial Station in 1982, I stayed faithfully on duty until November 1982, when a routine software update from Earth accidentally pointed my radio dish away from home.',
     youtubeUrl: 'https://www.youtube.com/watch?v=991yOhGC32c',
     officialSource: 'https://science.nasa.gov/mission/viking-1/',
     nssdcaId: '1975-075C',
@@ -454,20 +454,20 @@ export const MARS_ARTIFACTS: Artifact[] = [
     story: {
       headline: 'First Successful Martian Soft-Landing & Six Years of Weather Reports',
       introduction:
-        'Renamed the Thomas Mutch Memorial Station in 1982, Viking 1 faithfully beamed back weekly weather reports for over six years until a routine software update sent from Earth accidentally pointed its antenna away from home.',
+        'I am Viking 1, the pioneer who sent home the very first clear color photographs from the surface of Mars and listened to the Martian wind for more than six years.',
       theScience:
-        'First spacecraft to successfully land and operate on Mars; captured the very first high-resolution color photographs from the Martian surface; conducted the first soil biology experiments and recorded 6+ years of Martian weather (-86°C pre-dawn to -33°C afternoon).',
+        'Using my 3-meter digging arm, color scanner cameras, and miniature biology lab, I ran humanity’s first surface search for signs of life and tracked Martian temperatures (-86°C to -33°C).',
       whyLeftBehind:
-        'A stationary nuclear-powered lander built to stay on Chryse Planitia, Viking 1 lost contact in November 1982 after an inadvertent antenna-pointing command overwrite.',
+        'Built as a stationary nuclear lander on Chryse Planitia, I went quiet in November 1982 after an accidental command rotated my antenna away from Earth.',
       forSchoolKids:
-        'Viking 1 sent back the very first clear color photos from the surface of Mars and lasted more than six years instead of its 90-day plan!',
+        'I sent back the very first clear color photos from the surface of Mars—and instead of stopping after 90 days, I kept working for over six whole years!',
     },
     famousQuote:
-      'Turning a three-month trip into a six-year adventure on the Red Planet.',
+      'I turned a three-month mission into a six-year adventure on the Red Planet.',
     funFacts: [
-      'Captured the first clear surface photographs of Mars on July 20, 1976.',
-      'Powered by two SNAP-19 Plutonium-238 radioisotope thermoelectric generators.',
-      'Renamed the Thomas Mutch Memorial Station in 1982.',
+      'I snapped the very first clear surface photograph of Mars on July 20, 1976.',
+      'I run on two SNAP-19 Plutonium-238 nuclear generators that worked right through dust storms.',
+      'In 1982, NASA renamed me the Thomas Mutch Memorial Station.',
     ],
     keyComponents: [
       '2 Facsimile Color Cameras',
@@ -516,9 +516,9 @@ export const MARS_ARTIFACTS: Artifact[] = [
         'Launched: Dec 4, 1996 | Landed: July 4, 1997 | Final Transmission: Sept 27, 1997',
     },
     plannedVsActual:
-      'Sojourner was built for a 7-day primary mission (lander for 30 days) and operated for 83 Martian sols—nearly 12 times longer than planned.',
+      'My little Sojourner rover was only built for a 7-day test (and I was planned for 30 days)—yet together we explored Mars for 83 Martian sols, nearly 12 times longer than planned!',
     specs:
-      'Sojourner Rover Mass: 10.6 kg (23 lbs), standing 30 cm (1 ft) tall—roughly the size of a microwave oven. Powered by solar panels + batteries.',
+      'Sojourner weighs only 10.6 kg (23 lbs) and stands 30 cm (1 ft) tall—about the size of a microwave oven—powered by solar panels and batteries.',
     instruments: [
       'Alpha Proton X-Ray Spectrometer (APXS)',
       'Imager for Mars Pathfinder (IMP) stereo camera',
@@ -526,11 +526,11 @@ export const MARS_ARTIFACTS: Artifact[] = [
       'Atmospheric Structure & Meteorology Package',
     ],
     scientificDiscoveries:
-      'Returned 2.3 billion bits of data, 16,500+ lander photos, 550+ rover photos, and 15+ chemical rock/soil analyses. Rounded pebbles and cobbles proved liquid water once rushed across a warmer, wetter Mars.',
+      'We sent home 2.3 billion bits of data, 16,500+ lander photos, 550+ rover photos, and 15+ chemical tests of Martian rocks and soil—finding rounded pebbles that proved raging water once flooded Mars.',
     storytellingHook:
-      'Encased in a 5.8-meter cluster of giant airbags, Pathfinder slammed into Mars at 31 mph and bounced like a beach ball 15 times—up to 15 meters high—before coming to rest and letting microwave-sized Sojourner roll down its ramp onto Martian soil.',
+      'Wrapped inside a 5.8-meter bunch of giant airbags, I slammed into Mars at 31 mph and bounced like a beach ball 15 times—up to 15 meters high!—before opening my petals so little Sojourner could drive onto another planet.',
     firstPersonMonologue:
-      'I slammed into the rusty red ground of Mars in July 1997 at 31 miles per hour wrapped inside a 5.8-meter cluster of giant airbags, bouncing across the rocks like a giant beach ball 15 times—launching up to 15 meters high into the air! Once I finally came to rest and opened up my petals, I let my microwave-sized companion, the Sojourner rover, roll down my ramp onto the Martian soil. Even though we were only built to last for a quick 7 Martian days back in 1996 and 1997, we kept working for nearly three months, sending back over 16,500 images and checking the chemistry of neighboring stones.',
+      'I slammed into the rusty red ground of Mars on July 4, 1997, at 31 miles per hour wrapped inside a 5.8-meter cluster of giant airbags, bouncing across the rocks like a giant beach ball 15 times—launching up to 15 meters high into the air! Once I rolled to a stop and opened up my petals like a flower, I let my microwave-sized companion, the Sojourner rover, drive down my ramp onto Martian soil for the very first time. Even though Sojourner was only built for a 7-day mission after our December 1996 launch, we worked together until September 27, 1997, snapping over 16,500 images and studying nearby rocks.',
     officialSource: 'https://science.nasa.gov/mission/mars-pathfinder/',
     nssdcaId: '1996-068A',
     catalogRef: 'NSSDCA ID 1996-068A',
@@ -538,20 +538,20 @@ export const MARS_ARTIFACTS: Artifact[] = [
     story: {
       headline: 'Airbag Bounce Touchdown & First Wheeled Rover on Mars',
       introduction:
-        'Encased in a 5.8-meter cluster of giant airbags, Pathfinder slammed into Mars at 31 mph and bounced like a beach ball 15 times—up to 15 meters high—before coming to rest and letting microwave-sized Sojourner roll down its ramp onto Martian soil.',
+        'I am Mars Pathfinder—renamed the Carl Sagan Memorial Station—and in 1997 I bounced across Mars in giant airbags before opening my petals to let the very first Mars rover roll free.',
       theScience:
-        'Returned 2.3 billion bits of data, 16,500+ lander photos, 550+ rover photos, and 15+ chemical rock/soil analyses. Rounded pebbles and cobbles proved liquid water once rushed across a warmer, wetter Mars.',
+        'Together, Sojourner and I beamed back over 16,500 photos and studied rocks like Barnacle Bill and Yogi, discovering smooth flood-rounded pebbles that proved liquid water once rushed across Mars.',
       whyLeftBehind:
-        'After 83 sols—nearly 12 times Sojourner’s 7-day design life—battery depletion and Martian winter ended transmissions in September 1997.',
+        'After 83 Martian days—nearly 12 times Sojourner’s 7-day warranty—fading batteries and the bitter Martian cold ended our final radio message on September 27, 1997.',
       forSchoolKids:
-        'Pathfinder bounced across Mars inside giant airbags like a beach ball before opening its petals and letting the microwave-sized Sojourner rover drive onto another planet for the first time!',
+        'I bounced across Mars inside giant airbags like a beach ball before opening my petals and letting the microwave-sized Sojourner rover drive onto another planet for the first time!',
     },
     famousQuote:
-      'Wrapping a lander in giant airbags and unleashing the first wheeled rover onto Martian soil.',
+      'I bounced onto Mars in giant airbags and set the very first Mars rover rolling.',
     funFacts: [
-      'Bounced 15 times on giant airbags up to 15 meters high during landing.',
-      'Sojourner was roughly the size of a microwave oven at just 10.6 kg.',
-      'Sent back over 16,500 lander images and 550+ rover images.',
+      'I bounced 15 times on giant Kevlar airbags up to 15 meters high when landing on Mars.',
+      'My little partner Sojourner is only the size of a microwave oven at 10.6 kg.',
+      'Together we beamed home over 16,500 lander images and 550+ rover photos.',
     ],
     keyComponents: [
       'Alpha Proton X-Ray Spectrometer (APXS)',
@@ -607,9 +607,9 @@ export const MARS_ARTIFACTS: Artifact[] = [
         'Spirit Landed: Jan 3, 2004 (Ended: 2010) | Opportunity Landed: Jan 24, 2004 (Last Contact: June 10, 2018)',
     },
     plannedVsActual:
-      'Designed for 90-sol (3-month) missions; Spirit explored for over 6 years (7.73 km driven) and Opportunity lasted nearly 15 years (45.16 km / 28.06 mi driven).',
+      'We were only promised a 90-sol (3-month) mission—yet my twin Spirit explored for over 6 years (7.73 km driven) and I, Opportunity, kept rolling for nearly 15 years (45.16 km / 28.06 miles)!',
     specs:
-      'Golf-cart-sized six-wheeled rovers powered by solar arrays (periodically cleaned by lucky Martian wind gusts) and rechargeable lithium-ion batteries.',
+      'We are golf-cart-sized six-wheeled rovers powered by solar wings (periodically dusted off by lucky Martian wind gusts) and lithium-ion batteries.',
     instruments: [
       'Panoramic Camera (Pancam)',
       'Microscopic Imager',
@@ -619,11 +619,11 @@ export const MARS_ARTIFACTS: Artifact[] = [
       'Mini-TES',
     ],
     scientificDiscoveries:
-      "Found decisive geological and chemical proof—including tiny iron-rich mineral spheres nicknamed 'blueberries'—that liquid water once flowed and pooled on ancient Mars, creating environments that could have supported microbial life.",
+      "We uncovered unmistakable chemical clues—including tiny iron-rich mineral spheres nicknamed 'blueberries'—proving liquid water once pooled and flowed across ancient Mars in places where tiny life could have lived.",
     storytellingHook:
-      'Opportunity outlived its 90-day warranty by 55 times, trekking over 28 miles until a massive, planet-wide dust storm blotted out the Sun in June 2018, leaving the marathon explorer silent on the rim of Perseverance Valley.',
+      'I outlived my 90-day warranty by 55 times—driving over 28 miles across Mars until a monster planet-wide dust storm blotted out the Sun in June 2018 and put me to rest on the rim of Perseverance Valley.',
     firstPersonMonologue:
-      'Launching from Earth in June and July 2003 and landing on opposite sides of Mars in January 2004, my twin Spirit and I set out on a 90-day mission to search for clues of past water. Spirit kept rolling and studying rocks until March 2010, while I—Opportunity—outlived my 90-day warranty by 55 times, trekking over 28 miles across the Martian surface. After nearly 15 years of exploring, a massive, planet-wide dust storm blotted out the Sun in June 2018, leaving me silent on the rim of Perseverance Valley before NASA officially ended our mission in February 2019.',
+      'Launching from Earth in June and July 2003 and landing on opposite sides of Mars in January 2004, my twin Spirit and I set out on a 90-day mission to hunt for signs of ancient water. Spirit kept climbing hills and studying rocks until March 2010, while I—Opportunity—outlived my 90-day warranty by 55 times, trekking 28.06 miles across craters and plains! After nearly 15 years of exploring, a massive planet-wide dust storm hid the Sun in June 2018, leaving me silent on the rim of Perseverance Valley.',
     youtubeUrl: 'https://www.youtube.com/watch?v=8u6gNH6xIfc',
     officialSource:
       'https://science.nasa.gov/mission/mars-exploration-rovers-spirit-and-opportunity/',
@@ -633,20 +633,20 @@ export const MARS_ARTIFACTS: Artifact[] = [
     story: {
       headline: 'Twin Robot Geologists That Outlived a 90-Day Warranty for Years',
       introduction:
-        'Opportunity outlived its 90-day warranty by 55 times, trekking over 28 miles until a massive, planet-wide dust storm blotted out the Sun in June 2018, leaving the marathon explorer silent on the rim of Perseverance Valley.',
+        'We are twin robot geologists—Spirit and Opportunity—sent to opposite sides of Mars for what was only supposed to be a 90-day rock-hunting road trip.',
       theScience:
-        "Found decisive geological and chemical proof—including tiny iron-rich mineral spheres nicknamed 'blueberries'—that liquid water once flowed and pooled on ancient Mars, creating environments that could have supported microbial life.",
+        "Using our diamond Rock Abrasion Tool and spectrometers, we spotted mineral 'blueberries' and ancient silica vents that proved Mars once had standing liquid water.",
       whyLeftBehind:
-        'Spirit became trapped in soft sand at Troy in 2009 and went silent in 2010; Opportunity fell silent in June 2018 when a global dust storm blocked sunlight to its solar panels.',
+        'Spirit got stuck in soft Martian sand at Troy in 2009 and lost contact in 2010, while a global dust storm blocked sunlight from my solar wings in June 2018.',
       forSchoolKids:
-        'Spirit and Opportunity were only built to last 90 days on Mars—yet Spirit worked for over 6 years and Opportunity drove 28 miles across nearly 15 years!',
+        'Spirit and I were only built to work for 90 days on Mars—yet Spirit explored for over 6 years and I drove 28 miles across nearly 15 years!',
     },
     famousQuote:
       'My battery is low and it’s getting dark.',
     funFacts: [
-      'Opportunity drove 45.16 km (28.06 miles)—an off-world distance record for years.',
-      'Lucky Martian dust devils periodically swept dust off their solar panels.',
-      'Discovered hematite spheres nicknamed Martian blueberries formed in ancient water.',
+      'I drove 45.16 km (28.06 miles)—setting a driving record on another world that stood for years.',
+      'Lucky Martian dust devils swept dust right off our solar wings to keep us alive.',
+      'We discovered tiny hematite spheres nicknamed Martian blueberries that only form with water.',
     ],
     keyComponents: [
       'Panoramic Camera (Pancam)',
@@ -702,9 +702,9 @@ export const MARS_ARTIFACTS: Artifact[] = [
         'Launched: Aug 4, 2007 | Landed: May 25, 2008 | Last Contact: Nov 2, 2008 (Declared Complete: May 24, 2010)',
     },
     plannedVsActual:
-      'Designed for a 90-sol primary mission; operated for 157 Martian sols before the dark, freezing Arctic winter cut off sunlight to its solar panels.',
+      'I was designed for a 90-sol summer mission in the Martian Arctic, yet I kept digging and studying sky clouds for 157 Martian sols until dark winter froze my solar power.',
     specs:
-      'Landing Mass: 350 kg (770 lbs); powered by twin octagonal solar arrays + NiH2 battery. Equipped with a 2.35-meter (7.7 ft) titanium/aluminum robotic digging arm.',
+      'My 350 kg (770 lbs) body opens twin octagonal solar wings and reaches out with a 2.35-meter (7.7 ft) titanium-aluminum digging arm.',
     instruments: [
       'Robotic Arm (RA) & Robotic Arm Camera (RAC)',
       'Surface Stereo Imager (SSI)',
@@ -713,11 +713,11 @@ export const MARS_ARTIFACTS: Artifact[] = [
       'Meteorological Station (MET)',
     ],
     scientificDiscoveries:
-      'Directly scooped up and verified water ice just centimeters beneath the Martian Arctic soil, discovered perchlorate salts and calcium carbonate in Martian dirt, and observed snow falling from high-altitude clouds.',
+      'I dug straight into the frozen Arctic ground and scooped up real white water ice just centimeters below the dust! I also discovered perchlorate salts in the soil and watched snow fall from high Martian clouds.',
     storytellingHook:
-      'Named after the mythical bird reborn from ashes because it was built from the hardware of a canceled 2001 lander, Phoenix dug into Martian permafrost to taste real water ice—and later passed its exact spacecraft design on to the InSight lander.',
+      'Named after the mythical bird reborn from ashes because engineers built me from spare hardware of a canceled 2001 lander, I tasted real water ice—and later passed my spacecraft body design on to InSight.',
     firstPersonMonologue:
-      'Named after the mythical bird reborn from ashes because I was built from the hardware of a canceled 2001 lander, I touched down in the icy arctic plains of Mars in May 2008. Using my robotic digging arm, I scooped into the frozen Martian permafrost to taste and confirm real water ice—and later passed my exact spacecraft design on to the InSight lander, which launched in 2018. My own journey had started when I launched from Earth in August 2007 and landed on May 25, 2008 for a planned 90-day mission, working through the Martian summer until shrinking winter sunlight put me to sleep in November 2008.',
+      'Named after the mythical bird reborn from ashes because I was built from the hardware of a canceled 2001 lander, I touched down in the icy Arctic plains of Mars on May 25, 2008. Using my 2.35-meter robotic digging arm, I scooped into frozen permafrost to bake and confirm real water ice—and later passed my exact spacecraft design on to the InSight lander! After launching in August 2007 for a 90-day mission, I worked right through 157 Martian days until shrinking Arctic winter sunlight put me to sleep in November 2008.',
     youtubeUrl: 'https://www.youtube.com/watch?v=hH5pNFROlYU',
     officialSource: 'https://science.nasa.gov/mission/phoenix/',
     nssdcaId: '2007-034A',
@@ -726,20 +726,20 @@ export const MARS_ARTIFACTS: Artifact[] = [
     story: {
       headline: 'Reborn From Canceled Hardware to Taste Water Ice in Mars’ Arctic',
       introduction:
-        'Named after the mythical bird reborn from ashes because it was built from the hardware of a canceled 2001 lander, Phoenix dug into Martian permafrost to taste real water ice—and later passed its exact spacecraft design on to the InSight lander.',
+        'I am Phoenix—literally built from spare parts of a canceled lander to prove frozen water hides just a few inches under the Martian Arctic dirt.',
       theScience:
-        'Directly scooped up and verified water ice just centimeters beneath the Martian Arctic soil, discovered perchlorate salts and calcium carbonate in Martian dirt, and observed snow falling from high-altitude clouds.',
+        'My robotic arm scooped bright white chunks of water ice into my TEGA ovens, spotted perchlorate salts in my chemistry beakers, and watched Martian snow drift down from high cirrus clouds.',
       whyLeftBehind:
-        'After working for 157 Martian sols in Vastitas Borealis, Martian Arctic winter darkness and heavy dry-ice frost cut off sunlight to its solar arrays in November 2008.',
+        'Standing in Vastitas Borealis near Mars’ north pole, I lost sunlight when freezing Arctic winter darkness and dry-ice frost arrived in November 2008.',
       forSchoolKids:
-        'Phoenix dug right into Mars’ icy north pole and confirmed real frozen water ice just a few inches under the dirt—and even watched Martian snow fall from clouds!',
+        'I dug right into Mars’ icy north pole and proved real frozen water ice sits just inches under the dirt—and I even watched Martian snow fall from clouds!',
     },
     famousQuote:
-      'We have water ice on Mars—verified directly in the Martian Arctic soil.',
+      'We have water ice on Mars—I touched and verified it right in the Arctic soil.',
     funFacts: [
-      'Built from hardware originally constructed for a canceled 2001 Mars lander.',
-      'Its 2.35-meter robotic arm uncovered bright subsurface water ice just centimeters deep.',
-      'Observed snow falling from high-altitude Martian cirrus clouds.',
+      'I was built from hardware originally constructed for a canceled 2001 Mars lander.',
+      'My 2.35-meter robotic arm uncovered bright subsurface water ice just centimeters deep.',
+      'My laser weather mast watched snow falling from high Martian cirrus clouds.',
     ],
     keyComponents: [
       'Robotic Arm (RA) & Robotic Arm Camera (RAC)',
@@ -786,9 +786,9 @@ export const MARS_ARTIFACTS: Artifact[] = [
         'Launched: May 5, 2018 | Landed: Nov 26, 2018 | End of Mission: Dec 15, 2022',
     },
     plannedVsActual:
-      'Designed for a 1-Mars-year (~2 Earth years) primary mission; operated for over 4 Earth years until Martian dust covered its solar panels.',
+      'Built for one Martian year (~2 Earth years), I listened to Mars’ heartbeat for over four Earth years until heavy red dust blanketed my solar wings.',
     specs:
-      'Built on the Mars Phoenix lander frame with two circular solar arrays and a 1.8-meter (5 ft 9 in) robotic arm used to place instruments directly onto the ground.',
+      'Built on Phoenix’s proven lander frame with two round solar fans and a 1.8-meter (5 ft 9 in) robotic arm built to lift instruments directly onto the Martian dirt.',
     instruments: [
       'SEIS (ultra-sensitive dome seismometer)',
       'HP³ heat-flow probe',
@@ -797,11 +797,11 @@ export const MARS_ARTIFACTS: Artifact[] = [
       'Deployment cameras',
     ],
     scientificDiscoveries:
-      "First mission to measure Mars' 'vital signs'—detecting over 1,300 marsquakes and meteoroid impacts, mapping the thickness of Mars' crust, lumpy mantle, and liquid iron core, and recording the first audio of Martian wind.",
+      'I gave Mars its very first medical checkup—detecting over 1,300 marsquakes and meteoroid hits, mapping the thickness of its crust and liquid iron core, and recording the first audio of Martian wind.',
     storytellingHook:
-      'As thick red dust gradually blanketed its solar arrays over four years, InSight used its final trickle of energy in December 2022 to snap and send home one last dusty selfie before going to sleep forever.',
+      'As four years of red dust piled across my circular solar panels, I saved one last trickle of energy in December 2022 to snap a final dusty selfie before drifting peacefully to sleep.',
     firstPersonMonologue:
-      'Built from the proven design of the Phoenix lander, I spent four years sitting on the flat plains of Mars giving the Red Planet its very first medical checkup—listening closely for marsquakes and meteoroid impacts with my 5-foot-9-inch robotic arm and seismometer. As thick red dust gradually blanketed my two round solar arrays over those four years, I used my final trickle of energy in December 2022 to snap and send home one last dusty selfie before going to sleep forever. My journey had begun when I launched from Earth on May 5, 2018, and landed on Elysium Planitia on November 26, 2018, working hard for four years until my mission officially ended on December 15, 2022.',
+      'Built from the proven frame of the Phoenix lander, I spent four years sitting quietly on Elysium Planitia giving Mars its very first medical checkup—listening closely for marsquakes and meteoroid strikes with my 1.8-meter robotic arm and dome seismometer. As thick red dust slowly covered my two round solar fans, I used my final trickle of power in December 2022 to snap one last dusty selfie for Earth before going to sleep. My mission began on May 5, 2018, landed on November 26, 2018, and officially wrapped up on December 15, 2022.',
     youtubeUrl: 'https://www.youtube.com/watch?v=JJZ6UlH_TfQ',
     officialSource: 'https://science.nasa.gov/mission/insight/',
     nssdcaId: '2018-042A',
@@ -810,20 +810,20 @@ export const MARS_ARTIFACTS: Artifact[] = [
     story: {
       headline: 'Taking the Planetary Pulse of Mars With Over 1,300 Marsquakes',
       introduction:
-        'As thick red dust gradually blanketed its solar arrays over four years, InSight used its final trickle of energy in December 2022 to snap and send home one last dusty selfie before going to sleep forever.',
+        'I am InSight, the robot doctor who placed a super-sensitive seismometer straight onto Martian dirt to hear what lies miles beneath the Red Planet’s rusty surface.',
       theScience:
-        "First mission to measure Mars' 'vital signs'—detecting over 1,300 marsquakes and meteoroid impacts, mapping the thickness of Mars' crust, lumpy mantle, and liquid iron core, and recording the first audio of Martian wind.",
+        'Over four years I heard more than 1,300 marsquakes and meteorite impacts, captured the first sound of Martian wind, and measured Mars’ crust, mantle, and liquid iron core.',
       whyLeftBehind:
-        'Stationary geophysical lander whose solar panels gradually accumulated thick Martian dust until battery reserves ran out in December 2022.',
+        'Because I am a stationary lander without wheels, thick Martian dust gradually coated my solar panels until my batteries ran out in December 2022.',
       forSchoolKids:
-        'InSight placed a super-sensitive seismometer right onto Mars’ ground, acting like a doctor’s stethoscope to listen to over 1,300 marsquakes deep inside the planet!',
+        'I placed a super-sensitive stethoscope right onto Mars’ ground and listened to over 1,300 marsquakes rumbling deep inside the planet!',
     },
     famousQuote:
       'Don’t worry about me though: my time here has been both productive and serene.',
     funFacts: [
-      'Detected over 1,300 marsquakes and meteoroid impacts across four Earth years.',
-      'Recorded the first direct audio of Martian winds.',
-      'Measured the size and liquid iron composition of Mars’ planetary core.',
+      'I detected over 1,300 marsquakes and meteoroid impacts across four Earth years.',
+      'I recorded the very first direct audio of Martian winds brushing my solar panels.',
+      'My radio-wobble experiment measured the size and liquid iron core deep inside Mars.',
     ],
     keyComponents: [
       'SEIS (ultra-sensitive dome seismometer)',
@@ -871,9 +871,9 @@ export const MARS_ARTIFACTS: Artifact[] = [
         'Launched: July 30, 2020 | Landed: Feb 18, 2021 | First Flight: April 19, 2021 | Final Flight (#72): Jan 18, 2024 | Retired: Jan 25, 2024',
     },
     plannedVsActual:
-      'Built for a 30-day demo of up to 5 flights; completed 72 flights across nearly 3 years (128.8 flying minutes, 17.0 km distance, 24.0 m max altitude).',
+      'Engineers built me for a 30-day test of just 5 short flights—yet I soared 72 times across almost three years (128.8 flying minutes, 17.0 km covered, up to 24.0 m high)!',
     specs:
-      'Mass: 1.8 kg (3.97 lbs on Earth; weighs just 0.68 kg / 1.5 lbs in Mars gravity). Counter-rotating carbon-fiber rotors spanning 1.2 m (4 ft); solar-charged Li-ion batteries.',
+      'I weigh just 1.8 kg (3.97 lbs on Earth, and only 0.68 kg / 1.5 lbs in Mars gravity!). My counter-rotating carbon-fiber rotors span 1.2 m (4 ft) and spin off solar-charged batteries.',
     instruments: [
       'High-resolution downward navigation camera',
       'Horizon-facing color camera',
@@ -882,11 +882,11 @@ export const MARS_ARTIFACTS: Artifact[] = [
       'Two-way radio link via Perseverance',
     ],
     scientificDiscoveries:
-      "Achieved humanity's 'Wright Brothers moment' on another planet, proving controlled aerodynamic flight is possible in Mars' ultra-thin atmosphere (<1% of Earth's air density), and served as an aerial scout for the Perseverance rover.",
+      'I gave humanity its Wright Brothers moment on another world—proving controlled flight works in Martian air thinner than 1% of Earth’s atmosphere—while scouting ahead for the Perseverance rover.',
     storytellingHook:
-      'Tucked inside Ingenuity was a postage-stamp-sized swatch of fabric from the original 1903 Wright Flyer; after soaring 72 times across Jezero Crater and chipping a rotor blade, the tiny 4-pound pioneer now serves as a stationary weather monument on Mars.',
+      'Tucked safely inside me is a postage-stamp-sized square of fabric from the 1903 Wright Flyer; after 72 historic flights and a chipped blade tip, I now rest proudly as a stationary weather monument on Mars.',
     firstPersonMonologue:
-      'I carried a tiny, postage-stamp-sized piece of fabric from the original 1903 Wright Flyer tucked inside me, linking the very first airplane on Earth to the first flight on another planet. Even though I was only built for a 30-day test of five short flights, I soared 72 times across Jezero Crater—flying 24 meters high and covering over 17 kilometers—before chipping a rotor blade and becoming a quiet weather station on Mars. My adventure started when I launched from Earth in July 2020 and landed on February 18, 2021, making my first historic flight on April 19, 2021 and my very last flight on January 18, 2024.',
+      'I carried a tiny, postage-stamp-sized piece of fabric from the original 1903 Wright Flyer tucked inside me, linking the very first airplane on Earth to the first flight on another planet. Even though I was only built for a 30-day test of five short flights, I soared 72 times across Jezero Crater—flying 24 meters high and covering 17 kilometers—before chipping a rotor blade and becoming a quiet weather station on Mars. My adventure started when I launched in July 2020 and landed on February 18, 2021, taking my first historic flight on April 19, 2021 and my 72nd flight on January 18, 2024.',
     youtubeUrl: 'https://www.youtube.com/watch?v=qMbHE_VXI-8',
     officialSource:
       'https://science.nasa.gov/mission/mars-2020-perseverance/ingenuity-mars-helicopter/',
@@ -896,20 +896,20 @@ export const MARS_ARTIFACTS: Artifact[] = [
     story: {
       headline: 'Humanity’s First Powered Flight on Another World (72 Sorties)',
       introduction:
-        'Tucked inside Ingenuity was a postage-stamp-sized swatch of fabric from the original 1903 Wright Flyer; after soaring 72 times across Jezero Crater and chipping a rotor blade, the tiny 4-pound pioneer now serves as a stationary weather monument on Mars.',
+        'I am Ingenuity, the tiny 4-pound helicopter that proved human-made aircraft can fly in the super-thin skies of another planet.',
       theScience:
-        "Achieved humanity's 'Wright Brothers moment' on another planet, proving controlled aerodynamic flight is possible in Mars' ultra-thin atmosphere (<1% of Earth's air density), and served as an aerial scout for the Perseverance rover.",
+        'Spreading my 1.2-meter carbon-fiber blades at ~2,400 RPM in Mars’ 1% atmosphere, I flew 72 times for 128.8 total minutes and scouted rocky trails ahead of Perseverance.',
       whyLeftBehind:
-        'Following rotor blade damage during its 72nd landing in January 2024, Ingenuity can no longer fly and remains at Valinor Hills in Jezero Crater.',
+        'After chipping a rotor blade landing in sandy dunes during Flight 72 on January 18, 2024, I retired at Valinor Hills in Jezero Crater as an active monument.',
       forSchoolKids:
-        'Ingenuity weighs only 4 pounds on Earth and carried a tiny piece of the Wright brothers’ 1903 airplane wing fabric across 72 Martian flights!',
+        'I weigh only 4 pounds on Earth and carried a tiny piece of the Wright brothers’ 1903 airplane wing fabric across 72 Martian flights!',
     },
     famousQuote:
-      'Airfield Alpha on Mars—proving powered flight beyond Earth.',
+      'From Airfield Alpha on Mars—I proved powered flight works beyond Earth.',
     funFacts: [
-      'Carried a postage-stamp-sized piece of fabric from the 1903 Wright Flyer.',
-      'Completed 72 flights instead of the 5 flights originally planned.',
-      'Reaches ~2,400 RPM with its 1.2 m counter-rotating carbon-fiber rotors.',
+      'I carry a postage-stamp-sized swatch of fabric from the 1903 Wright Flyer.',
+      'I completed 72 flights instead of the 5 flights engineers originally planned.',
+      'My 1.2 m counter-rotating carbon-fiber rotors spin ~2,400 RPM—five times faster than Earth helicopters.',
     ],
     keyComponents: [
       'High-resolution downward navigation camera',
@@ -964,9 +964,9 @@ export const DEEP_SPACE_ARTIFACTS: Artifact[] = [
         "Launched: March 2, 1972 | Jupiter Flyby: Dec 4, 1973 | Crossed Neptune's Orbit: June 13, 1983 | Last Signal: Jan 23, 2003",
     },
     plannedVsActual:
-      'Designed for a 21-month mission to Jupiter; operated for over 30 years until its nuclear power dropped too low to transmit from 7.6 billion miles away.',
+      'Built for a 21-month visit to Jupiter, I kept talking to Earth for over 30 years until my nuclear batteries grew too faint across 7.6 billion miles of space.',
     specs:
-      'Mass: 258 kg (569 lbs); reached 51,682 km/h (32,110 mph) at launch. First all-nuclear spacecraft (two SNAP-19 Plutonium-238 RTGs).',
+      'I weigh 258 kg (569 lbs) and blasted off at 51,682 km/h (32,110 mph) as the first all-nuclear deep-space explorer powered by two SNAP-19 Plutonium-238 RTGs.',
     instruments: [
       'Imaging Photopolarimeter',
       'Helium Vector Magnetometer',
@@ -975,11 +975,11 @@ export const DEEP_SPACE_ARTIFACTS: Artifact[] = [
       'Meteoroid Detectors',
     ],
     scientificDiscoveries:
-      "First spacecraft to cross the asteroid belt, fly past Jupiter, and cross Neptune's orbit; captured the first close-up photos of Jupiter's Great Red Spot and moons (Ganymede, Europa, Callisto) and mapped Jupiter's intense radiation belts.",
+      'I was the first spacecraft to weave safely through the asteroid belt, fly past Jupiter, and cross Neptune’s orbit—snapping the first close-ups of Jupiter’s Great Red Spot and mapping its fierce radiation belts.',
     storytellingHook:
-      "Bolted to Pioneer 10's antenna struts is a gold-anodized aluminum plaque engraved with a man, a woman, our solar system, and a pulsar map showing Earth's cosmic address—a message in a bottle drifting toward Aldebaran for the next two million years.",
+      'Bolted to my antenna struts is a golden aluminum plaque showing a man, a woman, our solar system, and a star map to Earth—a message in a bottle flying toward the star Aldebaran over the next two million years.',
     firstPersonMonologue:
-      'I carry a shiny, gold-colored metal plaque bolted to my side with pictures of a man, a woman, our planets, and a star map showing where Earth is—like a message in a bottle floating toward a distant star called Aldebaran for the next two million years. My big adventure began when I launched from Earth on March 2, 1972, flying past Jupiter in December 1973 and leaving all the planets behind, before sending my very last whisper back home on January 23, 2003.',
+      'I carry a shiny gold-anodized plaque bolted to my antenna struts with pictures of a man, a woman, our planets, and a pulsar map showing Earth’s cosmic address—like a message in a bottle drifting toward the star Aldebaran for the next two million years. My adventure began when I launched on March 2, 1972, flew past Jupiter on December 4, 1973, and crossed Neptune’s orbit in 1983 before whispering my very last signal home on January 23, 2003.',
     officialSource: 'https://science.nasa.gov/mission/pioneer-10/',
     nssdcaId: '1972-012A',
     catalogRef: 'NSSDCA ID 1972-012A',
@@ -990,20 +990,20 @@ export const DEEP_SPACE_ARTIFACTS: Artifact[] = [
     story: {
       headline: 'First Through the Asteroid Belt & Messenger to Taurus',
       introduction:
-        "Bolted to Pioneer 10's antenna struts is a gold-anodized aluminum plaque engraved with a man, a woman, our solar system, and a pulsar map showing Earth's cosmic address—a message in a bottle drifting toward Aldebaran for the next two million years.",
+        'I am Pioneer 10, humanity’s trailblazer across the asteroid belt and Jupiter—still flying silently out between the stars with a golden greeting from Earth.',
       theScience:
-        "First spacecraft to cross the asteroid belt, fly past Jupiter, and cross Neptune's orbit; captured the first close-up photos of Jupiter's Great Red Spot and moons (Ganymede, Europa, Callisto) and mapped Jupiter's intense radiation belts.",
+        'I captured the first close-up images of Jupiter’s Great Red Spot and moons (Ganymede, Europa, Callisto) and proved spacecraft could survive giant-planet radiation.',
       whyLeftBehind:
-        'Jupiter’s gravity accelerated Pioneer 10 onto an eternal solar-system escape trajectory; its nuclear power dropped below transmitter threshold in January 2003.',
+        'Jupiter’s massive gravity flung me out of the solar system forever, and my nuclear RTGs gradually cooled too low to power my radio transmitter by January 2003.',
       forSchoolKids:
-        'Pioneer 10 carries a golden plaque showing where Earth is in the galaxy as it drifts silently toward the star Aldebaran over the next two million years!',
+        'I carry a golden plaque showing where Earth is in the Milky Way as I drift silently toward the red giant star Aldebaran over the next two million years!',
     },
     famousQuote:
-      'A message in a bottle drifting toward Aldebaran for the next two million years.',
+      'I am a message in a bottle drifting toward Aldebaran for the next two million years.',
     funFacts: [
-      'First spacecraft to cross the asteroid belt and fly past Jupiter.',
-      'Carries the famous gold-anodized Pioneer Plaque designed by Carl Sagan and Frank Drake.',
-      'Communicated for over 30 years—last faint signal received January 23, 2003.',
+      'I was the very first spacecraft to cross the asteroid belt and fly past Jupiter.',
+      'I carry the famous golden Pioneer Plaque designed by Carl Sagan and Frank Drake.',
+      'I talked with Earth for over 30 years—sending my last faint signal on January 23, 2003.',
     ],
     keyComponents: [
       'Imaging Photopolarimeter',
@@ -1051,9 +1051,9 @@ export const DEEP_SPACE_ARTIFACTS: Artifact[] = [
         'Launched: April 6, 1973 | Jupiter Flyby: Dec 3, 1974 | Saturn Flyby: Sept 1, 1979 | Last Signal: Nov 24, 1995',
     },
     plannedVsActual:
-      'Designed for a 21-month outer-planet flyby mission; operated for over 22 years until declining nuclear RTG power prevented antenna pointing.',
+      'Built for a 21-month flyby tour, I kept working for over 22 years until my nuclear RTG power dipped too low to aim my antenna dish.',
     specs:
-      'Mass: 258.5 kg (570 lbs); hexagonal bus with a 2.74-meter (9 ft) high-gain dish antenna, powered by two SNAP-19 Plutonium-238 RTGs.',
+      'I weigh 258.5 kg (570 lbs) with a hexagonal body, a 2.74-meter (9 ft) high-gain dish antenna, and two SNAP-19 Plutonium-238 RTGs.',
     instruments: [
       'Imaging Photopolarimeter',
       'Helium Vector & Triaxial Fluxgate Magnetometers',
@@ -1062,11 +1062,11 @@ export const DEEP_SPACE_ARTIFACTS: Artifact[] = [
       'Charged Particle & Cosmic Ray Telescopes',
     ],
     scientificDiscoveries:
-      "First spacecraft to fly past Saturn (skimming within 21,000 km of its cloud tops), discovering Saturn's narrow F ring and a new moon, and captured the first close-up images of Jupiter's polar regions.",
+      'I became the very first spacecraft to reach Saturn—skimming just 21,000 km above its cloud tops—where I discovered Saturn’s narrow F ring and a hidden moon, after snapping the first close-up views of Jupiter’s poles.',
     storytellingHook:
-      "Like its twin Pioneer 10, Pioneer 11 carries Carl Sagan's golden plaque depicting humanity and Earth's location relative to 14 pulsars—now coasting silently like a cosmic ghost ship toward the heart of the Milky Way.",
+      'Just like my twin Pioneer 10, I carry Carl Sagan’s golden plaque showing Earth’s location beside 14 pulsars—now gliding silently like a cosmic ghost ship toward the constellation Aquila.',
     firstPersonMonologue:
-      'Just like my twin brother Pioneer 10, I carry a shiny golden plaque showing pictures of humans and a star map pointing straight back to Earth—and now I am coasting silently like a cosmic ghost ship toward the heart of the Milky Way galaxy. My journey started when I launched from Earth in April 1973, flying past Jupiter in December 1974 and becoming the first visitor to Saturn in September 1979, before sending my final signal home in September 1995.',
+      'Just like my twin Pioneer 10, I carry a shiny golden plaque showing pictures of humans and a star map pointing straight back to Earth—and now I glide silently like a cosmic ghost ship toward the Milky Way constellation Aquila. My journey started when I launched on April 6, 1973, swung past Jupiter’s poles in December 1974, and became humanity’s first visitor to Saturn on September 1, 1979, before my final signals arrived home in late 1995.',
     officialSource: 'https://science.nasa.gov/mission/pioneer-11/',
     nssdcaId: '1973-019A',
     catalogRef: 'NSSDCA ID 1973-019A',
@@ -1077,20 +1077,20 @@ export const DEEP_SPACE_ARTIFACTS: Artifact[] = [
     story: {
       headline: 'First Explorer to Reach Saturn & Cosmic Ghost Ship Toward Aquila',
       introduction:
-        "Like its twin Pioneer 10, Pioneer 11 carries Carl Sagan's golden plaque depicting humanity and Earth's location relative to 14 pulsars—now coasting silently like a cosmic ghost ship toward the heart of the Milky Way.",
+        'I am Pioneer 11—the scout who banked sharply around Jupiter so I could thread past Saturn’s icy rings for the first time in history.',
       theScience:
-        "First spacecraft to fly past Saturn (skimming within 21,000 km of its cloud tops), discovering Saturn's narrow F ring and a new moon, and captured the first close-up images of Jupiter's polar regions.",
+        'While skimming 21,000 km above Saturn’s clouds, I discovered the narrow F ring and a new moon, scouting a safe highway for Voyager 1 and 2.',
       whyLeftBehind:
-        'Saturn’s gravity flung Pioneer 11 out of the solar system toward Aquila; declining nuclear power ended routine transmissions in late 1995.',
+        'Saturn’s gravity launched me onto an endless escape path toward Aquila, and declining nuclear power quieted my radio in November 1995.',
       forSchoolKids:
-        'Pioneer 11 was the very first spacecraft to visit Saturn, threading safely past its icy rings before flying out of our solar system forever!',
+        'I was the very first spacecraft to visit Saturn, threading safely past its icy rings before flying out of our solar system forever!',
     },
     famousQuote:
-      'Coasting silently like a cosmic ghost ship toward the heart of the Milky Way.',
+      'I am coasting silently like a cosmic ghost ship toward the heart of the Milky Way.',
     funFacts: [
-      'First spacecraft to fly past Saturn in September 1979.',
-      'Discovered Saturn’s narrow F ring while skimming 21,000 km above its clouds.',
-      'Carries the second gold-anodized Pioneer Plaque toward Constellation Aquila.',
+      'I was the very first spacecraft to fly past Saturn in September 1979.',
+      'I discovered Saturn’s narrow F ring while skimming 21,000 km above its clouds.',
+      'I carry the second gold-anodized Pioneer Plaque toward Constellation Aquila.',
     ],
     keyComponents: [
       'Imaging Photopolarimeter',
@@ -1138,9 +1138,9 @@ export const DEEP_SPACE_ARTIFACTS: Artifact[] = [
         'Launched: Feb 17, 1996 | Entered Eros Orbit: Feb 14, 2000 | Landed on Eros: Feb 12, 2001 | Last Contact: Feb 28, 2001',
     },
     plannedVsActual:
-      'Operated for 5 years, including an unexpected 16-day bonus surface mission after touching down on an asteroid it was never built to land on.',
+      'I worked for five full years, including a surprise 16-day bonus mission resting right on an asteroid I was never built to land on!',
     specs:
-      'Mass: 805 kg (1,775 lbs); first spacecraft to rely on solar cells for power beyond the orbit of Mars. Had no landing gear.',
+      'I weigh 805 kg (1,775 lbs) and made history as the first spacecraft powered solely by solar panels beyond Mars—even though I had zero landing legs.',
     instruments: [
       'Multi-Spectral Imager (MSI)',
       'Near-Infrared Spectrometer (NIS)',
@@ -1149,11 +1149,11 @@ export const DEEP_SPACE_ARTIFACTS: Artifact[] = [
       'Laser Rangefinder (NLR)',
     ],
     scientificDiscoveries:
-      "First human-made object to orbit and land on an asteroid; returned 10 times more data than planned (160,000 images), mapped over 70% of Eros, and showed the asteroid has no magnetic field and a density like Earth's crust.",
+      'I was the first spacecraft ever to orbit and soft-land on an asteroid! I sent back 160,000 images (10 times more data than promised), mapped over 70% of 433 Eros, and proved the space rock has no magnetic field.',
     storytellingHook:
-      "Built strictly as an orbiter with zero landing legs, NEAR Shoemaker was gently guided down onto Eros at a walking pace of 4 mph—where it survived touchdown and broadcast gamma-ray science from the asteroid's surface for two weeks until -173°C (-279°F) cold froze its systems.",
+      'Built strictly as an orbiter with zero landing legs, NASA gently eased me down onto asteroid 433 Eros at a walking pace of 4 mph—and I survived touchdown to radio gamma-ray science home for two more weeks!',
     firstPersonMonologue:
-      'Built strictly to fly around space rocks with zero landing legs, I was gently guided down onto the asteroid Eros at a slow walking pace of 4 miles per hour! Surviving the touchdown made me the first spacecraft ever to land on an asteroid, and I broadcast gamma-ray science right from the dusty surface for two weeks until freezing -173°C (-279°F) cold finally put my systems to sleep. My mission had started when I launched from Earth in February 1996, orbiting Eros starting on February 14, 2000, before making my surprise landing on February 12, 2001 and sending my final signal on February 28, 2001.',
+      'Built strictly to fly around space rocks with zero landing legs, I was gently guided down onto the asteroid Eros at a slow walking pace of 4 miles per hour! Surviving the touchdown made me the first spacecraft ever to land on an asteroid, and I broadcast gamma-ray science right from the dusty surface for 16 extra days until freezing -173°C (-279°F) cold finally put my systems to sleep. I launched on February 17, 1996, entered Eros’ orbit on February 14, 2000, touched down on February 12, 2001, and sent my final signal on February 28, 2001.',
     youtubeUrl: 'https://www.youtube.com/watch?v=4bWn_DgmNqc',
     officialSource: 'https://science.nasa.gov/mission/near-shoemaker/',
     nssdcaId: '1996-008A',
@@ -1165,20 +1165,20 @@ export const DEEP_SPACE_ARTIFACTS: Artifact[] = [
     story: {
       headline: 'The Legless Orbiter That Soft-Landed on Asteroid 433 Eros',
       introduction:
-        "Built strictly as an orbiter with zero landing legs, NEAR Shoemaker was gently guided down onto Eros at a walking pace of 4 mph—where it survived touchdown and broadcast gamma-ray science from the asteroid's surface for two weeks until -173°C (-279°F) cold froze its systems.",
+        'I am NEAR Shoemaker—an asteroid orbiter with zero landing gear that pulled off a gentle 4 mph belly landing on 21-mile-long asteroid 433 Eros.',
       theScience:
-        "First human-made object to orbit and land on an asteroid; returned 10 times more data than planned (160,000 images), mapped over 70% of Eros, and showed the asteroid has no magnetic field and a density like Earth's crust.",
+        'Even from the dusty surface, my X-Ray/Gamma-Ray Spectrometer analyzed Eros’s rocky crust up close after I had already mapped more than 70% of the asteroid from orbit.',
       whyLeftBehind:
-        'Engineered to end its primary mission with a controlled descent onto Eros, NEAR Shoemaker survived intact and transmitted surface gamma-ray science for 16 days until extreme cold ended operations.',
+        'After touching down near Eros’s saddle-shaped Himeros crater on February 12, 2001, I kept transmitting for 16 days until brutal -173°C cold ended my batteries on February 28.',
       forSchoolKids:
-        'Even though NEAR Shoemaker had zero landing legs, engineers gently set it down on asteroid Eros at 4 mph—making it the first spacecraft ever to land on an asteroid!',
+        'Even though I had zero landing legs, engineers gently set me down on asteroid Eros at 4 mph—making me the first spacecraft ever to land on an asteroid!',
     },
     famousQuote:
-      'Surviving touchdown at 4 mph with zero landing legs on an asteroid.',
+      'I survived touchdown at 4 mph with zero landing legs on an asteroid.',
     funFacts: [
-      'First spacecraft ever to orbit and soft-land on an asteroid.',
-      'Returned 160,000 images—10 times more data than originally planned.',
-      'First spacecraft powered by solar cells beyond Mars’ orbit.',
+      'I am the first spacecraft ever to orbit and soft-land on an asteroid.',
+      'I returned 160,000 images—10 times more data than originally planned.',
+      'I was the first spacecraft powered by solar cells beyond Mars’ orbit.',
     ],
     keyComponents: [
       'Multi-Spectral Imager (MSI)',
@@ -1225,20 +1225,20 @@ export const DEEP_SPACE_ARTIFACTS: Artifact[] = [
         'Launched: Sept 27, 2007 | Orbited Vesta: 2011–2012 | Orbited Ceres: 2015–2018 | End of Mission: Oct/Nov 2018',
     },
     plannedVsActual:
-      'Operated for 11 years across two deep-space destinations until exhausting its hydrazine attitude-control propellant in late 2018.',
+      'I worked across 11 years and two different worlds before using up the last drops of my hydrazine steering fuel in November 2018.',
     specs:
-      'Solar-powered spacecraft propelled by three high-efficiency Xenon Ion Thrusters alongside hydrazine attitude-control thrusters.',
+      'Spanning 19.7 meters (65 ft) tip-to-tip with my huge solar wings, I used three blue-glowing Xenon Ion Thrusters to reshape my orbit across the asteroid belt.',
     instruments: [
       'Framing Camera (FC)',
       'Visible and Infrared Mapping Spectrometer (VIR)',
       'Gamma Ray and Neutron Detector (GRaND)',
     ],
     scientificDiscoveries:
-      'First spacecraft ever to orbit two extraterrestrial bodies—giant protoplanet Vesta and dwarf planet Ceres. Revealed bright sodium carbonate salt deposits and signs of recent cryovolcanism and subsurface brines on Ceres.',
+      'I became the first spacecraft ever to orbit two deep-space worlds—giant protoplanet Vesta and dwarf planet Ceres! I spotted glowing white sodium-carbonate salt spots on Ceres left behind by ancient underground brines.',
     storytellingHook:
-      "Before Dawn ran out of thruster fuel after 11 years, NASA carefully parked it in a high, stable 'planetary protection' orbit so it will silently circle dwarf planet Ceres for decades without risking a crash onto its potentially habitable surface.",
+      'Before my steering fuel ran empty after 11 years, NASA parked me in a high, safe planetary-protection orbit so I will circle Ceres quietly for decades without touching its icy world.',
     firstPersonMonologue:
-      'I used special blue-glowing ion engines to become the very first spacecraft to orbit two different worlds beyond Earth—the giant asteroid Vesta and the dwarf planet Ceres. Before I ran out of thruster fuel after 11 years in deep space, NASA carefully parked me in a high, safe orbit so I will silently circle Ceres for decades without risking a crash onto its icy, potentially habitable surface. My long road trip started when I launched in September 2007, orbiting Vesta from July 2011 to September 2012 before arriving at Ceres in March 2015 and completing my mission in November 2018.',
+      'I fired special blue-glowing xenon ion engines to become the very first spacecraft to orbit two different worlds beyond Earth—the giant asteroid Vesta and the dwarf planet Ceres. Before I ran out of steering fuel after 11 years in the asteroid belt, NASA carefully parked me in a high, safe orbit so I will circle Ceres silently for decades without ever touching its icy surface. My road trip began on September 27, 2007, orbiting Vesta from 2011 to 2012 before arriving at Ceres in 2015 and retiring on November 1, 2018.',
     youtubeUrl: 'https://www.youtube.com/watch?v=MGpRPpfeIAw',
     officialSource: 'https://science.nasa.gov/mission/dawn/',
     nssdcaId: '2007-043A',
@@ -1250,20 +1250,20 @@ export const DEEP_SPACE_ARTIFACTS: Artifact[] = [
     story: {
       headline: 'The Ion-Propelled Explorer of Two Worlds: Vesta and Ceres',
       introduction:
-        "Before Dawn ran out of thruster fuel after 11 years, NASA carefully parked it in a high, stable 'planetary protection' orbit so it will silently circle dwarf planet Ceres for decades without risking a crash onto its potentially habitable surface.",
+        'I am Dawn, a deep-space traveler whose gentle blue ion engines carried me from orbiting giant Vesta all the way to dwarf planet Ceres.',
       theScience:
-        'First spacecraft ever to orbit two extraterrestrial bodies—giant protoplanet Vesta and dwarf planet Ceres. Revealed bright sodium carbonate salt deposits and signs of recent cryovolcanism and subsurface brines on Ceres.',
+        'By mapping Vesta’s towering crater mountains and Ceres’s bright salt domes in Occator Crater, I helped unlock how rocky and icy worlds formed at the birth of our solar system.',
       whyLeftBehind:
-        'Once its hydrazine attitude-control propellant ran out in 2018, Dawn remained in a decades-long quarantine orbit to protect Ceres’ icy subsurface brines from contamination.',
+        'Once my hydrazine steering fuel ran out in late 2018, I stayed in a decades-long safe quarantine orbit high above Ceres so Earth microbes could never contaminate its subsurface brines.',
       forSchoolKids:
-        'Dawn used futuristic blue-glowing xenon ion thrusters to orbit Vesta first and then fly on to orbit dwarf planet Ceres—the only spacecraft ever to orbit two deep-space worlds!',
+        'I used futuristic blue-glowing xenon ion thrusters to orbit Vesta first and then fly on to orbit dwarf planet Ceres—the only spacecraft ever to orbit two deep-space worlds!',
     },
     famousQuote:
-      'Silently circling dwarf planet Ceres in a high planetary-protection orbit.',
+      'I am silently circling dwarf planet Ceres in a high planetary-protection orbit.',
     funFacts: [
-      'First spacecraft ever to orbit two separate extraterrestrial bodies (Vesta and Ceres).',
-      'Propelled by three high-efficiency Xenon Ion Thrusters.',
-      'Revealed bright salt deposits left behind by ancient cryovolcanic brines on Ceres.',
+      'I am the first spacecraft ever to orbit two separate deep-space worlds (Vesta and Ceres).',
+      'I accelerated gently using three high-efficiency Xenon Ion Thrusters.',
+      'I discovered bright salt deposits left behind by icy cryovolcano brines on Ceres.',
     ],
     keyComponents: [
       'Framing Camera (FC)',
@@ -1309,18 +1309,18 @@ export const DEEP_SPACE_ARTIFACTS: Artifact[] = [
         'Launched: March 6, 2009 | K2 Extended Mission: May 2013 | Retired: Oct 30, 2018',
     },
     plannedVsActual:
-      "Designed for a 3.5-year primary mission; operated for 9.5 years across its primary survey and 19 'K2' sky campaigns until running out of fuel.",
+      "Built for a 3.5-year sky survey, I stared at the stars for 9.5 years—including 19 'K2' campaigns after two reaction wheels failed—until my fuel tank finally ran dry.",
     specs:
-      'Built around a 1.4-meter (4 ft 7 in) primary mirror and 0.95-meter (3 ft) aperture photometer—the largest digital camera in deep space at launch.',
+      'I carry a 1.4-meter (4 ft 7 in) main mirror and a 0.95-meter (3 ft) photometer—which was the largest digital camera in deep space when I launched.',
     instruments: [
       'Wide-field CCD Photometer array (stared at 150,000+ stars in Cygnus and 500,000+ stars in K2)',
     ],
     scientificDiscoveries:
-      'Discovered more than 2,600 confirmed exoplanets (including Earth-sized planets in habitable zones and multi-planet systems like Kepler-9 and Kepler-11), proving that planets outnumber stars in our Milky Way galaxy.',
+      'I discovered more than 2,600 confirmed exoplanets—including rocky Earth-sized worlds and multi-planet families—proving there are more planets than stars in our Milky Way galaxy!',
     storytellingHook:
-      "When two of its four pointing wheels failed in 2013, NASA engineers refused to quit—balancing Kepler against the gentle pressure of sunlight itself (like a kayak steering into a current) to launch its 'K2' second act and discover hundreds more worlds before its fuel tank ran dry.",
+      "When two of my four pointing wheels broke in 2013, engineers refused to quit—balancing me against the gentle push of sunlight itself, like a kayak paddling into a river current, to launch my 'K2' second act.",
     firstPersonMonologue:
-      "When two of my four pointing wheels broke in 2013, NASA engineers refused to give up on me—balancing me against the gentle push of sunlight itself, just like a kayak steering into a river current! That clever trick started my 'K2' second act, letting me discover hundreds more planets on top of the thousands I had already found before my fuel tank finally ran dry. My planet-hunting journey began when I launched from Earth on March 6, 2009, discovering more than 2,600 alien worlds across 9.5 years before NASA peacefully retired me in a safe orbit on October 30, 2018.",
+      "When two of my four pointing wheels broke in 2013, NASA engineers refused to give up on me—balancing me against the gentle push of sunlight itself, just like a kayak steering into a river current! That clever trick started my 'K2' second act, letting me spot hundreds more exoplanets on top of the thousands I had already uncovered before my fuel tank finally ran dry. My planet hunt began when I launched on March 6, 2009, revealing over 2,600 alien worlds across 9.5 years before NASA peacefully retired me on October 30, 2018.",
     youtubeUrl: 'https://www.youtube.com/watch?v=_V7J05fK5e0',
     officialSource: 'https://science.nasa.gov/mission/kepler/',
     nssdcaId: '2009-011A',
@@ -1332,20 +1332,20 @@ export const DEEP_SPACE_ARTIFACTS: Artifact[] = [
     story: {
       headline: 'The Exoplanet Hunter That Proved Planets Outnumber Stars',
       introduction:
-        "When two of its four pointing wheels failed in 2013, NASA engineers refused to quit—balancing Kepler against the gentle pressure of sunlight itself (like a kayak steering into a current) to launch its 'K2' second act and discover hundreds more worlds before its fuel tank ran dry.",
+        'I am the Kepler Space Telescope—a deep-space planet hunter trailing quietly behind Earth around the Sun, after proving our galaxy is packed with other worlds.',
       theScience:
-        'Discovered more than 2,600 confirmed exoplanets (including Earth-sized planets in habitable zones and multi-planet systems like Kepler-9 and Kepler-11), proving that planets outnumber stars in our Milky Way galaxy.',
+        'By watching for tiny dips in starlight when planets pass in front of their suns, I found more than 2,600 confirmed exoplanets, showing planets actually outnumber stars in the Milky Way.',
       whyLeftBehind:
-        'After 9.5 years and exhausting its hydrazine fuel in October 2018, Kepler was placed into a safe Earth-trailing heliocentric orbit and powered down.',
+        'After 9.5 years of staring across space, I ran out of hydrazine fuel in October 2018 and was safely powered down in an Earth-trailing orbit around the Sun.',
       forSchoolKids:
-        'Kepler stared at hundreds of thousands of stars and discovered over 2,600 alien planets—and when two pointing wheels broke, engineers balanced it using sunlight itself!',
+        'I stared at hundreds of thousands of stars and discovered over 2,600 alien planets—and when two pointing wheels broke, engineers balanced me using sunlight itself!',
     },
     famousQuote:
-      'Balancing against the gentle pressure of sunlight to discover over 2,600 alien worlds.',
+      'I balanced against the gentle pressure of sunlight to discover over 2,600 alien worlds.',
     funFacts: [
-      'Discovered more than 2,600 confirmed exoplanets across 9.5 years.',
-      'Used solar radiation pressure like a kayak paddle during its K2 second act.',
-      'Carried a 1.4-meter primary mirror and 0.95-meter wide-field photometer.',
+      'I discovered more than 2,600 confirmed exoplanets across 9.5 years in space.',
+      'I used solar radiation pressure like a kayak paddle during my K2 extended mission.',
+      'My 1.4-meter mirror and camera watched over 500,000 stars for tiny planet shadows.',
     ],
     keyComponents: [
       'Wide-field CCD Photometer array (stared at 150,000+ stars in Cygnus and 500,000+ stars in K2)',

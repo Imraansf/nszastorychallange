@@ -26,9 +26,10 @@ import { ModelInspectorModal } from './components/ModelInspectorModal';
 import { SurfaceExplorerGame } from './components/SurfaceExplorerGame';
 import {
   toggleAudioMute,
-  playTelemetryBeep,
-  playRadarPing,
-  playSuccessChime,
+  getAudioMuted,
+  playPlanetWhoosh,
+  playArtifactRememberingWhoosh,
+  playWhooshSound,
 } from './utils/audio';
 
 export default function App() {
@@ -44,7 +45,7 @@ export default function App() {
   const [inspectingArtifact, setInspectingArtifact] = useState<Artifact | null>(null);
   const [surfaceGameArtifact, setSurfaceGameArtifact] = useState<Artifact | null>(null);
   const [isTimelineCollapsed, setIsTimelineCollapsed] = useState(false);
-  const [isMuted, setIsMuted] = useState(true);
+  const [isMuted, setIsMuted] = useState(() => getAudioMuted());
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [hasSelectedPlanet, setHasSelectedPlanet] = useState(false);
   const [zoneVisitId, setZoneVisitId] = useState(0);
@@ -80,23 +81,28 @@ export default function App() {
     const nextMuted = toggleAudioMute();
     setIsMuted(nextMuted);
     if (!nextMuted) {
-      playSuccessChime();
+      playWhooshSound('ui');
     }
   }, []);
 
   const handleSelectArtifact = useCallback((artifact: Artifact | null) => {
-    playRadarPing();
+    if (artifact) {
+      playArtifactRememberingWhoosh();
+    } else {
+      playWhooshSound('out');
+    }
     setSelectedArtifact(artifact);
     setIsDossierOpen(false);
     setSelectedLandmark(null);
   }, []);
 
   const handleOpenCadInspector = useCallback((artifact: Artifact) => {
+    playWhooshSound('in');
     setInspectingArtifact(artifact);
   }, []);
 
   const handleSelectLandmark = useCallback((landmark: PlanetaryLandmark) => {
-    playRadarPing();
+    playWhooshSound('in');
     setSelectedLandmark(landmark);
   }, []);
 
@@ -167,10 +173,10 @@ export default function App() {
       >
         <button
           onClick={() => {
-            playTelemetryBeep(420);
+            playWhooshSound('ui');
             setIsMenuOpen((prev) => !prev);
           }}
-          className={`min-h-[40px] px-3.5 py-2 rounded-xl backdrop-blur-xl text-xs font-mono font-black flex items-center gap-2 active:translate-y-0.5 transition-all ${
+          className={`min-h-[40px] px-3.5 py-2 rounded-xl backdrop-blur-xl text-xs font-bold flex items-center gap-2 active:translate-y-0.5 transition-all ${
             isMars
               ? 'bg-[rgba(28,20,15,0.85)] hover:bg-[#291D16] border border-[#57534E] hover:border-[#D97706] text-[#F5E6D3] shadow-[0_6px_20px_rgba(0,0,0,0.45)]'
               : 'bg-[rgba(28,29,33,0.92)] hover:bg-[#2A2C32] border-2 border-[#BAE6FD] text-[#F4F4F5] shadow-none'
@@ -198,7 +204,7 @@ export default function App() {
           >
             <button
               onClick={() => {
-                playTelemetryBeep(380);
+                playPlanetWhoosh();
                 setIsMenuOpen(false);
                 setSelectedArtifact(null);
                 setSelectedLandmark(null);
@@ -352,7 +358,7 @@ export default function App() {
           {/* Collapse / Expand Toggle Button */}
           <button
             onClick={() => {
-              playTelemetryBeep(400);
+              playWhooshSound('ui');
               setIsTimelineCollapsed(!isTimelineCollapsed);
             }}
             className={`pointer-events-auto px-4 sm:px-5 py-1.5 sm:py-2 rounded-full text-[11px] sm:text-xs font-black flex items-center gap-1.5 sm:gap-2 transition-all active:translate-y-0.5 backdrop-blur-xl ${
@@ -443,10 +449,10 @@ export default function App() {
       {/* 5. Small Target Popup (Appears after zoom) */}
       {selectedArtifact && !isDossierOpen && showSmallPopup && (
         <div
-          className={`absolute top-16 right-3 sm:right-4 left-3 sm:left-auto w-auto sm:w-64 max-w-[260px] z-30 rounded-xl p-2.5 sm:p-3 backdrop-blur-xl animate-in fade-in slide-in-from-right-4 duration-300 ${
+          className={`absolute top-16 right-3 sm:right-4 left-3 sm:left-auto w-auto sm:w-72 max-w-[300px] z-30 rounded-xl p-3 sm:p-3.5 backdrop-blur-xl animate-in fade-in slide-in-from-right-4 duration-300 font-sans ${
             isMars
-              ? 'bg-[rgba(28,20,15,0.85)] border border-[#57534E] shadow-[0_10px_30px_rgba(0,0,0,0.5)]'
-              : 'bg-[rgba(28,29,33,0.92)] border-2 border-[#BAE6FD] shadow-none'
+              ? 'bg-[rgba(28,20,15,0.88)] border border-[#57534E] shadow-[0_10px_30px_rgba(0,0,0,0.5)]'
+              : 'bg-[rgba(28,29,33,0.94)] border-2 border-[#BAE6FD] shadow-none'
           }`}
         >
           <div
@@ -455,7 +461,7 @@ export default function App() {
             }`}
           >
             <div
-              className={`flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-widest font-mono ${
+              className={`flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest ${
                 isMars ? 'text-[#D97706]' : 'text-[#BAE6FD]'
               }`}
             >
@@ -464,10 +470,13 @@ export default function App() {
                   isMars ? 'bg-[#D97706]' : 'bg-[#BAE6FD]'
                 }`}
               />
-              Target Acquired
+              Hello from {selectedArtifact.moniker}
             </div>
             <button
-              onClick={() => setSelectedArtifact(null)}
+              onClick={() => {
+                playWhooshSound('out');
+                setSelectedArtifact(null);
+              }}
               className={`p-1 rounded-md transition-colors ${
                 isMars
                   ? 'hover:bg-[#D97706]/20 text-[#A8A29E] hover:text-[#F5E6D3]'
@@ -488,17 +497,24 @@ export default function App() {
               {selectedArtifact.name}
             </h3>
             <div
-              className={`text-[10px] font-mono truncate ${
+              className={`text-[11px] font-sans tabular-nums truncate ${
                 isMars ? 'text-[#A8A29E]' : 'text-[#A1A1AA]'
               }`}
             >
               {selectedArtifact.agency} • {selectedArtifact.year} • {selectedArtifact.locationName}
             </div>
+            <p
+              className={`mt-2 text-xs font-sans leading-relaxed line-clamp-3 ${
+                isMars ? 'text-[#E7E5E4]' : 'text-[#E4E4E7]'
+              }`}
+            >
+              “{selectedArtifact.story.forSchoolKids}”
+            </p>
           </div>
 
           <button
             onClick={() => {
-              playTelemetryBeep(650);
+              playWhooshSound('in');
               setIsDossierOpen(true);
             }}
             className={`mt-2.5 w-full py-1.5 px-3 rounded-lg font-bold text-xs flex items-center justify-center gap-1 transition-all ${
@@ -507,14 +523,14 @@ export default function App() {
                 : 'bg-[#BAE6FD] hover:bg-[#E0F2FE] text-[#1C1D21] shadow-none'
             }`}
           >
-            <span>Get details</span>
+            <span>Read My Full Story</span>
             <ChevronRight className="w-3.5 h-3.5" />
           </button>
 
           {(selectedArtifact.body === 'moon' || selectedArtifact.body === 'mars') && (
             <button
               onClick={() => {
-                playTelemetryBeep(720);
+                playWhooshSound('in');
                 setIsMenuOpen(false);
                 setSurfaceGameArtifact(selectedArtifact);
               }}
@@ -539,7 +555,10 @@ export default function App() {
       {selectedArtifact && isDossierOpen && (
         <StoryDrawer
           artifact={selectedArtifact}
-          onClose={() => setIsDossierOpen(false)}
+          onClose={() => {
+            playWhooshSound('out');
+            setIsDossierOpen(false);
+          }}
           onNextArtifact={handleNextArtifact}
           onPrevArtifact={handlePrevArtifact}
           onInspectModel={handleOpenCadInspector}
@@ -550,7 +569,10 @@ export default function App() {
       {inspectingArtifact && (
         <ModelInspectorModal
           artifact={inspectingArtifact}
-          onClose={() => setInspectingArtifact(null)}
+          onClose={() => {
+            playWhooshSound('out');
+            setInspectingArtifact(null);
+          }}
         />
       )}
 
@@ -558,7 +580,10 @@ export default function App() {
       {surfaceGameArtifact && (
         <SurfaceExplorerGame
           artifact={surfaceGameArtifact}
-          onClose={() => setSurfaceGameArtifact(null)}
+          onClose={() => {
+            playWhooshSound('out');
+            setSurfaceGameArtifact(null);
+          }}
         />
       )}
 

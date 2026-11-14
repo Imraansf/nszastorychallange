@@ -94,38 +94,38 @@ export const SPACECRAFT_MODEL_REGISTRY: Record<string, SpacecraftModelAsset> = {
   // Deep Space Artifacts
   dawn: {
     artifactId: 'dawn',
-    modelPath: null,
-    assetLabel: 'Telemetry Hologram & Archival Preview',
+    modelPath: '/model/dawn.glb',
+    assetLabel: 'Dawn Spacecraft (.glb)',
     fallbackReason:
-      'No local .glb mapped yet — displaying Horizon telemetry hologram & official NASA archival photo.',
+      'Dawn Spacecraft orbital beacon & NASA archival imagery active.',
   },
   'near-shoemaker': {
     artifactId: 'near-shoemaker',
-    modelPath: null,
-    assetLabel: 'Telemetry Hologram & Archival Preview',
+    modelPath: '/model/NEAR%20shoemaker.glb',
+    assetLabel: 'NEAR Shoemaker (.glb)',
     fallbackReason:
-      'No local .glb mapped yet — displaying Horizon telemetry hologram & official NASA archival photo.',
+      'NEAR Shoemaker orbital beacon & NASA archival imagery active.',
   },
   'pioneer-10': {
     artifactId: 'pioneer-10',
-    modelPath: null,
-    assetLabel: 'Telemetry Hologram & Archival Preview',
+    modelPath: '/model/pioneer%2010.glb',
+    assetLabel: 'Pioneer 10 (.glb)',
     fallbackReason:
-      'No local .glb mapped yet — displaying Horizon telemetry hologram & official NASA archival photo.',
+      'Pioneer 10 deep-space beacon & NASA archival imagery active.',
   },
   'pioneer-11': {
     artifactId: 'pioneer-11',
-    modelPath: null,
-    assetLabel: 'Telemetry Hologram & Archival Preview',
+    modelPath: '/model/pioneer%2010.glb',
+    assetLabel: 'Pioneer 11 (.glb)',
     fallbackReason:
-      'No local .glb mapped yet — displaying Horizon telemetry hologram & official NASA archival photo.',
+      'Pioneer 11 deep-space beacon & NASA archival imagery active.',
   },
   kepler: {
     artifactId: 'kepler',
-    modelPath: null,
-    assetLabel: 'Telemetry Hologram & Archival Preview',
+    modelPath: '/model/Kepler(A).glb',
+    assetLabel: 'Kepler Space Telescope (.glb)',
     fallbackReason:
-      'No local .glb mapped yet — displaying Horizon telemetry hologram & official NASA archival photo.',
+      'Kepler / K2 orbital beacon & NASA archival imagery active.',
   },
 };
 

@@ -166,19 +166,19 @@ export const StoryDrawer: React.FC<StoryDrawerProps> = ({
 
   const legacyBullets = [
     {
-      lead: 'Big Moment:',
+      lead: 'My Big Moment:',
       text: artifact.storytellingHook,
       icon: Rocket,
       iconBg: isMars ? 'bg-[#D97706]' : 'bg-[#38BDF8]',
     },
     {
-      lead: 'Why It Stayed:',
+      lead: 'Why I Stayed Behind:',
       text: artifact.story.whyLeftBehind,
       icon: MapPin,
       iconBg: isMars ? 'bg-[#E7E5E4]' : 'bg-[#DDD6FE]',
     },
     {
-      lead: 'Amazing Discovery:',
+      lead: 'What I Discovered:',
       text: artifact.scientificDiscoveries,
       icon: Sparkles,
       iconBg: isMars ? 'bg-[#F5E6D3]' : 'bg-[#7DD3FC]',
@@ -186,7 +186,7 @@ export const StoryDrawer: React.FC<StoryDrawerProps> = ({
     ...(artifact.funFacts[0]
       ? [
           {
-            lead: 'Cool Space Fact:',
+            lead: 'My Fun Fact:',
             text: artifact.funFacts[0],
             icon: Star,
             iconBg: isMars ? 'bg-[#D6D3D1]' : 'bg-[#E0F2FE]',
@@ -529,7 +529,9 @@ export const StoryDrawer: React.FC<StoryDrawerProps> = ({
                       isMars ? 'text-[#1C140F]/90' : 'text-[#06090F]/85'
                     }`}
                   >
-                    A postcard straight from {zoneMeta.label.toLowerCase()}!
+                    {artifact.body === 'deep_space'
+                      ? 'A postcard straight from me in deep space!'
+                      : `A postcard straight from me on the ${zoneMeta.label.toLowerCase()}!`}
                   </p>
                 </div>
               </div>
@@ -559,12 +561,12 @@ export const StoryDrawer: React.FC<StoryDrawerProps> = ({
                   {nasaVoice.isSpeaking ? (
                     <>
                       <VolumeX className="w-4 h-4" />
-                      <span>Stop Story</span>
+                      <span>Stop My Story</span>
                     </>
                   ) : (
                     <>
                       <Volume2 className={`w-4 h-4 ${isMars ? 'text-[#92400E]' : 'text-[#7C3AED]'}`} />
-                      <span>Listen to Story</span>
+                      <span>Listen to My Story</span>
                     </>
                   )}
                 </button>
@@ -696,7 +698,7 @@ export const StoryDrawer: React.FC<StoryDrawerProps> = ({
                         isMars ? 'text-[#44403C]' : 'text-[#06090F]/80'
                       }`}
                     >
-                      Cosmic GPS spot &amp; coordinates
+                      My cosmic GPS spot &amp; coordinates
                     </p>
                   </div>
                 </div>
@@ -819,7 +821,7 @@ export const StoryDrawer: React.FC<StoryDrawerProps> = ({
                         isMars ? 'text-[#A8A29E]' : 'text-[#06090F]/80'
                       }`}
                     >
-                      Launch, landing &amp; survival time
+                      My launch, landing &amp; survival time
                     </p>
                   </div>
                 </div>
@@ -935,7 +937,7 @@ export const StoryDrawer: React.FC<StoryDrawerProps> = ({
                     }`}
                   >
                     <Sparkles className="w-3 h-3" />
-                    <span>Planned vs. Actual</span>
+                    <span>What They Planned vs. What I Did</span>
                   </div>
                   <p
                     className={`text-sm font-bold leading-relaxed ${
@@ -987,7 +989,7 @@ export const StoryDrawer: React.FC<StoryDrawerProps> = ({
                         isMars ? 'text-[#1C140F]/90' : 'text-[#06090F]/85'
                       }`}
                     >
-                      Quick facts on why it mattered
+                      Quick facts on what I made possible
                     </p>
                   </div>
                 </div>
@@ -1112,14 +1114,14 @@ export const StoryDrawer: React.FC<StoryDrawerProps> = ({
                         isMars ? 'text-[#F5E6D3]' : 'text-[#F8FAFC]'
                       }`}
                     >
-                      Spacecraft Stats
+                      My Hardware Stats
                     </h2>
                     <p
                       className={`text-xs font-bold ${
                         isMars ? 'text-[#A8A29E]' : 'text-[#E0F2FE]/85'
                       }`}
                     >
-                      Size, power &amp; science gadgets
+                      My size, power &amp; science gadgets
                     </p>
                   </div>
                 </div>
@@ -1217,7 +1219,7 @@ export const StoryDrawer: React.FC<StoryDrawerProps> = ({
                       isMars ? 'text-[#1C140F]' : 'text-[#06090F]'
                     }`}
                   >
-                    Key Onboard Gadgets
+                    My Onboard Gadgets
                   </h3>
                   <div className="flex flex-wrap gap-2">
                     {artifact.instruments.map((inst, idx) => {

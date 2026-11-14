@@ -11,7 +11,7 @@ import {
   CheckCircle,
   Sparkles,
 } from 'lucide-react';
-import { playTelemetryBeep } from '../utils/audio';
+import { playWhooshSound } from '../utils/audio';
 import { Artifact3DViewport, ModelViewportStatus } from './Artifact3DViewport';
 import { getSpacecraftModelAsset } from '../utils/spacecraft-models';
 
@@ -39,7 +39,7 @@ export const ModelInspectorModal: React.FC<ModelInspectorModalProps> = ({
     if (!artifact) return;
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        playTelemetryBeep(450);
+        playWhooshSound('out');
         onClose();
       }
     };
@@ -185,7 +185,7 @@ export const ModelInspectorModal: React.FC<ModelInspectorModalProps> = ({
           {/* Close Button */}
           <button
             onClick={() => {
-              playTelemetryBeep(450);
+              playWhooshSound('out');
               onClose();
             }}
             className={`p-2 rounded-full transition-colors ${
@@ -380,14 +380,14 @@ export const ModelInspectorModal: React.FC<ModelInspectorModalProps> = ({
                 }`}
               >
                 <span
-                  className={`font-bold font-mono text-[10px] block mb-1.5 uppercase tracking-widest ${
+                  className={`font-bold text-[10px] block mb-1.5 uppercase tracking-widest ${
                     isMars ? 'text-[#F5E6D3]' : 'text-[#BAE6FD]'
                   }`}
                 >
-                  MISSION SIGNIFICANCE
+                  IN MY OWN WORDS
                 </span>
-                <p className="text-[11px] leading-relaxed italic text-[#FFFFFF]">
-                  "{artifact.story.headline}"
+                <p className="text-[11px] font-sans leading-relaxed italic text-[#FFFFFF]">
+                  “{artifact.story.forSchoolKids}”
                 </p>
               </div>
             </div>

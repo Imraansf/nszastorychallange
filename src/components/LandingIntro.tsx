@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { CelestialBody } from '../types/space';
-import { playTelemetryBeep } from '../utils/audio';
+import { playPlanetWhoosh } from '../utils/audio';
 
 interface LandingIntroProps {
   onSelectZone: (zone: CelestialBody) => void;
@@ -138,7 +138,7 @@ export const LandingIntro: React.FC<LandingIntroProps> = ({
       window.clearTimeout(arrivalTimeoutRef.current);
     }
     setIsArriving(false);
-    playTelemetryBeep(zone === 'moon' ? 440 : zone === 'mars' ? 520 : 620);
+    playPlanetWhoosh();
     setIsExiting(true);
     const prefersReducedMotion =
       typeof window !== 'undefined' &&

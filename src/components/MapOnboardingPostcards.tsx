@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, Globe, Rocket, ArrowRight, Sparkles, Compass } from 'lucide-react';
-import { playTelemetryBeep, playSuccessChime } from '../utils/audio';
+import { playWhooshSound } from '../utils/audio';
 
 import { CelestialBody } from '../types/space';
 
@@ -77,10 +77,10 @@ export const MapOnboardingPostcards: React.FC<MapOnboardingPostcardsProps> = ({
 
   const handleAdvance = () => {
     if (!isLastStep) {
-      playTelemetryBeep(540);
+      playWhooshSound('ui');
       setCurrentStepIndex((prev) => prev + 1);
     } else {
-      playSuccessChime();
+      playWhooshSound('out');
       setIsDismissed(true);
     }
   };
@@ -124,7 +124,7 @@ export const MapOnboardingPostcards: React.FC<MapOnboardingPostcardsProps> = ({
           >
             <div className="flex items-center gap-2.5 min-w-0">
               <span
-                className={`shrink-0 px-2 py-0.5 rounded-lg border text-[11px] font-black font-hud-display ${
+                className={`shrink-0 px-2 py-0.5 rounded-lg border text-[11px] font-black font-['Chakra_Petch'] ${
                   isMars
                     ? 'bg-[#F5E6D3] border-[#F5E6D3] text-[#1C140F]'
                     : 'bg-[#BAE6FD] border-[#BAE6FD] text-[#1C1D21]'
@@ -132,7 +132,7 @@ export const MapOnboardingPostcards: React.FC<MapOnboardingPostcardsProps> = ({
               >
                 {currentStep.stepNumber}/03
               </span>
-              <h3 className="font-hud-display text-sm sm:text-base font-bold uppercase tracking-wide leading-tight text-[#FFFFFF]">
+              <h3 className="font-['Chakra_Petch'] text-sm sm:text-base font-bold uppercase tracking-wide leading-tight text-[#FFFFFF]">
                 {currentStep.title}
               </h3>
             </div>
@@ -165,7 +165,7 @@ export const MapOnboardingPostcards: React.FC<MapOnboardingPostcardsProps> = ({
                 )}
               </span>
               <p
-                className={`font-hud-body text-xs sm:text-[13px] font-semibold leading-relaxed ${
+                className={`font-sans text-xs sm:text-[13px] font-semibold leading-relaxed ${
                   isMars ? 'text-[#F5E6D3]' : 'text-[#FFFFFF]'
                 }`}
               >
@@ -198,7 +198,7 @@ export const MapOnboardingPostcards: React.FC<MapOnboardingPostcardsProps> = ({
 
               <button
                 onClick={handleAdvance}
-                className={`font-hud-display min-h-[38px] px-4 py-2 rounded-xl border active:translate-y-0.5 text-xs font-bold uppercase tracking-wide flex items-center gap-1.5 transition-all whitespace-nowrap shrink-0 ${
+                className={`font-['Chakra_Petch'] min-h-[38px] px-4 py-2 rounded-xl border active:translate-y-0.5 text-xs font-bold uppercase tracking-wide flex items-center gap-1.5 transition-all whitespace-nowrap shrink-0 ${
                   isMars
                     ? 'bg-[#F5E6D3] hover:bg-[#FFFFFF] border-[#F5E6D3] text-[#1C140F] shadow-[0_4px_14px_rgba(0,0,0,0.35)]'
                     : 'bg-[#BAE6FD] hover:bg-[#FFFFFF] border-[#BAE6FD] text-[#1C1D21] shadow-none'

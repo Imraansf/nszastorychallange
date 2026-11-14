@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { Artifact } from '../types/space';
 import { ChevronUp, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
-import { playTelemetryBeep } from '../utils/audio';
+import { playWhooshSound } from '../utils/audio';
 
 interface MissionTimelineBarProps {
   artifacts: Artifact[];
@@ -62,7 +62,7 @@ export const MissionTimelineBar: React.FC<MissionTimelineBarProps> = ({
   const handleScrollBy = (direction: 'left' | 'right') => {
     const el = scrollContainerRef.current;
     if (!el) return;
-    playTelemetryBeep(direction === 'left' ? 460 : 520);
+    playWhooshSound('ui');
     const step = Math.max(220, Math.round(el.clientWidth * 0.55));
     el.scrollBy({
       left: direction === 'left' ? -step : step,
@@ -75,10 +75,10 @@ export const MissionTimelineBar: React.FC<MissionTimelineBarProps> = ({
       {/* Collapse / Expand Toggle Button */}
       <button
         onClick={() => {
-          playTelemetryBeep(400);
+          playWhooshSound('ui');
           onToggleCollapse();
         }}
-        className="pointer-events-auto font-hud-display px-4 sm:px-5 py-1.5 sm:py-2 rounded-full bg-[#facc15] hover:bg-[#fde047] border-[3px] border-[#0f172a] shadow-[0_4px_0_#0f172a] text-[11px] sm:text-xs font-bold uppercase tracking-wide text-[#0f172a] flex items-center gap-1.5 sm:gap-2 transition-all active:translate-y-0.5 active:shadow-[0_2px_0_#0f172a] whitespace-nowrap shrink-0"
+        className="pointer-events-auto font-['Chakra_Petch'] px-4 sm:px-5 py-1.5 sm:py-2 rounded-full bg-[#facc15] hover:bg-[#fde047] border-[3px] border-[#0f172a] shadow-[0_4px_0_#0f172a] text-[11px] sm:text-xs font-bold uppercase tracking-wide text-[#0f172a] flex items-center gap-1.5 sm:gap-2 transition-all active:translate-y-0.5 active:shadow-[0_2px_0_#0f172a] whitespace-nowrap shrink-0"
       >
         {isCollapsed ? (
           <>
@@ -133,12 +133,12 @@ export const MissionTimelineBar: React.FC<MissionTimelineBarProps> = ({
                       : 'bg-[#1e293b]/95 border-[#fde047]/60 text-[#f8fafc] hover:bg-[#334155] hover:border-[#facc15] shadow-[0_3px_0_#020617]'
                   }`}
                 >
-                  <div className="text-[10px] font-hud-body font-bold uppercase tracking-wider mb-0.5 flex items-center justify-between gap-1.5 tabular-nums">
+                  <div className="text-[10px] font-sans font-bold uppercase tracking-wider mb-0.5 flex items-center justify-between gap-1.5 tabular-nums">
                     <span className={isSelected ? 'text-[#9a3412]' : 'text-[#fde047]'}>
                       {artifact.year}
                     </span>
                     <span
-                      className={`text-[9px] font-hud-display px-1.5 py-0.2 rounded ${
+                      className={`text-[9px] font-['Chakra_Petch'] px-1.5 py-0.2 rounded ${
                         isSelected
                           ? 'bg-[#0f172a] text-[#facc15]'
                           : 'bg-[#0f172a]/70 text-[#fde047]'
@@ -148,7 +148,7 @@ export const MissionTimelineBar: React.FC<MissionTimelineBarProps> = ({
                     </span>
                   </div>
                   <h4
-                    className={`font-hud-display text-xs sm:text-[13px] font-bold truncate ${
+                    className={`font-['Chakra_Petch'] text-xs sm:text-[13px] font-bold truncate ${
                       isSelected ? 'text-[#0f172a]' : 'text-white'
                     }`}
                   >

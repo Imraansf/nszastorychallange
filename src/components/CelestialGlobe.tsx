@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { Artifact, CelestialBody, LunarLandmark } from '../types/space';
-import { playRadarPing, playTelemetryBeep } from '../utils/audio';
+import { playWhooshSound } from '../utils/audio';
 import {
   createGeographicLunarTexture,
   createGeographicLunarBumpMap,
@@ -55,7 +55,7 @@ export const CelestialGlobe: React.FC<CelestialGlobeProps> = React.memo(({
   const [activePreset, setActivePreset] = useState<'orbital' | 'north' | 'equator' | 'target'>('orbital');
 
   const handleFlyToPreset = (preset: 'orbital' | 'north' | 'equator' | 'target') => {
-    playTelemetryBeep(520);
+    playWhooshSound('ui');
     autoRotateRef.current = false;
     setActivePreset(preset);
 
@@ -514,7 +514,6 @@ export const CelestialGlobe: React.FC<CelestialGlobeProps> = React.memo(({
       if (hit && hoveredArtifact?.id !== hit.artifact.id) {
         setHoveredArtifact(hit.artifact);
         setHoveredLandmark(null);
-        playTelemetryBeep(700, 0.04);
       }
       return;
     } else {
@@ -533,7 +532,6 @@ export const CelestialGlobe: React.FC<CelestialGlobeProps> = React.memo(({
         );
         if (hitLm && hoveredLandmark?.id !== hitLm.landmark.id) {
           setHoveredLandmark(hitLm.landmark);
-          playTelemetryBeep(600, 0.03);
         }
         return;
       } else {
@@ -570,7 +568,6 @@ export const CelestialGlobe: React.FC<CelestialGlobeProps> = React.memo(({
       if (intersects.length > 0) {
         const hit = pinMeshesRef.current.find((p) => p.mesh === intersects[0].object);
         if (hit) {
-          playRadarPing();
           onSelectArtifact(hit.artifact);
           return;
         }
@@ -585,7 +582,6 @@ export const CelestialGlobe: React.FC<CelestialGlobeProps> = React.memo(({
             (l) => l.mesh === lmIntersects[0].object
           );
           if (hitLm) {
-            playRadarPing();
             onSelectLandmark?.(hitLm.landmark);
             return;
           }
@@ -639,8 +635,8 @@ export const CelestialGlobe: React.FC<CelestialGlobeProps> = React.memo(({
           <h4 className="text-sm font-semibold text-[#F8FAFC] mt-1">
             {hoveredArtifact.name}
           </h4>
-          <p className="text-xs text-[#E0F2FE]/80 mt-1 line-clamp-1 italic">
-            "{hoveredArtifact.story.headline}"
+          <p className="text-xs text-[#E0F2FE]/85 mt-1 line-clamp-2 italic">
+            “{hoveredArtifact.story.forSchoolKids}”
           </p>
         </div>
       )}

@@ -1,8 +1,16 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react';
 import * as THREE from 'three';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
+import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { Artifact, CelestialBody } from '../types/space';
 import { getArtifactColorHex } from '../utils/space-data';
-import { playRadarPing, playTelemetryBeep } from '../utils/audio';
+import { playPlanetWhoosh, playWhooshSound } from '../utils/audio';
+import {
+  DRACO_DECODER_CDN_URL,
+  getSpacecraftModelAsset,
+  loadValidatedGltf,
+} from '../utils/spacecraft-models';
 import {
   createSunTexture,
   createMercuryTexture,
@@ -229,13 +237,21 @@ export const DeepSpaceExplorer: React.FC<DeepSpaceExplorerProps> = React.memo(({
     group: THREE.Group;
     beacon: THREE.Mesh;
     ring: THREE.Mesh;
-    trailLine: THREE.Line | null;
+    halo: THREE.Mesh | null;
+    pulseRing: THREE.Mesh | null;
+    modelHolder: THREE.Group;
+    modelLoaded: boolean;
+    trailLine: THREE.LineSegments | null;
+    trailPoints: THREE.Vector3[];
+    trailPositionsArray: Float32Array | null;
     artifact: Artifact;
     pos: THREE.Vector3;
   }[]>([]);
   const planetMeshesRef = useRef<{ mesh: THREE.Mesh; planet: SolarPlanetData }[]>([]);
   const orbitLinesGroupRef = useRef<THREE.Group | null>(null);
   const trajectoryLinesGroupRef = useRef<THREE.Group | null>(null);
+  const sunDirLightRef = useRef<THREE.DirectionalLight | null>(null);
+  const sunDirTargetRef = useRef<THREE.Object3D | null>(null);
 
   // Simulation Astrodynamics Timing State
   const simTimeYearsRef = useRef<number>(BASE_YEAR);
@@ -367,9 +383,20 @@ export const DeepSpaceExplorer: React.FC<DeepSpaceExplorerProps> = React.memo(({
     renderer.setSize(width, height);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.15;
     container.innerHTML = '';
     container.appendChild(renderer.domElement);
     rendererRef.current = renderer;
+
+    // Subtle procedural space PMREM environment so high-metalness foil & solar panels catch specular reflections
+    const pmremGenerator = new THREE.PMREMGenerator(renderer);
+    const roomEnv = new RoomEnvironment();
+    const envTarget = pmremGenerator.fromScene(roomEnv, 0.04);
+    scene.environment = envTarget.texture;
+    (scene as unknown as { environmentIntensity?: number }).environmentIntensity = 0.55;
+    roomEnv.dispose();
+    pmremGenerator.dispose();
 
     const systemGroup = new THREE.Group();
     scene.add(systemGroup);
@@ -384,12 +411,26 @@ export const DeepSpaceExplorer: React.FC<DeepSpaceExplorerProps> = React.memo(({
     systemGroup.add(trajectoryLinesGroup);
     trajectoryLinesGroupRef.current = trajectoryLinesGroup;
 
-    // Lighting Rig
-    const sunLight = new THREE.PointLight(0xfff6d6, 3.4, 600, 0.25);
+    // Lighting Rig: PointLight from Sun for planets + Directional Sun Light aimed at tracked deep-space craft + fill lights
+    const sunLight = new THREE.PointLight(0xfff6d6, 3.2, 600, 0.25);
     sunLight.position.set(0, 0, 0);
     systemGroup.add(sunLight);
 
-    const ambientLight = new THREE.AmbientLight(0x334155, 0.7);
+    const sunDirTarget = new THREE.Object3D();
+    sunDirTarget.position.set(0, 0, 1);
+    systemGroup.add(sunDirTarget);
+    sunDirTargetRef.current = sunDirTarget;
+
+    const sunDirLight = new THREE.DirectionalLight(0xfff8e6, 2.8);
+    sunDirLight.position.set(0, 0, 0);
+    sunDirLight.target = sunDirTarget;
+    systemGroup.add(sunDirLight);
+    sunDirLightRef.current = sunDirLight;
+
+    const hemiLight = new THREE.HemisphereLight(0xdbeafe, 0x1e293b, 0.65);
+    scene.add(hemiLight);
+
+    const ambientLight = new THREE.AmbientLight(0x334155, 0.45);
     scene.add(ambientLight);
 
     // Sun 3D Render
@@ -649,23 +690,6 @@ export const DeepSpaceExplorer: React.FC<DeepSpaceExplorerProps> = React.memo(({
         }
       });
 
-      // Update 3D Deep Space Hardware Positions
-      probeMeshesRef.current.forEach(({ group, ring, artifact, pos }) => {
-        const hState = systemState.hardware.get(artifact.id);
-        if (hState) {
-          group.position.set(
-            hState.positionScene.x,
-            hState.positionScene.y,
-            hState.positionScene.z
-          );
-          pos.set(hState.positionScene.x, hState.positionScene.y, hState.positionScene.z);
-          ring.rotation.z += 0.02;
-        }
-        const targetScale = hoveredArtifactIdRef.current === artifact.id ? 1.35 : 1.0;
-        const nextScale = THREE.MathUtils.lerp(group.scale.x, targetScale, 0.18);
-        group.scale.setScalar(nextScale);
-      });
-
       // 1. Determine camera tracking target coordinate
       if (selectedPlanetRef.current) {
         const match = planetMeshesRef.current.find(
@@ -687,6 +711,17 @@ export const DeepSpaceExplorer: React.FC<DeepSpaceExplorerProps> = React.memo(({
 
       // Smooth tracking interpolation towards target celestial body or spacecraft
       currentLookAtRef.current.lerp(targetLookAtRef.current, 0.08);
+
+      // Keep directional sunlight originating from Sun (0,0,0) aimed toward the active spacecraft/planet
+      if (sunDirLightRef.current && sunDirTargetRef.current) {
+        sunDirLightRef.current.position.set(0, 0, 0);
+        if (currentLookAtRef.current.lengthSq() > 0.01) {
+          sunDirTargetRef.current.position.copy(currentLookAtRef.current);
+        } else {
+          sunDirTargetRef.current.position.set(0, 0, 1);
+        }
+        sunDirTargetRef.current.updateMatrixWorld();
+      }
 
       // Damped camera rotation and smooth zoom
       currentRotationRef.current.x +=
@@ -714,6 +749,124 @@ export const DeepSpaceExplorer: React.FC<DeepSpaceExplorerProps> = React.memo(({
         cameraRef.current.lookAt(currentLookAtRef.current);
       }
 
+      // Update 3D Deep Space Hardware Positions, Dynamic Zoom Sizing, Attitude Stabilization, & Non-Clipping Orbit Lines
+      const camPos = cameraRef.current ? cameraRef.current.position : null;
+      probeMeshesRef.current.forEach((probe) => {
+        const {
+          group,
+          beacon,
+          ring,
+          halo,
+          pulseRing,
+          modelHolder,
+          modelLoaded,
+          trailLine,
+          trailPoints,
+          trailPositionsArray,
+          artifact,
+          pos,
+        } = probe;
+
+        const hState = systemState.hardware.get(artifact.id);
+        if (hState) {
+          group.position.set(
+            hState.positionScene.x,
+            hState.positionScene.y,
+            hState.positionScene.z
+          );
+          pos.set(hState.positionScene.x, hState.positionScene.y, hState.positionScene.z);
+          ring.rotation.z += 0.02;
+        }
+
+        const isSelected = selectedArtifactRef.current?.id === artifact.id;
+        const isHovered = hoveredArtifactIdRef.current === artifact.id;
+        const baseGroupScale = isHovered ? 1.2 : 1.0;
+        const nextGroupScale = THREE.MathUtils.lerp(group.scale.x, baseGroupScale, 0.18);
+        group.scale.setScalar(nextGroupScale);
+
+        const distToCam = camPos ? camPos.distanceTo(group.position) : 100;
+        const zoomBlend = THREE.MathUtils.clamp((18 - distToCam) / (18 - 2.6), 0, 1);
+
+        if (modelLoaded && (isSelected || distToCam < 18)) {
+          const targetModelScale =
+            zoomBlend > 0.04
+              ? THREE.MathUtils.lerp(0.18, 1.55, Math.pow(zoomBlend, 0.72))
+              : 0.001;
+          const nextModelScale = THREE.MathUtils.lerp(
+            modelHolder.scale.x,
+            targetModelScale,
+            0.16
+          );
+          modelHolder.scale.setScalar(nextModelScale);
+          modelHolder.visible = nextModelScale > 0.03;
+
+          // Swap placeholder beacon sphere out cleanly once the 3D .glb model scales into view
+          const showing3dCraft = nextModelScale > 0.35;
+          beacon.visible = !showing3dCraft;
+          if (halo) halo.visible = !showing3dCraft;
+          if (pulseRing) {
+            pulseRing.visible = true;
+            const ringMat = pulseRing.material as THREE.MeshBasicMaterial;
+            ringMat.opacity = showing3dCraft ? 0.18 : 0.35;
+          }
+
+          // Slow subtle idle attitude stabilization while inspected
+          if (modelHolder.visible) {
+            modelHolder.rotation.y += deltaSec * 0.22;
+            modelHolder.rotation.z = Math.sin(currentTime * 0.0007) * 0.045;
+            modelHolder.rotation.x = Math.cos(currentTime * 0.0005) * 0.03;
+          }
+        } else {
+          const nextModelScale = THREE.MathUtils.lerp(modelHolder.scale.x, 0.001, 0.2);
+          modelHolder.scale.setScalar(nextModelScale);
+          modelHolder.visible = false;
+          beacon.visible = true;
+          if (halo) halo.visible = true;
+        }
+
+        // Prevent orbit trajectory line from clipping right through the 3D spacecraft mesh
+        if (trailLine && trailPositionsArray && trailPoints.length > 1) {
+          const posAttr = trailLine.geometry.getAttribute('position') as THREE.BufferAttribute;
+          const clearRadius = modelHolder.visible ? 0.85 * modelHolder.scale.x : 0;
+          const clearRadiusSq = clearRadius * clearRadius;
+          let writeIdx = 0;
+
+          for (let i = 0; i < trailPoints.length - 1; i++) {
+            const a = trailPoints[i];
+            const b = trailPoints[i + 1];
+
+            if (clearRadiusSq > 0.001) {
+              const midX = (a.x + b.x) * 0.5 - group.position.x;
+              const midY = (a.y + b.y) * 0.5 - group.position.y;
+              const midZ = (a.z + b.z) * 0.5 - group.position.z;
+              const distASq =
+                (a.x - group.position.x) ** 2 +
+                (a.y - group.position.y) ** 2 +
+                (a.z - group.position.z) ** 2;
+              const distBSq =
+                (b.x - group.position.x) ** 2 +
+                (b.y - group.position.y) ** 2 +
+                (b.z - group.position.z) ** 2;
+              const distMidSq = midX * midX + midY * midY + midZ * midZ;
+
+              if (distASq < clearRadiusSq || distBSq < clearRadiusSq || distMidSq < clearRadiusSq) {
+                continue;
+              }
+            }
+
+            trailPositionsArray[writeIdx++] = a.x;
+            trailPositionsArray[writeIdx++] = a.y;
+            trailPositionsArray[writeIdx++] = a.z;
+            trailPositionsArray[writeIdx++] = b.x;
+            trailPositionsArray[writeIdx++] = b.y;
+            trailPositionsArray[writeIdx++] = b.z;
+          }
+
+          posAttr.needsUpdate = true;
+          trailLine.geometry.setDrawRange(0, writeIdx / 3);
+        }
+      });
+
       renderer.render(scene, camera);
     };
     animate(performance.now());
@@ -731,6 +884,7 @@ export const DeepSpaceExplorer: React.FC<DeepSpaceExplorerProps> = React.memo(({
     return () => {
       cancelAnimationFrame(animId);
       window.removeEventListener('resize', handleResize);
+      envTarget.dispose();
       if (container && renderer.domElement) {
         container.innerHTML = '';
       }
@@ -748,18 +902,32 @@ export const DeepSpaceExplorer: React.FC<DeepSpaceExplorerProps> = React.memo(({
     }
   }, [showOrbits]);
 
-  // 7. Render Deep Space Hardware Beacons and Trajectory Lines
+  // 7. Render Deep Space Hardware Beacons, Draco .GLB Spacecraft Models, and Trajectory Lines
   useEffect(() => {
     const systemGroup = systemGroupRef.current;
     const trajectoryGroup = trajectoryLinesGroupRef.current;
     if (!systemGroup || !trajectoryGroup) return;
 
-    // Clean up old probes
+    const disposeObject3D = (root: THREE.Object3D) => {
+      root.traverse((child) => {
+        const mesh = child as THREE.Mesh;
+        if (mesh.geometry) {
+          mesh.geometry.dispose();
+        }
+        const mat = mesh.material;
+        if (Array.isArray(mat)) {
+          mat.forEach((m) => m.dispose());
+        } else if (mat) {
+          mat.dispose();
+        }
+      });
+    };
+
+    // Clean up old probes & loaded .glb models
     const oldChildren = systemGroup.children.filter((c: any) => c.isProbe);
     oldChildren.forEach((c: any) => {
       systemGroup.remove(c);
-      if (c.geometry) c.geometry.dispose();
-      if (c.material) c.material.dispose();
+      disposeObject3D(c);
     });
 
     // Clean up old trajectory trails
@@ -772,7 +940,104 @@ export const DeepSpaceExplorer: React.FC<DeepSpaceExplorerProps> = React.memo(({
 
     probeMeshesRef.current = [];
 
-    // Add Probes and their Astrodynamic Trajectory Trails
+    const abortController = new AbortController();
+    const dracoLoader = new DRACOLoader();
+    dracoLoader.setDecoderPath(DRACO_DECODER_CDN_URL);
+    const gltfLoader = new GLTFLoader();
+    gltfLoader.setDRACOLoader(dracoLoader);
+
+    const matchesFoilOrPanelName = (rawName?: string | null): boolean => {
+      if (!rawName) return false;
+      const clean = rawName.trim().replace(/\.\d+$/, '').toLowerCase();
+      return (
+        clean === 'foil_gold' ||
+        clean === 'foil_silver' ||
+        clean === 'shiny_panel' ||
+        clean === 'shiny_panels' ||
+        clean === 'silver' ||
+        clean.includes('foil_gold') ||
+        clean.includes('foil_silver') ||
+        clean.includes('shiny_panel')
+      );
+    };
+
+    const enhanceSpacecraftMaterials = (root: THREE.Object3D) => {
+      root.traverse((child) => {
+        const mesh = child as THREE.Mesh;
+        if (!mesh.isMesh) return;
+
+        mesh.renderOrder = 2;
+        const meshNameMatched = matchesFoilOrPanelName(mesh.name);
+        const origMaterials = Array.isArray(mesh.material)
+          ? mesh.material
+          : mesh.material
+            ? [mesh.material]
+            : [];
+
+        const updatedMaterials = origMaterials.map((mat) => {
+          const isFoilOrPanel = meshNameMatched || matchesFoilOrPanelName(mat.name);
+
+          if (
+            isFoilOrPanel &&
+            !(mat instanceof THREE.MeshStandardMaterial) &&
+            !(mat instanceof THREE.MeshPhysicalMaterial)
+          ) {
+            const legacyColor =
+              'color' in mat && (mat as THREE.MeshBasicMaterial).color
+                ? (mat as THREE.MeshBasicMaterial).color.clone()
+                : new THREE.Color(0xd4af37);
+            const upgraded = new THREE.MeshStandardMaterial({
+              name: mat.name,
+              color: legacyColor,
+              metalness: 0.9,
+              roughness: 0.25,
+              side: THREE.DoubleSide,
+              envMapIntensity: 1.35,
+            });
+            mat.dispose();
+            return upgraded;
+          }
+
+          if (mat instanceof THREE.MeshStandardMaterial || mat instanceof THREE.MeshPhysicalMaterial) {
+            if (isFoilOrPanel) {
+              mat.metalness = 0.9;
+              mat.roughness = 0.25;
+              mat.envMapIntensity = 1.35;
+            } else {
+              mat.envMapIntensity = Math.max(mat.envMapIntensity ?? 1.0, 1.1);
+            }
+            mat.side = THREE.DoubleSide;
+          }
+
+          if (!mat.transparent || mat.opacity >= 0.99) {
+            mat.depthWrite = true;
+          }
+          mat.needsUpdate = true;
+          return mat;
+        });
+
+        if (Array.isArray(mesh.material)) {
+          mesh.material = updatedMaterials;
+        } else if (updatedMaterials.length > 0) {
+          mesh.material = updatedMaterials[0];
+        }
+      });
+    };
+
+    const normalizeModelToUnitBox = (object: THREE.Object3D) => {
+      object.updateMatrixWorld(true);
+      const box = new THREE.Box3().setFromObject(object);
+      const size = box.getSize(new THREE.Vector3());
+      const center = box.getCenter(new THREE.Vector3());
+      const maxDim = Math.max(size.x, size.y, size.z);
+      const scale = maxDim > 0.0001 ? 1.0 / maxDim : 1.0;
+
+      object.scale.multiplyScalar(scale);
+      object.position.set(-center.x * scale, -center.y * scale, -center.z * scale);
+      object.updateMatrixWorld(true);
+    };
+
+    // Add Probes, .GLB Model Holders, and Astrodynamic Trajectory Trails
     artifacts.forEach((artifact) => {
       const isSelected = selectedArtifact?.id === artifact.id;
       const hardwarePos = getHardwarePosition(artifact.id, simTimeYearsRef.current);
@@ -786,83 +1051,141 @@ export const DeepSpaceExplorer: React.FC<DeepSpaceExplorerProps> = React.memo(({
       );
       (probeGroup as any).isProbe = true;
 
-      // Simplistic representation: A single geometric point (Sphere) and a minimal ring
+      // Distant solar-system beacon (hidden automatically once zoomed in and .glb scales up)
       const beaconGeo = new THREE.SphereGeometry(isSelected ? 0.35 : 0.18, 12, 12);
-      const beaconMat = new THREE.MeshBasicMaterial({ 
+      const beaconMat = new THREE.MeshBasicMaterial({
         color: colorHex,
         transparent: true,
-        opacity: isSelected ? 1 : 0.7
+        opacity: isSelected ? 1 : 0.75,
       });
       const beaconMesh = new THREE.Mesh(beaconGeo, beaconMat);
       probeGroup.add(beaconMesh);
 
-      // Orbital highlight: A subtle selection halo
+      let haloMesh: THREE.Mesh | null = null;
+      let pulseMesh: THREE.Mesh | null = null;
+
       if (isSelected) {
         const haloGeo = new THREE.SphereGeometry(0.7, 24, 24);
         const haloMat = new THREE.MeshBasicMaterial({
           color: colorHex,
           transparent: true,
           opacity: 0.12,
-          side: THREE.BackSide
+          side: THREE.BackSide,
         });
-        const haloMesh = new THREE.Mesh(haloGeo, haloMat);
+        haloMesh = new THREE.Mesh(haloGeo, haloMat);
         probeGroup.add(haloMesh);
 
-        // Selection Pulse Ring - highlights the orbit
-        const pulseGeo = new THREE.RingGeometry(0.85, 0.88, 48);
+        const pulseGeo = new THREE.RingGeometry(0.95, 0.99, 48);
         const pulseMat = new THREE.MeshBasicMaterial({
           color: colorHex,
           transparent: true,
           opacity: 0.35,
-          side: THREE.DoubleSide
+          side: THREE.DoubleSide,
+          depthWrite: false,
         });
-        const pulseMesh = new THREE.Mesh(pulseGeo, pulseMat);
+        pulseMesh = new THREE.Mesh(pulseGeo, pulseMat);
         pulseMesh.rotation.x = Math.PI / 2;
+        pulseMesh.renderOrder = 1;
         probeGroup.add(pulseMesh);
       }
 
-      // Minimalist flat representation
       const ringGeo = new THREE.RingGeometry(0.4, 0.42, 24);
       const ringMat = new THREE.MeshBasicMaterial({
         color: colorHex,
         side: THREE.DoubleSide,
         transparent: true,
-        opacity: isSelected ? 0.5 : 0.1,
+        opacity: isSelected ? 0.45 : 0.12,
+        depthWrite: false,
       });
       const ringMesh = new THREE.Mesh(ringGeo, ringMat);
       ringMesh.rotation.x = Math.PI / 2;
+      ringMesh.renderOrder = 1;
       probeGroup.add(ringMesh);
 
-      // B. True Astrodynamics Trajectory Path (Hyperbolic escape vector / Halo orbit / Ellipse)
+      // 3D .GLB Spacecraft Holder (starts minimized until camera zooms in)
+      const modelHolder = new THREE.Group();
+      modelHolder.scale.setScalar(0.001);
+      modelHolder.visible = false;
+      probeGroup.add(modelHolder);
+
+      // B. True Astrodynamics Trajectory Path (LineSegments so active craft clearance gap never clips mesh)
       const pathPoints = getHardwareTrajectoryPath(artifact.id, 120);
-      let trailLine: THREE.Line | null = null;
-      if (pathPoints.length > 1) {
-        const threePath = pathPoints.map((p) => new THREE.Vector3(p.x, p.y, p.z));
-        const trailGeo = new THREE.BufferGeometry().setFromPoints(threePath);
+      const threePath = pathPoints.map((p) => new THREE.Vector3(p.x, p.y, p.z));
+      let trailLine: THREE.LineSegments | null = null;
+      let trailPositionsArray: Float32Array | null = null;
+
+      if (threePath.length > 1) {
+        const segmentCount = threePath.length - 1;
+        trailPositionsArray = new Float32Array(segmentCount * 2 * 3);
+        let idx = 0;
+        for (let i = 0; i < segmentCount; i++) {
+          trailPositionsArray[idx++] = threePath[i].x;
+          trailPositionsArray[idx++] = threePath[i].y;
+          trailPositionsArray[idx++] = threePath[i].z;
+          trailPositionsArray[idx++] = threePath[i + 1].x;
+          trailPositionsArray[idx++] = threePath[i + 1].y;
+          trailPositionsArray[idx++] = threePath[i + 1].z;
+        }
+        const trailGeo = new THREE.BufferGeometry();
+        trailGeo.setAttribute('position', new THREE.BufferAttribute(trailPositionsArray, 3));
         const trailMat = new THREE.LineBasicMaterial({
           color: colorHex,
           transparent: true,
-          opacity: isSelected ? 0.65 : 0.22,
+          opacity: isSelected ? 0.65 : 0.24,
+          depthWrite: false,
         });
-        trailLine = new THREE.Line(trailGeo, trailMat);
+        trailLine = new THREE.LineSegments(trailGeo, trailMat);
+        trailLine.renderOrder = 1;
         trajectoryGroup.add(trailLine);
       }
 
       systemGroup.add(probeGroup);
 
-      probeMeshesRef.current.push({
+      const probeRecord = {
         group: probeGroup,
         beacon: beaconMesh,
         ring: ringMesh,
+        halo: haloMesh,
+        pulseRing: pulseMesh,
+        modelHolder,
+        modelLoaded: false,
         trailLine,
+        trailPoints: threePath,
+        trailPositionsArray,
         artifact,
         pos: new THREE.Vector3(
           hardwarePos.positionScene.x,
           hardwarePos.positionScene.y,
           hardwarePos.positionScene.z
         ),
-      });
+      };
+      probeMeshesRef.current.push(probeRecord);
+
+      // Asynchronously load Draco-compressed .glb for this spacecraft
+      const asset = getSpacecraftModelAsset(artifact.id);
+      if (asset.modelPath) {
+        loadValidatedGltf(asset.modelPath, gltfLoader, abortController.signal)
+          .then((gltf) => {
+            if (abortController.signal.aborted) {
+              disposeObject3D(gltf.scene);
+              return;
+            }
+            const loadedScene = gltf.scene;
+            enhanceSpacecraftMaterials(loadedScene);
+            normalizeModelToUnitBox(loadedScene);
+            modelHolder.add(loadedScene);
+            probeRecord.modelLoaded = true;
+          })
+          .catch(() => {
+            // Silently retain beacon orb fallback when asset is missing or aborted
+          });
+      }
     });
+
+    return () => {
+      abortController.abort();
+      dracoLoader.dispose();
+    };
   }, [artifacts, selectedArtifact]);
 
   // Apply category/search filter visibility to 3D probes and trajectory trails
@@ -877,31 +1200,14 @@ export const DeepSpaceExplorer: React.FC<DeepSpaceExplorerProps> = React.memo(({
     });
   }, [filteredArtifacts, artifacts, selectedArtifact]);
 
-  // Sync tracking refs when selectedArtifact changes
+  // Sync tracking refs when selectedArtifact changes — zoom into ALL spacecraft including Pioneer 10 & 11 so 3D .glb renders cleanly
   useEffect(() => {
     selectedArtifactRef.current = selectedArtifact;
     if (selectedArtifact) {
-      const isInterstellar =
-        selectedArtifact.category === 'interstellar_probe' ||
-        selectedArtifact.id.includes('voyager') ||
-        selectedArtifact.id.includes('pioneer') ||
-        selectedArtifact.id === 'new-horizons';
-
       setSelectedPlanet(null);
       selectedPlanetRef.current = null;
-
-      if (isInterstellar) {
-        // Interstellar probes: show big overview from our solar system
-        selectedArtifactRef.current = null;
-        targetLookAtRef.current.set(0, 0, 0);
-        targetZoomDistanceRef.current = 480;
-        targetRotationRef.current.x = 0.38;
-        targetRotationRef.current.y = -0.85;
-      } else {
-        // Non-interstellar deep space objects: keep camera further away for comfortable context
-        targetZoomDistanceRef.current = 22.0;
-        targetRotationRef.current.x = 0.35;
-      }
+      targetZoomDistanceRef.current = 3.2;
+      targetRotationRef.current.x = 0.35;
     }
   }, [selectedArtifact]);
 
@@ -909,7 +1215,7 @@ export const DeepSpaceExplorer: React.FC<DeepSpaceExplorerProps> = React.memo(({
   const handleFlyToPreset = (
     preset: 'solar_system' | 'inner' | 'gas_giants' | 'interstellar' | 'sun'
   ) => {
-    playTelemetryBeep(520);
+    playWhooshSound('out');
     setSelectedPlanet(null);
     selectedPlanetRef.current = null;
     onSelectArtifact(null);
@@ -953,7 +1259,7 @@ export const DeepSpaceExplorer: React.FC<DeepSpaceExplorerProps> = React.memo(({
   };
 
   const handleFocusPlanet = (planet: SolarPlanetData) => {
-    playRadarPing();
+    playPlanetWhoosh();
     setSelectedPlanet(planet);
     selectedPlanetRef.current = planet;
     onSelectArtifact(null);
@@ -1022,18 +1328,30 @@ export const DeepSpaceExplorer: React.FC<DeepSpaceExplorerProps> = React.memo(({
     const raycaster = new THREE.Raycaster();
     raycaster.setFromCamera(new THREE.Vector2(mouseX, mouseY), camera);
 
-    // 1. Check visible probe beacons
-    const interactiveProbes = probeMeshesRef.current
-      .filter((p) => p.group.visible)
-      .map((p) => p.beacon);
-    const probeIntersects = raycaster.intersectObjects(interactiveProbes);
+    // 1. Check visible probe beacons & loaded 3D .glb spacecraft meshes
+    const interactiveProbeTargets: THREE.Object3D[] = [];
+    probeMeshesRef.current.forEach((p) => {
+      if (!p.group.visible) return;
+      if (p.beacon.visible) interactiveProbeTargets.push(p.beacon);
+      if (p.modelHolder.visible) interactiveProbeTargets.push(p.modelHolder);
+    });
+    const probeIntersects = raycaster.intersectObjects(interactiveProbeTargets, true);
+
+    const resolveProbeFromHit = (obj: THREE.Object3D | null) => {
+      let cur: THREE.Object3D | null = obj;
+      while (cur) {
+        const match = probeMeshesRef.current.find((p) => p.group === cur);
+        if (match) return match;
+        cur = cur.parent;
+      }
+      return undefined;
+    };
 
     if (probeIntersects.length > 0) {
-      const hit = probeMeshesRef.current.find((p) => p.beacon === probeIntersects[0].object);
+      const hit = resolveProbeFromHit(probeIntersects[0].object);
       if (hit && hoveredArtifact?.id !== hit.artifact.id) {
         setHoveredArtifact(hit.artifact);
         setHoveredPlanet(null);
-        playTelemetryBeep(720, 0.03);
       }
       return;
     } else {
@@ -1050,7 +1368,6 @@ export const DeepSpaceExplorer: React.FC<DeepSpaceExplorerProps> = React.memo(({
       const hit = planetMeshesRef.current.find((p) => p.mesh === planetIntersects[0].object);
       if (hit && hoveredPlanet?.id !== hit.planet.id) {
         setHoveredPlanet(hit.planet);
-        playTelemetryBeep(640, 0.03);
       }
     } else {
       if (hoveredPlanet !== null) {
@@ -1078,16 +1395,24 @@ export const DeepSpaceExplorer: React.FC<DeepSpaceExplorerProps> = React.memo(({
       const raycaster = new THREE.Raycaster();
       raycaster.setFromCamera(new THREE.Vector2(mouseX, mouseY), camera);
 
-      // 1. Check visible probe clicks
-      const interactiveProbes = probeMeshesRef.current
-        .filter((p) => p.group.visible)
-        .map((p) => p.beacon);
-      const probeHits = raycaster.intersectObjects(interactiveProbes);
+      // 1. Check visible probe clicks (both beacon orb and zoomed 3D .glb model)
+      const interactiveProbeTargets: THREE.Object3D[] = [];
+      probeMeshesRef.current.forEach((p) => {
+        if (!p.group.visible) return;
+        if (p.beacon.visible) interactiveProbeTargets.push(p.beacon);
+        if (p.modelHolder.visible) interactiveProbeTargets.push(p.modelHolder);
+      });
+      const probeHits = raycaster.intersectObjects(interactiveProbeTargets, true);
 
       if (probeHits.length > 0) {
-        const hit = probeMeshesRef.current.find((p) => p.beacon === probeHits[0].object);
+        let cur: THREE.Object3D | null = probeHits[0].object;
+        let hit = undefined;
+        while (cur) {
+          hit = probeMeshesRef.current.find((p) => p.group === cur);
+          if (hit) break;
+          cur = cur.parent;
+        }
         if (hit) {
-          playRadarPing();
           onSelectArtifact(hit.artifact);
           setSelectedPlanet(null);
           return;
@@ -1110,7 +1435,7 @@ export const DeepSpaceExplorer: React.FC<DeepSpaceExplorerProps> = React.memo(({
   const handleWheel = (e: React.WheelEvent) => {
     e.preventDefault();
     const delta = e.deltaY * 0.05;
-    const minZoom = selectedPlanetRef.current || selectedArtifactRef.current ? 1.6 : 8;
+    const minZoom = selectedPlanetRef.current || selectedArtifactRef.current ? 1.2 : 8;
     targetZoomDistanceRef.current = THREE.MathUtils.clamp(
       targetZoomDistanceRef.current + delta,
       minZoom,
@@ -1204,13 +1529,13 @@ export const DeepSpaceExplorer: React.FC<DeepSpaceExplorerProps> = React.memo(({
           {selectedArtifact && (
             <button
               onClick={() => {
-                playTelemetryBeep(650);
+                playWhooshSound('in');
                 const match = probeMeshesRef.current.find((p) => p.artifact.id === selectedArtifact.id);
                 if (match) {
-                  const angle = Math.atan2(match.pos.x, match.pos.z);
-                  targetRotationRef.current.y = -angle + 0.3;
-                  targetRotationRef.current.x = 0.45;
-                  targetZoomDistanceRef.current = Math.max(36, match.pos.length() * 1.3);
+                  selectedArtifactRef.current = selectedArtifact;
+                  targetRotationRef.current.y = -0.6;
+                  targetRotationRef.current.x = 0.35;
+                  targetZoomDistanceRef.current = 3.0;
                 }
               }}
               className="flex items-center justify-center gap-2 w-full py-2 px-3 rounded-xl bg-[#3F4147] hover:bg-[#52525B] text-[#F4F4F5] border border-[#BAE6FD] shadow-none text-[10px] font-black uppercase tracking-wide transition-all active:translate-y-0.5"
@@ -1424,7 +1749,10 @@ export const DeepSpaceExplorer: React.FC<DeepSpaceExplorerProps> = React.memo(({
           {/* Cesium Shortcut */}
           {(selectedPlanet.id === 'mars' || selectedPlanet.id === 'earth') && onSwitchBody && (
             <button
-              onClick={() => onSwitchBody(selectedPlanet.id === 'mars' ? 'mars' : 'moon')}
+              onClick={() => {
+                playPlanetWhoosh();
+                onSwitchBody(selectedPlanet.id === 'mars' ? 'mars' : 'moon');
+              }}
               className="mt-4 w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-[#BAE6FD] hover:bg-[#FFFFFF] text-[#1C1D21] text-xs font-bold shadow-none transition-all active:scale-[0.98]"
             >
               <span>Inspect Surface</span>
@@ -1476,7 +1804,7 @@ export const DeepSpaceExplorer: React.FC<DeepSpaceExplorerProps> = React.memo(({
           <button
             key={filter.id}
             onClick={() => {
-              playTelemetryBeep(520);
+              playWhooshSound('ui');
               const filterId = filter.id as DeepSpaceFilter;
               setActiveFilter(filterId);
               if (filterId === 'interstellar') {
@@ -1515,7 +1843,7 @@ export const DeepSpaceExplorer: React.FC<DeepSpaceExplorerProps> = React.memo(({
           </span>
           <button
             onClick={() => {
-              playTelemetryBeep(450);
+              playWhooshSound('out');
               setSelectedPlanet(null);
               selectedPlanetRef.current = null;
               onSelectArtifact(null);
@@ -1550,7 +1878,7 @@ export const DeepSpaceExplorer: React.FC<DeepSpaceExplorerProps> = React.memo(({
         {/* Toggle Button */}
         <button
           onClick={() => {
-            playTelemetryBeep(400);
+            playWhooshSound('ui');
             setIsTimelineCollapsed(!isTimelineCollapsed);
           }}
           className="pointer-events-auto px-4 py-1.5 rounded-full bg-[rgba(28,29,33,0.92)] hover:bg-[#2A2C32] border-2 border-[#BAE6FD] shadow-none text-xs font-black text-[#F4F4F5] flex items-center gap-2 transition-all active:translate-y-0.5 backdrop-blur-xl"
@@ -1577,7 +1905,6 @@ export const DeepSpaceExplorer: React.FC<DeepSpaceExplorerProps> = React.memo(({
                 <button
                   key={artifact.id}
                   onClick={() => {
-                    playRadarPing();
                     onSelectArtifact(artifact);
                     setSelectedPlanet(null);
                   }}

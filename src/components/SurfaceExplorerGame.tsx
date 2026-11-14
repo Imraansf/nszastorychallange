@@ -5,17 +5,15 @@ import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 import { Artifact } from '../types/space';
 import {
   ArrowLeft,
-  Compass,
   Info,
   X,
-  Footprints,
-  MousePointerClick,
-  Flashlight,
-  FlashlightOff,
   Eye,
-  CheckCircle2,
 } from 'lucide-react';
-import { playTelemetryBeep, playSuccessChime, playRadarPing } from '../utils/audio';
+import {
+  playArtifactRememberingWhoosh,
+  playFootstepSound,
+  playWhooshSound,
+} from '../utils/audio';
 import {
   DRACO_DECODER_CDN_URL,
   getSpacecraftModelAsset,
@@ -87,80 +85,80 @@ function getCraftParts(artifact: Artifact): Record<string, CraftPartDef> {
       dps: {
         id: 'dps',
         name: 'Descent engine & crushable nozzle skirt',
-        text: `The throttleable rocket engine that slowed ${nameStr} down for a gentle touchdown on the lunar regolith. The bottom bell nozzle was designed to crumple upon contact with the ground so it wouldn't fracture the descent stage.`,
+        text: `This is the throttleable rocket engine that slowed me (${nameStr}) down for a gentle touchdown on the lunar dust. My bell nozzle was built to crumple on contact if needed so it would never crack my lower stage.`,
         why: isFalcon
-          ? "Why it's cool: extended 10 inches longer than Apollo 11's nozzle to carry the heavy 16-ton J-mission payload and the electric Lunar Roving Vehicle."
+          ? "Engineers stretched my nozzle 10 inches longer than Apollo 11's so I could carry a heavy 16-ton J-mission payload—including the electric Lunar Roving Vehicle!"
           : isIntrepid
-          ? "Why it's cool: allowed Pete Conrad to throttle down and hover over Surveyor Crater, executing history's first pinpoint planetary landing."
-          : "Why it's cool: because engine power could be throttled continuously, Neil Armstrong steered past West Crater's dangerous boulder field.",
+          ? "My throttle control let Commander Pete Conrad hover over Surveyor Crater and nail history's first pinpoint planetary landing right next to Surveyor 3."
+          : "Because my engine thrust could be throttled smoothly, Neil Armstrong was able to steer me past West Crater's dangerous boulder field and find safe ground.",
       },
       probe: {
         id: 'probe',
         name: 'Lunar surface contact sensing probe',
-        text: `A 5.6-foot (1.7 m) thin sensor wand extending below the footpads. When its tip touched the lunar soil, a blue indicator light lit up on the instrument panel.`,
-        why: "Why it's cool: blowing lunar dust completely obscured downward visibility in the final 50 feet; this probe told the crew the instant touchdown occurred.",
+        text: `Look below my footpads—that thin 5.6-foot (1.7 m) sensor wand was my sense of touch. The instant its tip brushed the lunar soil, a blue 'CONTACT' light flashed inside my cabin.`,
+        why: "My own rocket exhaust kicked up so much Moon dust in the final 50 feet that my crew couldn't see the ground clearly; my probe told them the exact second we arrived.",
       },
       pad: {
         id: 'pad',
         name: 'Landing gear footpad',
-        text: `Each of the four feet is a wide 37-inch dish made of spun aluminum honeycomb wrapped in gold Kapton foil to spread the lander's weight like a snowshoe.`,
-        why: "Why it's cool: engineers had feared the Moon might be covered in deep quicksand-like dust; these wide footpads sank only 2–3 inches into the soil.",
+        text: `Each of my four feet is a wide 37-inch dish made of spun aluminum honeycomb wrapped in gold Kapton foil to spread my weight out like a cosmic snowshoe.`,
+        why: "Before Apollo, scientists worried the Moon might be buried in deep, soft quicksand-like dust. My wide footpads sank only 2 to 3 inches!",
       },
       gear: {
         id: 'gear',
         name: 'Landing gear leg and crush struts',
-        text: `Cantilever landing gear containing crushable aluminum honeycomb cartridges inside the primary struts that permanently absorb touchdown impact energy.`,
+        text: `My cantilever landing legs hold crushable aluminum honeycomb cartridges inside the primary struts that permanently absorb landing shock like one-time springs.`,
         why: isFalcon
-          ? "Why it's cool: Falcon landed on an 11-degree crater slope—the steepest touchdown angle of any Apollo mission—and the crush struts held firm."
-          : "Why it's cool: purely mechanical crush struts eliminated the need for complex hydraulics, leaving zero parts that could freeze or jam in the vacuum.",
+          ? "I touched down on an 11-degree crater slope—the steepest landing angle of any Apollo mission—and my crush struts held me steady without flinching."
+          : "Using pure mechanical crushable aluminum meant I needed zero complex hydraulics that could leak, freeze, or jam in the airless lunar vacuum.",
       },
       dstage: {
         id: 'dstage',
         name: 'Descent stage thermal foil & equipment bays',
-        text: `The octagonal lower stage housing hypergolic propellant tanks and scientific equipment, wrapped in 25 layers of aluminized Mylar and gold Kapton foil.`,
+        text: `My octagonal lower body carries propellant tanks and science bays, wrapped in 25 gossamer layers of aluminized Mylar and gold Kapton foil.`,
         why: isFalcon
-          ? "Why it's cool: Quadrant 1 housed the folded Lunar Roving Vehicle, while the science bay held the Apollo 15 nuclear ALSEP station."
-          : "Why it's cool: thin, reflective foil reflects intense solar radiation into the dark void, keeping onboard electronics cool without air conditioning.",
+          ? "My Quadrant 1 bay folded up the Lunar Roving Vehicle like a space-age suitcase, while another bay carried my nuclear ALSEP weather and quake station."
+          : "My crinkly gold blanket bounces harsh sunlight straight back into space, protecting my delicate electronics during scorching 120°C lunar afternoons.",
       },
       interface: {
         id: 'interface',
         name: 'Ascent / descent stage separation interface',
-        text: `Four explosive interstage nuts and a mechanical guillotine that severed all electrical cabling and coolant lines the instant the upper stage ignited.`,
-        why: "Why it's cool: once separated, the bottom half served as a stationary launch pad, remaining permanently on the Moon while the upper stage blasted home.",
+        text: `Four explosive bolts and a mechanical guillotine sliced cleanly through my wires and coolant tubes the moment my upper cabin blasted off to return my crew home.`,
+        why: "Once separated, my golden bottom half stayed behind permanently on the Moon, serving as a quiet launch pad for my upper half's journey back to orbit.",
       },
       rcs: {
         id: 'rcs',
         name: 'Reaction control thruster quads',
-        text: `Four clusters of four 100-pound-thrust hypergolic thrusters providing 3-axis attitude control, pitch, yaw, roll, and translation.`,
-        why: "Why it's cool: firing in precise millisecond bursts, these thrusters allowed the pilot to pivot the spacecraft with surgical precision.",
+        text: `These four clusters of 100-pound-thrust hypergolic rockets let my pilots pitch, roll, yaw, and nudge me sideways in the vacuum where airplane wings are useless.`,
+        why: "Firing in crisp millisecond bursts, these little thrusters gave my astronauts surgical fingertip control while hovering above craters.",
       },
       dock: {
         id: 'dock',
         name: 'Overhead docking hatch and tunnel',
-        text: `A 32-inch circular forward hatch and drogue docking collar atop the ascent stage, providing a pressurized transfer tunnel into the Command Module.`,
-        why: "Why it's cool: enabled the transfer of astronauts and lunar rock boxes without requiring a spacewalk in lunar orbit.",
+        text: `Atop my ascent stage sits my 32-inch circular docking collar and transfer tunnel—the doorway that connected me to the orbiting Command Module.`,
+        why: "Through this snug tunnel, my crew floated across with sealed boxes of Moon rocks without ever needing an extra spacewalk in lunar orbit.",
       },
       dish: {
         id: 'dish',
         name: 'S-band steerable antenna & rendezvous radar',
-        text: `The 26-inch high-gain parabolic steerable dish transmitting telemetry, voice, and television to Earth, paired with the rendezvous radar dish.`,
+        text: `My 26-inch steerable parabolic dish beamed my telemetry, crew voices, and live television back to Earth, working alongside my rendezvous radar dish.`,
         why: isFalcon
-          ? "Why it's cool: transmitted television and voice when Dave Scott dropped a hammer and feather to prove Galileo's gravity law."
-          : "Why it's cool: radar data during Eagle's descent triggered the famous 1202 alarms; software priority scheduling kept the AGC guidance computer flying.",
+          ? "Through this dish, Earth watched Commander Dave Scott drop a hammer and a falcon feather to prove Galileo's gravity law right beside me."
+          : "During Apollo 11's descent, my rendezvous radar flooded my guidance computer with extra data—triggering the famous 1202 alarms that my smart software survived!",
       },
       vhf: {
         id: 'vhf',
         name: 'VHF communication antenna',
-        text: `Omnidirectional whip antennas providing line-of-sight voice and biometric telemetry relay between the astronauts' backpacks and Earth.`,
-        why: "Why it's cool: turned the Lunar Module into a lunar radio relay tower so astronauts could speak freely to Houston from hundreds of meters away.",
+        text: `My whip antennas caught radio waves directly from my astronauts' backpacks and relayed their voices and heartbeat telemetry all the way back to Houston.`,
+        why: "I acted like a personal lunar cell tower so my crew could hike across craters and talk clearly with mission control hundreds of meters away.",
       },
       cabin: {
         id: 'cabin',
         name: 'Ascent stage crew cabin',
-        text: `The cramped, triangular-windowed pressurized flight cabin where the two astronauts stood without seats during landing and surface stays.`,
+        text: `Inside this cramped, triangular-windowed pressurized cabin, two astronauts stood upright during descent—skipping heavy seats to save every precious kilogram.`,
         why: isIntrepid
-          ? "Why it's cool: Pete Conrad and Alan Bean slept in hammocks slung across the tiny cabin between their two moonwalks."
-          : "Why it's cool: when an engine circuit breaker broke on Apollo 11, Buzz Aldrin jammed a felt-tip pen into the switch to arm the ascent engine and save the crew.",
+          ? "Between moonwalks, Pete Conrad and Alan Bean slung hammocks across my tiny cabin to catch some sleep on the Ocean of Storms."
+          : "When a crucial circuit breaker snapped off during Apollo 11, Buzz Aldrin used a felt-tip pen to push the switch and ignite my ascent engine to bring the crew home.",
       },
     };
   }
@@ -171,44 +169,44 @@ function getCraftParts(artifact: Artifact): Record<string, CraftPartDef> {
       cam: {
         id: 'cam',
         name: 'Surveillance TV camera & steerable mirror',
-        text: 'A variable focal length camera (25mm and 100mm lenses) beneath an azimuth-elevation steerable mirror that sent back 6,326 television pictures.',
-        why: "Why it's cool: Apollo 12 astronauts Pete Conrad and Alan Bean unbolted this exact camera in November 1969 and brought it home to Earth.",
+        text: 'This is my variable-focal-length television camera (25 mm and 100 mm lenses) sitting beneath a movable mirror that let me snap 6,326 pictures of Oceanus Procellarum.',
+        why: 'Thirty-one months after I went silent, Apollo 12 astronauts Pete Conrad and Alan Bean unbolted this very camera and carried it home so scientists could study how hardware ages in space.',
       },
       scoop: {
         id: 'scoop',
         name: 'Robotic surface sampler claw & arm',
-        text: 'An electric motor-driven scoop with a claw capable of extending 5 feet and digging up to 7 inches deep into lunar soil.',
-        why: "Why it's cool: dug four trenches and conducted 13 impact tests, proving lunar soil had the firmness of wet sand (~10 psi) to safely support Apollo landers.",
+        text: 'My motor-driven claw and folding accordion arm could reach 5 feet (1.5 m) out and dig 7 inches (18 cm) deep into lunar regolith.',
+        why: 'With this scoop I dug four trenches and made 13 impact tests, proving Moon soil had the firmness of damp sand (~10 psi) and would hold Apollo landers safely.',
       },
       solar: {
         id: 'solar',
         name: 'Planar solar panel array',
-        text: 'A 0.85-square-meter solar panel containing 792 solar cells mounted on a mast above the central electronics compartment.',
-        why: "Why it's cool: generated 89 watts of electrical power to charge the silver-zinc battery during the two-week lunar daylight.",
+        text: 'Sitting atop my mast is a 0.85-square-meter panel packed with 792 solar cells that fed my central electronics compartment.',
+        why: 'It generated 89 watts of electricity—just enough to charge my silver-zinc battery through the blazing two-week lunar day.',
       },
       pad: {
         id: 'pad',
         name: 'Aluminum honeycomb landing footpad',
-        text: 'Three crushable footpads made of aluminum honeycomb to dampen touchdown impact.',
-        why: "Why it's cool: highly reflective lunar rocks confused its radar, causing the vernier engines to keep firing and making Surveyor 3 bounce twice—once 10 meters into the air!",
+        text: 'My three crushable aluminum honeycomb footpads were built to soak up landing impact on unknown lunar terrain.',
+        why: 'Bright rocks tricked my radar during touchdown so my engines stayed on—making me bounce twice (once 10 meters into the sky!) before my pads finally settled in the dust.',
       },
       leg: {
         id: 'leg',
         name: 'Tubular aluminum tripod landing leg',
-        text: 'Hollow tubular aluminum tripod struts with hydraulic shock absorber dampers.',
-        why: "Why it's cool: kept the spacecraft upright inside a 14-degree crater slope in Oceanus Procellarum.",
+        text: 'My hollow aluminum tripod legs carry hydraulic shock dampers to stabilize my frame upon touchdown.',
+        why: 'They kept me upright even though I came to rest tilted inside a 14-degree crater slope.',
       },
       dish: {
         id: 'dish',
         name: 'High-gain planar directional antenna',
-        text: 'Directional antenna mounted beside the solar panel aimed back toward Earth.',
-        why: "Why it's cool: transmitted television picture frames to Goldstone, California at high scan rates.",
+        text: 'Mounted beside my solar panel, my flat directional antenna aimed squarely back toward Earth.',
+        why: 'It beamed all 6,326 of my television frames across 384,000 kilometers to NASA tracking dishes at Goldstone, California.',
       },
       frame: {
         id: 'frame',
         name: 'Tubular aluminum spaceframe chassis',
-        text: 'Open triangular truss structure carrying propellant tanks, helium pressurization sphere, and flight control electronics.',
-        why: "Why it's cool: the open frame allowed Apollo 12 astronauts to walk right up and inspect its internal components with wire cutters.",
+        text: 'My open triangular aluminum truss frame holds my propellant tanks, helium sphere, and flight-control electronics in plain sight.',
+        why: 'Because my skeleton was completely open, Apollo 12 astronauts could walk right up and inspect my wiring and tubes with wire cutters.',
       },
     };
   }
@@ -219,44 +217,44 @@ function getCraftParts(artifact: Artifact): Record<string, CraftPartDef> {
       rtg: {
         id: 'rtg',
         name: 'SNAP-19 radioisotope thermoelectric generators',
-        text: 'Two Plutonium-238 RTGs enclosed in wind screens, producing continuous electrical power and heat.',
-        why: "Why it's cool: freed the lander from solar panel dust and winter darkness, keeping Viking 1 alive for over 6 continuous years on Chryse Planitia.",
+        text: 'These two Plutonium-238 nuclear batteries tucked under wind shields gave me nonstop electricity and comforting warmth through freezing Martian nights.',
+        why: 'Unlike solar panels that get choked by dust and winter darkness, my twin RTGs kept me alive for more than six straight years on Chryse Planitia.',
       },
       dish: {
         id: 'dish',
         name: 'High-gain parabolic S-band antenna dish',
-        text: 'A 0.76-meter steerable parabolic antenna communicating directly with NASA Deep Space Network stations on Earth.',
-        why: "Why it's cool: a routine software update in November 1982 accidentally overwrote antenna pointing tables, pointing the dish away and ending the mission.",
+        text: 'My 0.76-meter steerable dish pointed straight across deep space toward Earth to talk directly with NASA Deep Space Network antennas.',
+        why: 'I kept transmitting until November 1982, when a routine software command from Earth accidentally overwrote my pointing data, turning my dish away and ending my six-year run.',
       },
       bio_lab: {
         id: 'bio_lab',
         name: 'Biology & GCMS chemical laboratory',
-        text: 'An automated miniaturized biology lab that tested soil samples for microbial respiration, photosynthesis, and organic carbon molecules.',
-        why: "Why it's cool: performed humanity’s first direct search for alien biochemistry on the surface of another planet.",
+        text: 'Inside my belly sits a miniature automated biology and chemistry lab that tested Martian dirt for signs of microbes, photosynthesis, and organic carbon.',
+        why: 'With these tiny ovens and sensors, I carried out humanity’s very first direct search for life in the soil of another planet.',
       },
       scoop: {
         id: 'scoop',
         name: '3-meter robotic surface sampler arm & scoop',
-        text: 'A telescoping boom made of two stainless steel tapes formed into a rigid tube, ending in a motorized trenching scoop.',
-        why: "Why it's cool: dug multiple trenches through Martian duricrust, dumped soil into onboard chemistry ovens, and pushed rocks aside.",
+        text: 'My 3-meter telescoping boom—made from two curled stainless-steel tapes—reached out to dig trenches and scoop Martian soil into my onboard lab.',
+        why: 'I carved deep trenches through crusty red duricrust, pushed aside rocks, and dropped fresh soil into my chemical analyzers.',
       },
       cam: {
         id: 'cam',
         name: 'Facsimile color stereo scanning camera',
-        text: 'Optical scanner camera utilizing a nodding mirror and photodiode detectors to build up lines of digital imagery.',
-        why: "Why it's cool: captured the historic very first color photograph from the surface of Mars on July 20, 1976.",
+        text: 'My twin cylindrical scanning cameras swept a tiny nodding mirror up and down to build crisp stereo pictures line by line.',
+        why: 'On July 20, 1976, this camera captured humanity’s very first color photograph from the surface of Mars.',
       },
       descent_engine: {
         id: 'descent_engine',
         name: 'Terminal descent monopropellant engines',
-        text: 'Three multi-nozzle hydrazine rocket engines designed to minimize ground disturbance during touchdown.',
-        why: "Why it's cool: each engine had 18 small nozzles to disperse exhaust gas and avoid blasting away surface rocks.",
+        text: 'Instead of one giant rocket bell, each of my three hydrazine landing engines split exhaust through 18 tiny nozzles.',
+        why: 'Breaking the blast into 18 gentle jets prevented me from digging a crater beneath myself or blowing away the untouched soil I came to study.',
       },
       leg: {
         id: 'leg',
         name: 'Inverted tripod landing leg & footpad',
-        text: 'Three aluminum legs with crushable honeycomb shock absorbers and inverted dish footpads.',
-        why: "Why it's cool: provided a rock-solid platform that remained stable through fierce Martian dust storms with winds over 70 mph.",
+        text: 'My three aluminum legs hold crushable honeycomb shock absorbers anchored to broad inverted dish footpads.',
+        why: 'They planted me firmly in the rocks of Chryse Planitia through six years of howling Martian dust storms.',
       },
     };
   }
@@ -267,50 +265,50 @@ function getCraftParts(artifact: Artifact): Record<string, CraftPartDef> {
       sojourner_body: {
         id: 'sojourner_body',
         name: 'Sojourner rover chassis & Warm Electronics Box',
-        text: 'A 23-pound (10.6 kg) microwave-sized rover carrying navigation computer, radio modems, and three cameras.',
-        why: "Why it's cool: the first wheeled vehicle ever driven on another planet, traversing 100 meters around the Ares Vallis landing site.",
+        text: 'I am Sojourner—only 10.6 kg (23 lbs) and the size of a microwave oven, packing my computer, radio modems, and three cameras inside an insulated box.',
+        why: 'Rolling down my lander’s ramp in July 1997, I became the first wheeled vehicle ever driven on Mars, exploring 100 meters of ancient floodplain.',
       },
       sojourner_wheels: {
         id: 'sojourner_wheels',
         name: '6-wheel rocker-bogie mobility drive',
-        text: 'Six independently driven aluminum wheels with stainless-steel cleats mounted on a rocker-bogie articulated suspension.',
-        why: "Why it's cool: enabled the tiny rover to climb over obstacles larger than its own wheel diameter without tipping over.",
+        text: 'My six aluminum wheels each have their own electric motor and spiked treads mounted on an articulated rocker-bogie suspension.',
+        why: 'This clever linkage let my tiny frame clamber over boulders taller than my own wheels without ever tipping over.',
       },
       sojourner_apxs: {
         id: 'sojourner_apxs',
         name: 'Alpha Proton X-Ray Spectrometer (APXS)',
-        text: 'A sensor head deployed on a robotic arm that pressed against Martian rocks to measure elemental chemistry.',
-        why: "Why it's cool: analyzed rocks named Barnacle Bill and Yogi, discovering volcanic andesite that proved complex geological evolution.",
+        text: 'My robotic arm pressed this spectrometer nose right up against Martian boulders to sniff out the exact elements inside the rock.',
+        why: 'When I nudged rocks nicknamed Barnacle Bill and Yogi, I proved Mars had volcanic andesite and a complex geological past.',
       },
       sojourner_solar: {
         id: 'sojourner_solar',
         name: 'Gallium arsenide solar panel array',
-        text: 'A flat top array of solar cells providing 16 watts of peak electrical power at midday on Mars.',
-        why: "Why it's cool: kept Sojourner working for 83 sols—nearly 12 times longer than its 7-day primary mission design.",
+        text: 'The flat solar panel riding on my back gave me 16 watts of peak noon power—barely enough to light a nightlight, yet enough to drive across Mars.',
+        why: 'I was built to last 7 Martian sols, but my solar deck kept me roving and sending science for 83 sols—nearly 12 times longer!',
       },
       petals: {
         id: 'petals',
         name: 'Lander triangular solar petals',
-        text: 'Three foldable triangular carbon-fiber petals that protected the rover during descent and opened like a flower upon landing.',
-        why: "Why it's cool: automatically righted the lander regardless of which side it came to rest on after bouncing inside giant airbags.",
+        text: 'My Carl Sagan Memorial Station folded into a pyramid during landing, then unfolded three triangular solar-covered petals like a blooming metal flower.',
+        why: 'No matter which way my airbags came to rest, opening these motorized petals automatically flipped me right-side up.',
       },
       imp_cam: {
         id: 'imp_cam',
         name: 'Imager for Mars Pathfinder (IMP) stereo camera',
-        text: 'A stereo color camera pair mounted on a deployable 2.6-foot mast above the lander base.',
-        why: "Why it's cool: returned 16,500 vivid photographs and helped mission controllers on Earth steer Sojourner using 3D stereo glasses.",
+        text: 'Popping up on a 2.6-foot mast, my twin color stereo eyes gave Mars mission engineers true 3D depth perception.',
+        why: 'I beamed back 16,500 vivid images so drivers back on Earth wearing 3D glasses could steer little Sojourner safely around rocks.',
       },
       airbags: {
         id: 'airbags',
         name: 'Impact airbag deflation system',
-        text: 'Four clusters of 24 interconnected Kevlar airbags that cushioned touchdown at 31 mph, bouncing 15 times up to 50 feet high.',
-        why: "Why it's cool: revolutionized planetary exploration by eliminating heavy landing legs and thrusters, cutting mission costs dramatically.",
+        text: 'Twenty-four interconnected Kevlar airbag lobes wrapped around me for landing, cushions that absorbed a 31 mph slam into Mars.',
+        why: 'I bounced 15 times—soaring up to 50 feet high!—proving low-cost airbags could land spacecraft safely without heavy retro-rockets.',
       },
       lander_body: {
         id: 'lander_body',
         name: 'Carl Sagan Memorial Station central core',
-        text: 'The central electronics core carrying meteorology sensors, radio transmitter, and rover deployment ramps.',
-        why: "Why it's cool: renamed in honor of astronomer Carl Sagan shortly after touching down on Mars on Independence Day 1997.",
+        text: 'Here in my central core sit my weather sensors, Earth-link radio transmitter, and the deployable ramps that rolled Sojourner onto Mars.',
+        why: 'Shortly after I touched down on July 4, 1997, NASA named my stationary lander base in honor of astronomer Carl Sagan.',
       },
     };
   }
@@ -321,44 +319,44 @@ function getCraftParts(artifact: Artifact): Record<string, CraftPartDef> {
       pancam: {
         id: 'pancam',
         name: 'Panoramic camera (Pancam) & Navcam stereo mast',
-        text: 'Twin high-resolution multispectral stereo cameras mounted atop a 5-foot (1.5 m) mast with 360-degree rotation.',
-        why: "Why it's cool: gave scientists human-eye-level panoramic color vision of Martian craters, sunset panoramas, and dust devils.",
+        text: 'Rising 1.5 meters above my deck, my stereo Pancam and Navcam eyes let me look across Mars at human eye level.',
+        why: 'With this rotating head I captured sweeping crater panoramas, blue Martian sunsets, and swirling dust devils racing across the plains.',
       },
       wheels: {
         id: 'wheels',
         name: 'Independent motorized cleated aluminum wheels',
-        text: 'Six spiral-flexure aluminum wheels with machined treads, each driven by its own brushless DC motor.',
-        why: "Why it's cool: Opportunity drove 28.06 miles (45.16 km) on these wheels—an off-world driving record that stood for years.",
+        text: 'Each of my six machined aluminum wheels has spiral shock-absorbing spokes and its own brushless motor.',
+        why: 'Opportunity rolled 45.16 kilometers (28.06 miles) on these wheels—setting an off-world driving record that stood for years.',
       },
       bogie_rocker: {
         id: 'bogie_rocker',
         name: 'Rocker-bogie articulated suspension',
-        text: 'A differential joint connecting rocker and bogie titanium tubes, distributing wheel weight equally across uneven boulders.',
-        why: "Why it's cool: when Spirit’s right-front wheel seized in 2006, drivers dragged it backwards, accidentally churning up bright white silica soil that proved ancient hydrothermal springs existed.",
+        text: 'My titanium rocker-bogie joints keep all six wheels pressed onto jagged rocks while keeping my rover body gently balanced.',
+        why: 'Even after Spirit’s right-front wheel froze in 2006, dragging it backwards accidentally scraped up bright white silica—proving ancient hot springs once bubbled there.',
       },
       solar_wings: {
         id: 'solar_wings',
         name: 'Gull-wing multi-junction solar array',
-        text: 'Triple-junction solar cell wings spanning 2.3 meters, designed to produce up to 900 watt-hours per sol.',
-        why: "Why it's cool: lucky Martian wind gusts ('cleaning events') periodically swept dust off the panels, extending a 90-day mission to nearly 15 years.",
+        text: 'My wide gull-wing solar panels span 2.3 meters and were sized to harvest up to 900 watt-hours per Martian day.',
+        why: 'We were only planned for 90 sols, yet lucky Martian whirlwinds kept sweeping dust off my wings—stretching Opportunity’s life to nearly 15 years!',
       },
       web_body: {
         id: 'web_body',
         name: 'Warm Electronics Box (WEB) & aerogel insulation',
-        text: 'A sealed composite hull insulated with silica aerogel and radioisotope heater units (RHUs) to survive -100°C nights.',
-        why: "Why it's cool: aerogel is 99.8% air, making it one of the lightest and most effective thermal insulators known to human science.",
+        text: 'My insulated body keeps my computers and batteries cozy inside silica aerogel walls and tiny isotope heaters during -100°C nights.',
+        why: 'Aerogel is 99.8% air—light as smoke, yet strong enough thermally to shield my electronic brain through brutal Martian winters.',
       },
       arm_rat: {
         id: 'arm_rat',
         name: 'Instrument arm & Rock Abrasion Tool (RAT)',
-        text: 'A five-degree-of-freedom robotic arm carrying diamond-tipped cutting wheels, microscopic imager, and Mössbauer spectrometer.',
-        why: "Why it's cool: ground 2-inch circles into ancient rocks, exposing pristine interior minerals that confirmed liquid water once flowed here.",
+        text: 'My five-jointed robotic arm stretches out like a geologist’s hand, carrying a microscope, spectrometers, and a spinning diamond grinder.',
+        why: 'Grinding 5 mm holes into weathered rocks let me inspect fresh inner minerals that confirmed liquid water once soaked Mars.',
       },
       hga_dish: {
         id: 'hga_dish',
         name: 'High-gain steerable parabolic X-band dish',
-        text: 'A steerable dish antenna providing direct high-speed radio links to NASA Deep Space Network antennas on Earth.',
-        why: "Why it's cool: beamed back tens of thousands of gigabits of geology data across 14 years of roving.",
+        text: 'My steerable X-band dish aimed directly toward Earth, supplementing the orbital relays flying overhead.',
+        why: 'Across more than 14 years of exploration, my radios delivered hundreds of thousands of images and treasure troves of geology data.',
       },
     };
   }
@@ -369,38 +367,38 @@ function getCraftParts(artifact: Artifact): Record<string, CraftPartDef> {
       dig_arm: {
         id: 'dig_arm',
         name: '2.35-meter robotic digging arm & rasp scoop',
-        text: 'A titanium-aluminum arm with a motorized rasp and scoop capable of digging into rock-hard frozen permafrost.',
-        why: "Why it's cool: uncovered bright white chunks of pure subsurface water ice just two inches under the Arctic dirt, which evaporated into vapor over four days.",
+        text: 'My 2.35-meter titanium-and-aluminum arm ends in a sharp tungsten rasp and scoop strong enough to chip into frozen Arctic permafrost.',
+        why: 'Just two inches beneath the red dust, I scraped up bright white chunks of pure water ice—and watched them vanish into vapor over four days.',
       },
       solar_oct: {
         id: 'solar_oct',
         name: 'Twin octagonal ultra-thin solar arrays',
-        text: 'Two 5.5-meter octagonal solar wings deployed like folding fans after landing in Vastitas Borealis.',
-        why: "Why it's cool: powered the lander through the 24-hour midnight Sun of the Martian Arctic summer before winter frost cut off power.",
+        text: 'My two huge 5.5-meter octagonal solar wings unfolded like paper fans shortly after I touched down in Vastitas Borealis.',
+        why: 'They soaked up the 24-hour midnight sun of the Martian Arctic summer until dark autumn frost finally settled over my deck.',
       },
       tega_lab: {
         id: 'tega_lab',
         name: 'Thermal and Evolved Gas Analyzer (TEGA)',
-        text: 'Eight miniature high-temperature ovens and a mass spectrometer that heated soil samples to 1,000°C to analyze released gases.',
-        why: "Why it's cool: verified water vapor and carbon dioxide escaping from the heated soil, confirming water ice in the Arctic ground.",
+        text: 'My eight tiny ovens baked scooped Arctic soil all the way to 1,000°C while a mass spectrometer sniffed every puff of gas.',
+        why: 'Seeing pure water vapor rise from heated dirt inside my ovens gave scientists hands-on proof of Martian water ice.',
       },
       meca_lab: {
         id: 'meca_lab',
         name: 'MECA wet chemistry lab & microscope',
-        text: 'Four beakers for dissolving soil in water and an atomic-force microscope resolving details down to 10 nanometers.',
-        why: "Why it's cool: discovered perchlorate salts in the Martian soil, a chemical that acts as a natural antifreeze and chemical energy source.",
+        text: 'I carried four tiny beakers to mix Mars soil with Earth water, plus an atomic-force microscope seeing grains just 10 nanometers wide.',
+        why: 'My beakers discovered perchlorate salts in the dirt—chemicals that lower water’s freezing point and could be useful for future explorers.',
       },
       lidar_mast: {
         id: 'lidar_mast',
         name: 'Meteorological lidar station mast',
-        text: 'A Canadian-built weather mast emitting green laser pulses upward into the Arctic sky to detect dust and atmospheric clouds.',
-        why: "Why it's cool: detected water-ice snow falling from high-altitude Martian cirrus clouds, evaporating before reaching the ground.",
+        text: 'My Canadian-built weather mast fired green laser pulses straight up into the polar sky to watch dust and clouds drift overhead.',
+        why: 'My laser caught real water-ice snow falling from high Martian cirrus clouds before evaporating in mid-air!',
       },
       leg: {
         id: 'leg',
         name: 'Tripod landing legs & pulse descent thrusters',
-        text: 'Three landing legs and pulsed hydrazine descent engines that brought Phoenix to a soft landing without airbags.',
-        why: "Why it's cool: thruster exhaust blew away the top dust layer, exposing a slab of clean white water ice directly under the lander.",
+        text: 'My three legs and pulsed hydrazine engines eased me down gently to the Arctic plains without using bouncing airbags.',
+        why: 'As I touched down, my thruster blast swept away loose dust—exposing a smooth slab of white water ice right beneath my belly.',
       },
     };
   }
@@ -411,38 +409,38 @@ function getCraftParts(artifact: Artifact): Record<string, CraftPartDef> {
       seis_dome: {
         id: 'seis_dome',
         name: 'SEIS seismometer dome & Wind/Thermal Shield',
-        text: 'An ultra-sensitive French seismometer housed inside a vacuum sphere beneath a gold-rimmed aerodynamic wind and thermal shield.',
-        why: "Why it's cool: placed directly on the Martian dirt by InSight's robotic arm; recorded over 1,300 marsquakes and mapped the liquid core of Mars.",
+        text: 'My ultra-sensitive French seismometer hides inside a vacuum sphere under a shiny gold-rimmed dome to stay calm in the Martian wind.',
+        why: 'Placed directly on the ground, it felt over 1,300 marsquakes and meteorite hits—letting me take Mars’s pulse and map its liquid iron core.',
       },
       solar_ultraflex: {
         id: 'solar_ultraflex',
         name: 'Twin circular Ultraflex solar arrays',
-        text: 'Two 7-foot (2.15 m) diameter circular solar arrays that unfolded like folding Chinese hand fans upon touchdown.',
-        why: "Why it's cool: generated 4,500 watt-hours of power per sol initially; four years of accumulated dust reduced power until InSight sent its final selfie in 2022.",
+        text: 'My two 2.15-meter circular solar wings snapped open like pleated hand fans right after landing on Elysium Planitia.',
+        why: 'They powered me at 4,500 watt-hours per sol at first, until four years of settling red dust slowly dimmed my light to silence in December 2022.',
       },
       arm_ida: {
         id: 'arm_ida',
         name: 'Instrument Deployment Arm (IDA) & grapple',
-        text: 'A 5.9-foot (1.8 m) robotic arm equipped with a motorized five-finger claw grapple and color deployment camera.',
-        why: "Why it's cool: the first robotic arm on Mars designed to lift heavy instruments off the spacecraft deck and place them onto the planet’s ground.",
+        text: 'My 1.8-meter robotic arm uses a five-fingered claw grapple and wrist camera to lift heavy gear gently off my deck.',
+        why: 'I became the first spacecraft on Mars to pick up science instruments and set them carefully onto the planet’s ground.',
       },
       hp3_probe: {
         id: 'hp3_probe',
         name: 'HP3 Heat Flow Probe ("The Mole")',
-        text: 'A self-hammering tungsten cylinder designed to burrow up to 16 feet (5 m) beneath the surface to measure interior planetary heat.',
-        why: "Why it's cool: unexpected cement-like soil consistency caused the Mole to bounce in place, prompting engineers to use the arm scoop to pin it down.",
+        text: 'Built by DLR in Germany, my self-hammering cylinder was designed to burrow down into the crust to measure Mars’s internal heat.',
+        why: 'Unexpectedly cement-hard soil pushed back against the Mole, leading my Earth team to creatively press my robotic scoop down to help it dig.',
       },
       rise_antenna: {
         id: 'rise_antenna',
         name: 'RISE radio science medium-gain X-band antennas',
-        text: 'Two horn antennas that tracked Doppler shifts in radio signals between Earth and the stationary lander.',
-        why: "Why it's cool: measured the wobble (nutation) of Mars' north pole down to inches, proving the planet has a liquid molten iron-nickel core.",
+        text: 'My twin horn antennas bounced precision X-band radio signals back and forth with NASA tracking stations on Earth.',
+        why: 'Tracking tiny Doppler shifts showed how Mars’s north pole wobbles by inches—confirming the planet holds a molten liquid core.',
       },
       chassis: {
         id: 'chassis',
         name: 'Avionics deck & electronics chassis',
-        text: 'The central hexagonal electronics platform with landing radar, batteries, and weather sensors.',
-        why: "Why it's cool: recorded the very first direct audio recordings of Martian wind vibrations rattling the solar panels.",
+        text: 'My hexagonal body holds my flight computers, batteries, landing radar, and air-pressure sensors.',
+        why: 'Using my pressure sensors and seismometer together, I sent home humanity’s first direct audio recordings of Martian wind.',
       },
     };
   }
@@ -453,38 +451,38 @@ function getCraftParts(artifact: Artifact): Record<string, CraftPartDef> {
       rotors: {
         id: 'rotors',
         name: 'Counter-rotating carbon-fiber rotor blades',
-        text: 'Two 4-foot (1.2 m) carbon-fiber rotors spinning in opposite directions at 2,400 to 2,700 RPM—roughly five times faster than an Earth helicopter.',
-        why: "Why it's cool: needed extreme rotational speed because Mars' atmospheric density is less than 1% of Earth's air at sea level.",
+        text: 'My two 1.2-meter carbon-fiber blades spin in opposite directions at 2,400 to 2,700 RPM—around five times faster than an Earth helicopter.',
+        why: 'Mars’s air is less than 1% as thick as Earth’s at sea level, so my blades had to whip wildly just to lift my 1.8 kg frame.',
       },
       solar_panel: {
         id: 'solar_panel',
         name: 'Top solar panel & antenna mast',
-        text: 'A 0.5-square-foot solar array mounted above the rotor blades, connected to six Sony lithium-ion batteries.',
-        why: "Why it's cool: gathered just enough power during the day to run heaters through the freezing -90°C Martian nights.",
+        text: 'Sitting above my spinning rotors is a compact solar wing connected to six lithium-ion batteries nestled inside my body.',
+        why: 'Every sunny afternoon it soaked up just enough charge to keep my heaters warm through -90°C Jezero Crater nights and fuel another flight.',
       },
       fuselage: {
         id: 'fuselage',
         name: 'Fuselage avionics cube & processors',
-        text: 'A 5.4-inch (14 cm) cube housing smartphone-grade Qualcomm Snapdragon processors, laser altimeter, and visual odometry algorithms.',
-        why: "Why it's cool: flew completely autonomously because radio signals between Earth and Mars take 5 to 20 minutes each way.",
+        text: 'Inside this 14-centimeter tissue-box cube live smartphone-class processors, a laser altimeter, and my autonomous flight brain.',
+        why: 'Radio signals take 5 to 20 minutes between Earth and Mars, so nobody could joystick me—I piloted every single takeoff and landing myself!',
       },
       legs: {
         id: 'legs',
         name: 'Four carbon-fiber landing legs & compliant dampeners',
-        text: 'Four lightweight splayed carbon-fiber tubes with flexible feet designed to absorb touchdown shock on rocks and sand.',
-        why: "Why it's cool: engineered to touch down at up to 1 meter per second on slopes without bouncing or rolling over.",
+        text: 'My four springy carbon-fiber legs splay outward with flexible joints to soak up the bump of landing on sand and boulders.',
+        why: 'They carried me safely through 72 historic flights until rotor blade damage on Flight 72 finally grounded me at Valinor Hills.',
       },
       nav_camera: {
         id: 'nav_camera',
         name: 'Downward high-speed navigation camera',
-        text: 'A camera taking 30 frames per second of surface sand ripples, running optical flow algorithms to track speed and drift.',
-        why: "Why it's cool: kept Ingenuity flying in straight lines without GPS, using pure computer vision to track features on the Martian surface.",
+        text: 'My downward camera snapped 30 black-and-white frames every second, tracking pebbles and sand ripples rushing beneath me.',
+        why: 'Without GPS on Mars, I navigated entirely by watching the ground move beneath my lens.',
       },
       wright_fabric: {
         id: 'wright_fabric',
         name: 'Wright Brothers 1903 Flyer fabric compartment',
-        text: 'A postage-stamp-sized swatch of unbleached muslin fabric from the lower left wing of the original 1903 Wright Flyer wrapped in Kapton tape.',
-        why: "Why it's cool: directly connected humanity’s first powered flight on Earth at Kitty Hawk to the first powered aerodynamic flight on another planet.",
+        text: 'Tucked under my solar panel in Kapton tape is a postage-stamp swatch of muslin from the wing of the original 1903 Wright Flyer.',
+        why: 'Carrying a piece of Kitty Hawk into Martian skies bridged 117 years from humanity’s first airplane to the first powered flight on another world.',
       },
     };
   }
@@ -494,20 +492,20 @@ function getCraftParts(artifact: Artifact): Record<string, CraftPartDef> {
     chassis: {
       id: 'chassis',
       name: `${artifact.moniker} Main Chassis`,
-      text: `The central structural core housing payload electronics, batteries, and transmitters.`,
-      why: "Why it's cool: designed to survive extreme vacuum, cosmic radiation, and day-to-night thermal swings.",
+      text: `This is my central structural core housing my computers, batteries, and radio transmitters.`,
+      why: 'Engineers built my hull to endure airless vacuum, cosmic radiation, and brutal day-to-night temperature swings.',
     },
     antenna: {
       id: 'antenna',
       name: 'Communications Antenna System',
-      text: 'Radio transmission dish transmitting science telemetry across hundreds of millions of kilometers.',
-      why: "Why it's cool: beamed high-resolution images back to the NASA Deep Space Network.",
+      text: 'This is my radio dish that beamed science telemetry back to Earth across millions of kilometers.',
+      why: 'It carried my high-resolution images and discoveries home to NASA Deep Space Network antennas.',
     },
     power: {
       id: 'power',
       name: 'Surface Power System',
-      text: 'Nuclear RTG or solar array providing electrical power for instruments.',
-      why: "Why it's cool: kept the spacecraft alive in harsh off-world environments.",
+      text: 'This is my solar or nuclear power source that kept my scientific instruments awake.',
+      why: 'Reliable energy let me keep gathering science long after touchdown.',
     },
   };
 }
@@ -1098,9 +1096,9 @@ function buildMissionSiteItems(
       -8.5,
       -5.0,
       2.5,
-      'The American flag planted by Neil Armstrong and Buzz Aldrin. Supported by a horizontal telescoping rod along the top because there is no wind in the airless lunar vacuum.',
-      "Why it's cool: Eagle's exhaust gases during liftoff blew the flag over. After 50+ years of unfiltered solar UV radiation, its colors have likely bleached to chalk white.",
-      'Knocked over in regolith, likely bleached pure white by intense solar UV.',
+      'Neil Armstrong and Buzz Aldrin planted this flag right beside me, using a horizontal telescoping rod across the top because there is no breeze in the airless lunar vacuum.',
+      "When my upper stage blasted back to orbit, the rocket exhaust blew the flag right over—and after 50+ years of unfiltered solar UV, its stripes have likely faded to chalk white.",
+      'Resting in the regolith beside me, likely bleached white by unfiltered sunlight.',
       (grp) => {
         const flagCanvas = document.createElement('canvas');
         flagCanvas.width = 260;
@@ -1142,9 +1140,9 @@ function buildMissionSiteItems(
       16.0,
       -4.0,
       2.5,
-      'The first seismometer deployed on the Moon, listening for moonquakes, tidal vibrations, and meteorite strikes. Powered by solar cells and kept warm with isotope heaters.',
-      "Why it's cool: operated for 21 days before succumbing to the freezing -170°C lunar night, proving the Moon is seismically active.",
-      'Quiet since August 1969; resting undisturbed on Mare Tranquillitatis.',
+      'My astronauts carried this solar-powered seismometer away from my hull so it could listen quietly for moonquakes, tidal vibrations, and meteorite impacts.',
+      'It stayed awake for 21 days before the -170°C lunar night silenced it—giving scientists the first proof that the Moon trembles inside.',
+      'Quiet since August 1969; standing sentinel beside me on Mare Tranquillitatis.',
       (grp) => {
         const b = box(0.7, 0.35, 0.7, gold);
         b.position.y = 0.3;
@@ -1162,9 +1160,9 @@ function buildMissionSiteItems(
       20.0,
       2.0,
       2.5,
-      'An unpowered panel array of 100 quartz corner-cube prisms. Observatories on Earth fire lasers at this mirror and measure the return travel time down to picoseconds.',
-      "Why it's cool: Still active today! Has proven that the Moon is slowly spiraling away from Earth at 3.8 centimeters per year—about the speed fingernails grow.",
-      'Still fully operational after 55+ years; routinely targeted by Earth lasers.',
+      'Packed with 100 quartz corner-cube prisms, my mirror panel needs zero electricity—telescopes on Earth still shoot laser pulses at it and time every bounce back.',
+      'I am still helping science today! Those laser bounces prove the Moon is drifting away from Earth at 3.8 centimeters every year—about as fast as your fingernails grow.',
+      'Still working after 55+ years; routinely pinged by Earth laser observatories.',
       (grp) => {
         const p = box(0.6, 0.6, 0.06, grey);
         p.position.y = 0.55;
@@ -1182,9 +1180,9 @@ function buildMissionSiteItems(
       9.0,
       12.0,
       2.5,
-      'The bulky backpack units that supplied oxygen, water cooling, and radio communication during Neil and Buzz’s historic 2.5-hour moonwalk.',
-      "Why it's cool: jettisoned out of the cabin hatch before liftoff along with heavy boots and cameras to save precious weight for 21.55 kg of lunar samples.",
-      'Lying where they landed on the regolith beside Eagle’s front ladder.',
+      'These bulky white backpacks kept Neil and Buzz breathing, cool, and talking over radio during humanity’s very first 2.5-hour moonwalk.',
+      'Before my top half lifted off, my crew tossed these heavy packs out the hatch so we could carry 21.55 kg of priceless Moon rocks home instead.',
+      'Resting untouched in the lunar soil just outside my front ladder.',
       (grp) => {
         let first: THREE.Mesh | null = null;
         [0, 1].forEach((i) => {
@@ -1207,9 +1205,9 @@ function buildMissionSiteItems(
       -16.0,
       -14.0,
       3.0,
-      'The robotic Surveyor 3 lander, which had sat silent in Oceanus Procellarum for 2.5 years before Apollo 12 astronauts Pete Conrad and Alan Bean walked right up to it.',
-      "Why it's cool: the astronauts unbolted its camera and soil scoop to bring back to Earth, testing how materials and microbial spores hold up in space.",
-      'Stationary monument on crater slope; camera retrieved and on display at the Smithsonian.',
+      'Right across this crater slope sits Surveyor 3, who waited silently for 2.5 years until my astronauts Pete Conrad and Alan Bean walked down from my ladder to pay a visit.',
+      'My crew snipped off Surveyor 3’s television camera and soil scoop to carry back to Earth, showing scientists how spacecraft survive years in deep vacuum.',
+      'Standing beside me on the crater wall; its camera now greets visitors at the Smithsonian.',
       (grp) => {
         const body = cyl(0.5, 0.6, white, 6);
         body.position.y = 0.4;
@@ -1226,9 +1224,9 @@ function buildMissionSiteItems(
       18.0,
       5.0,
       2.5,
-      'A full Apollo Lunar Surface Experiments Package powered by a 73-watt Plutonium-238 radioisotope thermoelectric generator.',
-      "Why it's cool: transmitted continuous seismic, magnetic, and solar wind science back to Earth for nearly eight years until shutdown in September 1977.",
-      'Nuclear fuel decay complete; science station resting silent on the plain.',
+      'My crew set up this nuclear-powered ALSEP weather and moonquake station with a 73-watt Plutonium-238 generator so it could survive freezing two-week lunar nights.',
+      'It radioed continuous seismic, magnetic, and solar-wind measurements back to Earth for nearly eight straight years until September 1977.',
+      'Mission complete since 1977; resting quietly beside me on the Ocean of Storms.',
       (grp) => {
         const cs = box(0.8, 0.4, 0.8, white);
         cs.position.y = 0.3;
@@ -1248,9 +1246,9 @@ function buildMissionSiteItems(
       14.0,
       8.0,
       3.5,
-      'The first wheeled vehicle driven on the Moon. Powered by two 36-volt batteries, it covered 27.9 km across Hadley-Apennine at speeds up to 13 km/h.',
-      "Why it's cool: parked 100 meters away so its ground-controlled color TV camera could film Falcon’s liftoff into lunar orbit.",
-      'Parked permanently at Hadley-Apennine, ready to roll if batteries were fresh.',
+      'I carried the very first Moon Buggy tucked into my side bay—an electric 4-wheel rover powered by two 36-volt batteries that drove my crew 27.9 km across Hadley-Apennine.',
+      'When my astronauts left, they parked LRV-1 100 meters away so its remote-controlled TV camera could film my upper stage blasting off into lunar orbit!',
+      'Parked permanently near me at Hadley-Apennine with its camera still aimed at my launch pad.',
       (grp) => {
         const body = box(1.8, 0.25, 0.9, white);
         body.position.y = 0.45;
@@ -1268,9 +1266,9 @@ function buildMissionSiteItems(
       -8.0,
       -12.0,
       2.0,
-      'A small 3.3-inch (8.5 cm) aluminum sculpture created by Belgian artist Paul Van Hoeydonck beside a plaque listing 14 deceased astronauts and cosmonauts.',
-      "Why it's cool: the only official piece of memorial art on the lunar surface, placed quietly by Commander David Scott without fanfare.",
-      'Resting face-down in the lunar dust at the foot of Mt. Hadley.',
+      'Just 8.5 cm (3.3 inches) tall, this tiny aluminum sculpture rests beside a plaque listing 14 brave astronauts and cosmonauts who gave their lives exploring space.',
+      'Commander David Scott placed it gently in the lunar dust without fanfare—the only official work of art created specifically for the Moon.',
+      'Resting peacefully in the quiet dust beneath Mt. Hadley.',
       (grp) => {
         const fig = box(0.12, 0.04, 0.28, grey);
         fig.position.y = 0.02;
@@ -1287,9 +1285,9 @@ function buildMissionSiteItems(
       -10.0,
       6.0,
       2.0,
-      "The exact spot where Commander David Scott dropped a 1.3 kg aluminum geology hammer and a 30-gram falcon feather simultaneously.",
-      "Why it's cool: in the airless lunar vacuum, both hit the dust at the exact same instant, visually confirming Galileo’s 400-year-old law of gravity.",
-      'Hammer and feather resting side-by-side in the regolith undisturbed.',
+      'Right here in front of my TV camera, Commander David Scott held out a 1.3 kg geology hammer and a 30-gram falcon feather and let go at the exact same instant.',
+      'Without air resistance on the Moon, both hit the dust together—proving Galileo’s 400-year-old gravity discovery live on Earth television!',
+      'Hammer and feather still rest side-by-side right where they fell in 1971.',
       (grp) => {
         const h = box(0.08, 0.35, 0.04, darkMetal);
         h.rotation.z = Math.PI / 2;
@@ -1311,9 +1309,9 @@ function buildMissionSiteItems(
       -12.0,
       8.0,
       3.0,
-      'A shallow circular imprint in the lunar dust where Surveyor 3’s footpads struck the Moon before bouncing 10 meters into the sky.',
-      "Why it's cool: radar confusion caused vernier engines to keep firing, producing three distinct sets of footpad imprints on the Moon.",
-      'Imprint preserved in vacuum.',
+      'This shallow ring in the lunar dust marks where my footpads first struck the Moon before bright rocks tricked my radar and launched me 10 meters back into the sky!',
+      'My still-firing vernier engines made me bounce twice across the crater before I finally settled softly—leaving three sets of footprints in the vacuum.',
+      'My bouncing footprints remain crisp and unweathered in the airless Moon dust.',
       (grp) => {
         const r = cyl(0.8, 0.08, mat(0x5a5852, 0, 1), 16);
         r.position.y = 0.02;
@@ -1328,9 +1326,9 @@ function buildMissionSiteItems(
       3.2,
       -1.8,
       2.0,
-      'Four soil trenches dug by the miniature surface sampler claw, reaching up to 18 cm deep.',
-      "Why it's cool: confirmed lunar soil was cohesive enough to support the landing legs of Apollo 11.",
-      'Trenches remain crisp with steep side walls.',
+      'Using my folding claw arm, I carved four neat trenches up to 18 cm deep right beside my frame.',
+      'Digging these walls proved the Moon’s surface soil would hold firm under future Apollo Lunar Modules without swallowing them up.',
+      'My 1967 trenches still hold their sharp edges right next to me.',
       (grp) => {
         const t = box(0.9, 0.06, 0.25, mat(0x3a3832, 0, 1));
         t.position.y = 0.02;
@@ -1348,9 +1346,9 @@ function buildMissionSiteItems(
       2.8,
       -1.5,
       2.0,
-      'A deep trench dug through crusty Martian soil (duricrust) to deliver samples into the GCMS and biology test ovens.',
-      "Why it's cool: proved Martian soil is saturated with oxidizing compounds that mimic microbial gas exchange.",
-      'Trench edges softened by decades of gentle Martian dust deposition.',
+      'I reached out with my 3-meter steel tape boom to carve this trench through crusty Martian dirt and scoop samples into my biology lab.',
+      'My chemical ovens discovered reactive oxidizers in the Martian soil that fizzed like living microbes when wet, rewriting how we search for life on Mars.',
+      'Decades of gentle Martian wind have softly dusted my old trench.',
       (grp) => {
         const t = box(1.1, 0.08, 0.35, mat(0x5a2816, 0, 1));
         t.position.y = 0.02;
@@ -1365,9 +1363,9 @@ function buildMissionSiteItems(
       -3.2,
       2.2,
       2.0,
-      'A test target with color chips and mirror patches used to calibrate Viking’s facsimile stereo cameras under shifting salmon skies.',
-      "Why it's cool: allowed scientists to settle the fierce debate on whether the Martian sky was actually butterscotch-pink or blue.",
-      'Surface chips dusted over by regional dust storms.',
+      'I used these painted color chips and reference mirrors to check my cameras under Mars’s shifting light.',
+      'Comparing these colors proved the Martian sky really is dusty butterscotch-pink—settling a big debate among scientists back in 1976!',
+      'Lightly coated by regional dust storms across Chryse Planitia.',
       (grp) => {
         const c = box(0.35, 0.08, 0.35, grey);
         c.position.y = 0.05;
@@ -1385,9 +1383,9 @@ function buildMissionSiteItems(
       7.2,
       -4.5,
       2.5,
-      'A distinctive weathered boulder resembling a bear’s head analyzed by Sojourner’s Alpha Proton X-Ray Spectrometer.',
-      "Why it's cool: rounded pebbles around Yogi confirmed that catastrophic ancient floods once tore through Ares Vallis.",
-      'Permanent geological landmark of Ares Vallis.',
+      'When I (Sojourner) rolled up to this bear-shaped boulder nicknamed Yogi, I backed my spectrometer nose right up against its face to read its chemistry.',
+      'The rounded pebbles scattered around Yogi and Ares Vallis helped prove roaring ancient floods once washed across this Martian valley.',
+      'Standing guard beside Carl Sagan Memorial Station in Ares Vallis.',
       (grp) => {
         const y = new THREE.Mesh(new THREE.DodecahedronGeometry(0.75, 1), mat(0x7c381c, 0, 1));
         y.position.y = 0.45;
@@ -1402,9 +1400,9 @@ function buildMissionSiteItems(
       -4.5,
       -3.2,
       2.5,
-      'The multi-layer Kevlar airbags that protected Pathfinder as it bounced 15 times across the rocky Martian floodplain.',
-      "Why it's cool: completely retracted after landing to allow the triangular solar petals to open and deploy Sojourner.",
-      'Deflated white fabric resting on red soil.',
+      'Twenty-four tough Kevlar airbag lobes wrapped around me when I slammed into Mars at 31 mph—bouncing 15 times before coming to rest.',
+      'Once I stopped rolling, I pulled these airbags flat so my triangular solar petals could open and launch little Sojourner.',
+      'Resting deflated beside my solar petals on the red floodplain.',
       (grp) => {
         const a = box(1.4, 0.18, 1.2, white);
         a.position.y = 0.09;
@@ -1422,9 +1420,9 @@ function buildMissionSiteItems(
       4.2,
       -3.5,
       2.5,
-      'Tiny millimeter-sized gray spherules rich in the iron oxide mineral hematite covering the soil of Meridiani Planum.',
-      "Why it's cool: formed as concretions precipitating out of ancient acidic groundwater pools, proving Mars was once wet.",
-      'Billions of spherules carpet the surrounding plains.',
+      'My cameras spotted millions of tiny BB-sized gray spheres scattered like blueberries across the soil of Meridiani Planum.',
+      'When my spectrometers checked them, they turned out to be iron-rich hematite concretions that only grow inside standing ancient water!',
+      'Billions of these mineral spheres still carpet the plains around me.',
       (grp) => {
         const b = box(1.2, 0.06, 1.2, mat(0x444855, 0.7, 0.4));
         b.position.y = 0.02;
@@ -1439,9 +1437,9 @@ function buildMissionSiteItems(
       -2.8,
       2.6,
       2.0,
-      'A circular 45 mm diameter, 5 mm deep hole ground into a rock surface by diamond-impregnated grinding bits.',
-      "Why it's cool: exposed the pristine interior of Martian rocks shielded from millions of years of chemical weathering.",
-      'Clean circular rock core mark visible in stone.',
+      'I pressed my spinning diamond-tipped Rock Abrasion Tool onto this stone to brush away dust and carve a neat 45 mm wide, 5 mm deep inspection window.',
+      'Peeking underneath the weathered red rind exposed fresh inner rock grains formed when ancient Mars was warm and wet.',
+      'Clean circular grind mark preserved right in the Martian bedrock.',
       (grp) => {
         const r = cyl(0.24, 0.04, mat(0x8a4b2a, 0, 1), 16);
         r.position.y = 0.02;
@@ -1459,9 +1457,9 @@ function buildMissionSiteItems(
       2.5,
       -1.8,
       2.0,
-      'A trench dug by Phoenix’s robotic scoop revealing glistening white chunks of pure water ice just 2 inches below the surface.',
-      "Why it's cool: over four days of time-lapse photography, scientists watched the ice chunks sublimate into gas, confirming water ice on Mars.",
-      'Subsurface ice table protected beneath topsoil.',
+      'Right here in Vastitas Borealis, my robotic arm scraped aside two inches of Arctic dirt and revealed bright chunks of frozen water ice.',
+      'Over four days of photos, my cameras watched those white ice chunks sublimate into thin air—giving humanity touchable proof of Martian water ice.',
+      'Frozen water-ice table resting safely beneath the polar dust.',
       (grp) => {
         const ice = box(0.8, 0.05, 0.35, mat(0xddeeff, 0.1, 0.3));
         ice.position.y = 0.02;
@@ -1479,9 +1477,9 @@ function buildMissionSiteItems(
       3.2,
       2.4,
       2.5,
-      'The ultra-sensitive French SEIS seismometer placed directly onto the Martian ground beneath its protective gold Wind and Thermal Shield.',
-      "Why it's cool: detected over 1,300 marsquakes and meteorite strikes, measuring the thickness of the Martian crust and core.",
-      'Resting peacefully on Elysium Planitia; silent since late 2022.',
+      'Using my robotic arm, I lifted my super-sensitive SEIS seismometer off my deck, set it gently on Mars, and tucked it beneath this wind-blocking gold dome.',
+      'Listening quietly to the planet beneath me, it recorded over 1,300 marsquakes and revealed the size of Mars’s crust, mantle, and liquid core.',
+      'Resting gently on Elysium Planitia beside my dust-covered solar wings.',
       (grp) => {
         const d = new THREE.Mesh(
           new THREE.SphereGeometry(0.38, 16, 12, 0, Math.PI * 2, 0, Math.PI * 0.5),
@@ -1502,8 +1500,8 @@ function buildMissionSiteItems(
       -6.0,
       4.0,
       2.5,
-      'A 10-meter circle on the dusty floor of Jezero Crater where Ingenuity made the first powered, controlled flight on another planet on April 19, 2021.',
-      "Why it's cool: proved aerodynamic rotorcraft flight is possible in Mars’ ultra-thin atmosphere (<1% Earth air density).",
+      'Right on this 10-meter dusty patch of Jezero Crater on April 19, 2021, I spun my rotors up to 2,537 RPM and rose 3 meters into the thin Martian sky.',
+      'That 39-second hop proved powered aerodynamic flight works on another planet—and launched me onto 72 unforgettable flights!',
       'Named Wright Brothers Field by the International Civil Aviation Organization (ICAO).',
       (grp) => {
         const m = cyl(0.6, 0.04, mat(0x9a5832, 0, 1), 16);
@@ -1547,32 +1545,28 @@ export const SurfaceExplorerGame: React.FC<SurfaceExplorerGameProps> = ({
   const isMars = artifact.body === 'mars';
 
   // Game UI States
-  const [isEntered, setIsEntered] = useState(false);
   const [isPointerLocked, setIsPointerLocked] = useState(false);
   const [isFlashlightOn, setIsFlashlightOn] = useState(false);
   const [hoveredTarget, setHoveredTarget] = useState<InspectableTarget | null>(null);
   const [inspectModalTarget, setInspectModalTarget] = useState<InspectableTarget | null>(null);
-  const [distanceMeters, setDistanceMeters] = useState<number>(22);
   const [hudCoords, setHudCoords] = useState<string>(
     formatOffsetCoords(artifact.coordinates.lat, artifact.coordinates.lon, 14, 20, isMars)
   );
-  const [nearestInfo, setNearestInfo] = useState<string>('Scanning surface...');
-  const [itemsLoggedCount, setItemsLoggedCount] = useState<number>(0);
-  const [totalItemsCount, setTotalItemsCount] = useState<number>(0);
-  const [partsInspectedCount, setPartsInspectedCount] = useState<number>(0);
-  const [totalPartsCount, setTotalPartsCount] = useState<number>(0);
-  const [modelSourceLabel, setModelSourceLabel] = useState<'CAD' | 'NASA GLB'>('CAD');
+  const [siteItemsList, setSiteItemsList] = useState<{ id: string; name: string }[]>([]);
+  const [craftPartsList, setCraftPartsList] = useState<{ id: string; name: string }[]>([]);
+  const [seenItemIds, setSeenItemIds] = useState<string[]>([]);
+  const [seenPartIds, setSeenPartIds] = useState<string[]>([]);
 
   // Mutable refs for high-frequency game loop
-  const isEnteredRef = useRef(isEntered);
-  isEnteredRef.current = isEntered;
   const flashlightOnRef = useRef(isFlashlightOn);
   flashlightOnRef.current = isFlashlightOn;
   const inspectModalRef = useRef(inspectModalTarget);
   inspectModalRef.current = inspectModalTarget;
+  const seenItemIdsRef = useRef<Set<string>>(new Set());
+  const seenPartIdsRef = useRef<Set<string>>(new Set());
 
   const handleExit = useCallback(() => {
-    playTelemetryBeep(420);
+    playWhooshSound('out');
     if (document.pointerLockElement) {
       document.exitPointerLock?.();
     }
@@ -1582,18 +1576,27 @@ export const SurfaceExplorerGame: React.FC<SurfaceExplorerGameProps> = ({
   const toggleFlashlight = useCallback(() => {
     setIsFlashlightOn((prev) => {
       const next = !prev;
-      playTelemetryBeep(next ? 880 : 380);
+      playWhooshSound('ui');
       return next;
     });
   }, []);
 
   const openInspection = useCallback((target: InspectableTarget) => {
-    playSuccessChime();
+    playArtifactRememberingWhoosh();
+    if (target.type === 'site_item') {
+      if (!seenItemIdsRef.current.has(target.id)) {
+        seenItemIdsRef.current.add(target.id);
+        setSeenItemIds(Array.from(seenItemIdsRef.current));
+      }
+    } else if (!seenPartIdsRef.current.has(target.id)) {
+      seenPartIdsRef.current.add(target.id);
+      setSeenPartIds(Array.from(seenPartIdsRef.current));
+    }
     setInspectModalTarget(target);
   }, []);
 
   const closeInspection = useCallback(() => {
-    playTelemetryBeep(480);
+    playWhooshSound('out');
     setInspectModalTarget(null);
     const canvas = mountRef.current?.querySelector('canvas');
     canvas?.requestPointerLock?.();
@@ -1602,6 +1605,14 @@ export const SurfaceExplorerGame: React.FC<SurfaceExplorerGameProps> = ({
   useEffect(() => {
     const container = mountRef.current;
     if (!container) return;
+
+    seenItemIdsRef.current = new Set();
+    seenPartIdsRef.current = new Set();
+    setSeenItemIds([]);
+    setSeenPartIds([]);
+    setInspectModalTarget(null);
+    setHoveredTarget(null);
+    playWhooshSound('in');
 
     let isDisposed = false;
     let rafId = 0;
@@ -1868,8 +1879,9 @@ export const SurfaceExplorerGame: React.FC<SurfaceExplorerGameProps> = ({
 
     // Craft parts definitions & tracking
     const craftPartsMap = getCraftParts(artifact);
-    const totalParts = Object.keys(craftPartsMap).length;
-    setTotalPartsCount(totalParts);
+    setCraftPartsList(
+      Object.values(craftPartsMap).map((p) => ({ id: p.id, name: p.name }))
+    );
 
     let craftMeshes: THREE.Mesh[] = [];
     let craftBounds: CraftBounds = {
@@ -1966,7 +1978,6 @@ export const SurfaceExplorerGame: React.FC<SurfaceExplorerGameProps> = ({
           siteAnchor.add(loaded);
           gltfRoot = loaded;
           updateCraftBoundingData(loaded);
-          setModelSourceLabel('NASA GLB');
           dracoLoader.dispose();
         })
         .catch(() => {
@@ -1976,7 +1987,7 @@ export const SurfaceExplorerGame: React.FC<SurfaceExplorerGameProps> = ({
 
     // 9. COMPANION GROUND SITE ITEMS REGISTRATION
     const siteItems = buildMissionSiteItems(artifact, scene, sampleH, isMars);
-    setTotalItemsCount(siteItems.length);
+    setSiteItemsList(siteItems.map((it) => ({ id: it.id, name: it.name })));
 
     // 10. MESH HIGHLIGHTING (setHL)
     let highlightedMesh: THREE.Mesh | null = null;
@@ -2056,17 +2067,17 @@ export const SurfaceExplorerGame: React.FC<SurfaceExplorerGameProps> = ({
 
     const onKeyDown = (e: KeyboardEvent) => {
       keys[e.code] = true;
-      if (e.code === 'KeyG' && isEnteredRef.current) {
+      if (e.code === 'KeyG') {
         toggleFlashlight();
       }
-      if (e.code === 'KeyE' && isEnteredRef.current) {
+      if (e.code === 'KeyE') {
         if (inspectModalRef.current) {
           closeInspection();
         } else if (activeTargetRef.current) {
           openInspection(activeTargetRef.current);
         }
       }
-      if (e.code === 'Space' && isEnteredRef.current && player.onGround) {
+      if (e.code === 'Space' && player.onGround) {
         e.preventDefault();
         player.vel.y = isMars ? 3.8 : 3.4;
         player.onGround = false;
@@ -2078,7 +2089,6 @@ export const SurfaceExplorerGame: React.FC<SurfaceExplorerGameProps> = ({
     };
 
     const onMouseMove = (e: MouseEvent) => {
-      if (!isEnteredRef.current) return;
       if (document.pointerLockElement === renderer.domElement) {
         player.yaw -= e.movementX * 0.0022;
         player.pitch = THREE.MathUtils.clamp(
@@ -2097,7 +2107,6 @@ export const SurfaceExplorerGame: React.FC<SurfaceExplorerGameProps> = ({
     };
 
     const onMouseDown = (e: MouseEvent) => {
-      if (!isEnteredRef.current) return;
       if (e.target === renderer.domElement) {
         isDraggingLook = true;
         lastDragX = e.clientX;
@@ -2138,6 +2147,7 @@ export const SurfaceExplorerGame: React.FC<SurfaceExplorerGameProps> = ({
 
     const printDummy = new THREE.Object3D();
     const activeTargetRef = { current: null as InspectableTarget | null };
+    let lastLockedTargetKey = '';
 
     let lastHudUpdate = 0;
     let probeTimer = 0;
@@ -2177,183 +2187,148 @@ export const SurfaceExplorerGame: React.FC<SurfaceExplorerGameProps> = ({
       const dt = Math.min(0.05, Math.max(0.001, (now - prevTime) / 1000));
       prevTime = now;
 
-      if (isEnteredRef.current) {
-        // Player movement
-        const fw =
-          (keys['KeyW'] || keys['ArrowUp'] ? 1 : 0) -
-          (keys['KeyS'] || keys['ArrowDown'] ? 1 : 0);
-        const st =
-          (keys['KeyD'] || keys['ArrowRight'] ? 1 : 0) -
-          (keys['KeyA'] || keys['ArrowLeft'] ? 1 : 0);
-        const sp = keys['ShiftLeft'] || keys['ShiftRight'] ? 6.5 : 3.2;
+      // Player movement
+      const fw =
+        (keys['KeyW'] || keys['ArrowUp'] ? 1 : 0) -
+        (keys['KeyS'] || keys['ArrowDown'] ? 1 : 0);
+      const st =
+        (keys['KeyD'] || keys['ArrowRight'] ? 1 : 0) -
+        (keys['KeyA'] || keys['ArrowLeft'] ? 1 : 0);
+      const sp = keys['ShiftLeft'] || keys['ShiftRight'] ? 6.5 : 3.2;
 
-        const wx = -Math.sin(player.yaw) * fw + Math.cos(player.yaw) * st;
-        const wz = -Math.cos(player.yaw) * fw - Math.sin(player.yaw) * st;
-        const n = Math.hypot(wx, wz) || 1;
-        const k = player.onGround ? Math.min(1, dt * 7) : dt * 0.25;
+      const wx = -Math.sin(player.yaw) * fw + Math.cos(player.yaw) * st;
+      const wz = -Math.cos(player.yaw) * fw - Math.sin(player.yaw) * st;
+      const n = Math.hypot(wx, wz) || 1;
+      const k = player.onGround ? Math.min(1, dt * 7) : dt * 0.25;
 
-        player.vel.x += ((wx / n) * sp * (fw || st ? 1 : 0) - player.vel.x) * k;
-        player.vel.z += ((wz / n) * sp * (fw || st ? 1 : 0) - player.vel.z) * k;
+      player.vel.x += ((wx / n) * sp * (fw || st ? 1 : 0) - player.vel.x) * k;
+      player.vel.z += ((wz / n) * sp * (fw || st ? 1 : 0) - player.vel.z) * k;
 
-        const gravity = isMars ? 3.72 : 1.62;
-        player.vel.y -= gravity * dt;
-        player.pos.addScaledVector(player.vel, dt);
+      const gravity = isMars ? 3.72 : 1.62;
+      player.vel.y -= gravity * dt;
+      player.pos.addScaledVector(player.vel, dt);
 
-        // Spacecraft collision pushout
-        const craftDist = Math.hypot(player.pos.x, player.pos.z);
-        if (craftDist < craftRadius && craftDist > 0.001 && player.pos.y < centerGroundY + 5) {
-          player.pos.x *= craftRadius / craftDist;
-          player.pos.z *= craftRadius / craftDist;
-        }
+      // Spacecraft collision pushout
+      const craftDist = Math.hypot(player.pos.x, player.pos.z);
+      if (craftDist < craftRadius && craftDist > 0.001 && player.pos.y < centerGroundY + 5) {
+        player.pos.x *= craftRadius / craftDist;
+        player.pos.z *= craftRadius / craftDist;
+      }
 
-        // Ground clamping
-        const groundY = sampleH(player.pos.x, player.pos.z);
-        if (player.pos.y <= groundY) {
-          player.pos.y = groundY;
-          player.vel.y = 0;
-          player.onGround = true;
-        } else if (player.pos.y > groundY + 0.05) {
-          player.onGround = false;
-        }
+      // Ground clamping
+      const groundY = sampleH(player.pos.x, player.pos.z);
+      if (player.pos.y <= groundY) {
+        player.pos.y = groundY;
+        player.vel.y = 0;
+        player.onGround = true;
+      } else if (player.pos.y > groundY + 0.05) {
+        player.onGround = false;
+      }
 
-        // Boot footprints
-        if (player.onGround && Math.hypot(player.pos.x - lastPrintPos.x, player.pos.z - lastPrintPos.z) > 0.85) {
-          lastPrintPos.copy(player.pos);
-          printStepSide *= -1;
-          const fx = player.pos.x + Math.cos(player.yaw) * printStepSide * 0.18;
-          const fz = player.pos.z - Math.sin(player.yaw) * printStepSide * 0.18;
-          printDummy.position.set(fx, sampleH(fx, fz) + 0.03, fz);
-          printDummy.rotation.set(0, player.yaw, 0);
-          printDummy.scale.set(1, 1, 2.1);
-          printDummy.updateMatrix();
-          footprintMesh.setMatrixAt(printCursor, printDummy.matrix);
-          footprintMesh.instanceMatrix.needsUpdate = true;
-          printCursor = (printCursor + 1) % maxPrints;
-        }
+      // Boot footprints & walking footstep sound
+      if (player.onGround && Math.hypot(player.pos.x - lastPrintPos.x, player.pos.z - lastPrintPos.z) > 0.85) {
+        lastPrintPos.copy(player.pos);
+        printStepSide *= -1;
+        playFootstepSound(isMars);
+        const fx = player.pos.x + Math.cos(player.yaw) * printStepSide * 0.18;
+        const fz = player.pos.z - Math.sin(player.yaw) * printStepSide * 0.18;
+        printDummy.position.set(fx, sampleH(fx, fz) + 0.03, fz);
+        printDummy.rotation.set(0, player.yaw, 0);
+        printDummy.scale.set(1, 1, 2.1);
+        printDummy.updateMatrix();
+        footprintMesh.setMatrixAt(printCursor, printDummy.matrix);
+        footprintMesh.instanceMatrix.needsUpdate = true;
+        printCursor = (printCursor + 1) % maxPrints;
+      }
 
-        // Perimeter bounds
-        player.pos.x = Math.max(-WORLD_LIMIT, Math.min(WORLD_LIMIT, player.pos.x));
-        player.pos.z = Math.max(-WORLD_LIMIT, Math.min(WORLD_LIMIT, player.pos.z));
+      // Perimeter bounds
+      player.pos.x = Math.max(-WORLD_LIMIT, Math.min(WORLD_LIMIT, player.pos.x));
+      player.pos.z = Math.max(-WORLD_LIMIT, Math.min(WORLD_LIMIT, player.pos.z));
 
-        // Smooth flashlight intensity interpolation
-        flashlight.intensity +=
-          ((flashlightOnRef.current ? 3.5 : 0) - flashlight.intensity) * Math.min(1, dt * 9);
+      // Smooth flashlight intensity interpolation
+      flashlight.intensity +=
+        ((flashlightOnRef.current ? 3.5 : 0) - flashlight.intensity) * Math.min(1, dt * 9);
 
-        // POINT-AND-INSPECT CROSSHAIR RAYCASTING (Throttle to ~25 Hz)
-        if ((probeTimer += dt) > 0.04) {
-          probeTimer = 0;
-          camera.updateMatrixWorld();
-          raycaster.setFromCamera(screenCenter, camera);
+      // POINT-AND-INSPECT CROSSHAIR RAYCASTING (Throttle to ~25 Hz)
+      if ((probeTimer += dt) > 0.04) {
+        probeTimer = 0;
+        camera.updateMatrixWorld();
+        raycaster.setFromCamera(screenCenter, camera);
 
-          let detectedTarget: InspectableTarget | null = null;
+        let detectedTarget: InspectableTarget | null = null;
 
-          // 1. Raycast spacecraft components if within 22 meters
-          const distToCraft = Math.hypot(player.pos.x - craftBounds.cx, player.pos.z - craftBounds.cz);
-          if (
-            distToCraft < 22 &&
-            craftSphere &&
-            raycaster.ray.intersectsSphere(craftSphere) &&
-            craftMeshes.length > 0
-          ) {
-            const hits = raycaster.intersectObjects(craftMeshes, false);
-            if (hits.length > 0) {
-              const h = hits[0];
-              const partId = classifyCraftHit(artifact, h.object as THREE.Mesh, h.point, craftBounds);
-              const part = craftPartsMap[partId];
-              if (part) {
-                detectedTarget = {
-                  type: 'craft_part',
-                  id: partId,
-                  name: part.name,
-                  text: part.text,
-                  why: part.why,
-                  mesh: h.object as THREE.Mesh,
-                };
-              }
+        // 1. Raycast spacecraft components if within 22 meters
+        const distToCraft = Math.hypot(player.pos.x - craftBounds.cx, player.pos.z - craftBounds.cz);
+        if (
+          distToCraft < 22 &&
+          craftSphere &&
+          raycaster.ray.intersectsSphere(craftSphere) &&
+          craftMeshes.length > 0
+        ) {
+          const hits = raycaster.intersectObjects(craftMeshes, false);
+          if (hits.length > 0) {
+            const h = hits[0];
+            const partId = classifyCraftHit(artifact, h.object as THREE.Mesh, h.point, craftBounds);
+            const part = craftPartsMap[partId];
+            if (part) {
+              detectedTarget = {
+                type: 'craft_part',
+                id: partId,
+                name: part.name,
+                text: part.text,
+                why: part.why,
+                mesh: h.object as THREE.Mesh,
+              };
             }
           }
-
-          // 2. Check companion ground items if spacecraft not hit
-          if (!detectedTarget) {
-            const camFwd = new THREE.Vector3(0, 0, -1).applyEuler(camera.rotation);
-            let bestScore = 0;
-            for (const item of siteItems) {
-              const dVec = item.center.clone().sub(player.pos);
-              const dist = dVec.length();
-              if (dist > item.radius + 4.0) continue;
-              const dot = dVec.normalize().dot(camFwd);
-              if (dot > 0.92 && dot > bestScore) {
-                bestScore = dot;
-                detectedTarget = {
-                  type: 'site_item',
-                  id: item.id,
-                  name: item.name,
-                  text: item.text,
-                  why: item.why,
-                  status: item.status,
-                  mesh: item.mesh || null,
-                };
-              }
-            }
-          }
-
-          activeTargetRef.current = detectedTarget;
-          setHoveredTarget(detectedTarget);
-          setHL(detectedTarget && !inspectModalRef.current ? detectedTarget.mesh || null : null);
         }
 
-        // TELEMETRY HUD UPDATES (~8 Hz)
-        if (now - lastHudUpdate > 120) {
-          lastHudUpdate = now;
-          const distFromCraft = Math.hypot(player.pos.x, player.pos.z);
-          setDistanceMeters(Math.max(0, Math.round(distFromCraft - craftRadius * 0.6)));
-          setHudCoords(
-            formatOffsetCoords(
-              artifact.coordinates.lat,
-              artifact.coordinates.lon,
-              player.pos.x,
-              player.pos.z,
-              isMars
-            )
-          );
-
-          // Find nearest unread companion item
-          let nearestDist = 1e9;
-          let nearestBearing = 0;
-          let hasUnread = false;
-
+        // 2. Check companion ground items if spacecraft not hit
+        if (!detectedTarget) {
+          const camFwd = new THREE.Vector3(0, 0, -1).applyEuler(camera.rotation);
+          let bestScore = 0;
           for (const item of siteItems) {
-            if (!item.seen) {
-              const dx = item.center.x - player.pos.x;
-              const dz = item.center.z - player.pos.z;
-              const d = Math.hypot(dx, dz);
-              if (d < nearestDist) {
-                nearestDist = d;
-                nearestBearing = (Math.atan2(dx, -dz) * (180 / Math.PI) + 360) % 360;
-                hasUnread = true;
-              }
+            const dVec = item.center.clone().sub(player.pos);
+            const dist = dVec.length();
+            if (dist > item.radius + 4.0) continue;
+            const dot = dVec.normalize().dot(camFwd);
+            if (dot > 0.92 && dot > bestScore) {
+              bestScore = dot;
+              detectedTarget = {
+                type: 'site_item',
+                id: item.id,
+                name: item.name,
+                text: item.text,
+                why: item.why,
+                status: item.status,
+                mesh: item.mesh || null,
+              };
             }
           }
-
-          const seenItems = siteItems.filter((i) => i.seen).length;
-          setItemsLoggedCount(seenItems);
-
-          if (hasUnread) {
-            setNearestInfo(
-              `Nearest unread: ${Math.round(nearestDist)} m, bearing ${Math.round(nearestBearing)}°`
-            );
-          } else {
-            const allPartsSeen = Object.values(craftPartsMap).every((p) => p.seen);
-            setNearestInfo(
-              allPartsSeen
-                ? 'Every object logged.'
-                : `Debris logged. Aim crosshair at ${artifact.moniker}'s parts and press [E].`
-            );
-          }
-
-          const seenParts = Object.values(craftPartsMap).filter((p) => p.seen).length;
-          setPartsInspectedCount(seenParts);
         }
+
+        const nextTargetKey = detectedTarget
+          ? `${detectedTarget.type}:${detectedTarget.id}`
+          : '';
+        lastLockedTargetKey = nextTargetKey;
+
+        activeTargetRef.current = detectedTarget;
+        setHoveredTarget(detectedTarget);
+        setHL(detectedTarget && !inspectModalRef.current ? detectedTarget.mesh || null : null);
+      }
+
+      // TELEMETRY HUD UPDATES (~8 Hz)
+      if (now - lastHudUpdate > 120) {
+        lastHudUpdate = now;
+        setHudCoords(
+          formatOffsetCoords(
+            artifact.coordinates.lat,
+            artifact.coordinates.lon,
+            player.pos.x,
+            player.pos.z,
+            isMars
+          )
+        );
       }
 
       // Camera pose
@@ -2406,22 +2381,8 @@ export const SurfaceExplorerGame: React.FC<SurfaceExplorerGameProps> = ({
     };
   }, [artifact, isMars, toggleFlashlight, openInspection, closeInspection]);
 
-  const handleEnterSurface = useCallback(() => {
-    playTelemetryBeep(640);
-    setIsEntered(true);
-    const canvas = mountRef.current?.querySelector('canvas');
-    canvas?.requestPointerLock?.();
-  }, []);
-
-  // When an inspect modal opens, mark the item or part as seen
-  useEffect(() => {
-    if (!inspectModalTarget) return;
-    if (inspectModalTarget.type === 'site_item') {
-      setItemsLoggedCount((c) => c + 1);
-    } else {
-      setPartsInspectedCount((c) => c + 1);
-    }
-  }, [inspectModalTarget]);
+  const seenItemIdSet = new Set(seenItemIds);
+  const seenPartIdSet = new Set(seenPartIds);
 
   // Planet theme tokens
   const panelBgClass = isMars
@@ -2433,9 +2394,6 @@ export const SurfaceExplorerGame: React.FC<SurfaceExplorerGameProps> = ({
   const dividerClass = isMars ? 'border-[#44403C]' : 'border-[#3F3F46]';
   const accentTextClass = isMars ? 'text-[#D97706]' : 'text-[#BAE6FD]';
   const mutedTextClass = isMars ? 'text-[#A8A29E]' : 'text-[#A1A1AA]';
-  const badgeClass = isMars
-    ? 'bg-[#F5E6D3] text-[#1C140F] border-[#F5E6D3]'
-    : 'bg-[#BAE6FD] text-[#1C1D21] border-[#BAE6FD]';
   const buttonActionClass = isMars
     ? 'bg-[#F5E6D3] hover:bg-[#D97706] text-[#1C140F] shadow-[0_4px_14px_rgba(0,0,0,0.35)]'
     : 'bg-[#BAE6FD] hover:bg-[#E0F2FE] text-[#1C1D21] shadow-none';
@@ -2449,103 +2407,88 @@ export const SurfaceExplorerGame: React.FC<SurfaceExplorerGameProps> = ({
         aria-label={`3D surface exploration of ${artifact.name}`}
       />
 
-      {/* Top-Left: Exit Surface / Return to Orbit */}
-      <div className="absolute top-3 left-2 sm:top-4 sm:left-4 z-30 pointer-events-auto flex items-center gap-2">
+      {/* Top-Left: Exit Button + Minimalist Blue Checklist HUD */}
+      <div className="absolute top-3 left-2 sm:top-4 sm:left-4 z-30 pointer-events-none flex flex-col items-start gap-2.5">
         <button
           onClick={handleExit}
-          className={`min-h-[40px] px-3.5 py-2 rounded-xl text-xs font-mono font-black flex items-center gap-2 active:translate-y-0.5 transition-all ${
-            isMars
-              ? 'bg-[rgba(28,20,15,0.90)] hover:bg-[#291D16] border border-[#57534E] hover:border-[#D97706] text-[#F5E6D3] shadow-[0_6px_20px_rgba(0,0,0,0.45)]'
-              : 'bg-[rgba(28,29,33,0.94)] hover:bg-[#2A2C32] border-2 border-[#BAE6FD] text-[#F4F4F5] shadow-none'
-          }`}
+          className="pointer-events-auto min-h-[40px] px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-2 active:translate-y-0.5 transition-all bg-[rgba(28,29,33,0.94)] hover:bg-[#2A2C32] border-2 border-[#BAE6FD] text-[#F4F4F5] shadow-none"
         >
-          <ArrowLeft className={`w-4 h-4 ${accentTextClass}`} />
+          <ArrowLeft className="w-4 h-4 text-[#BAE6FD]" />
           <span>Exit Surface / Return to Orbit</span>
         </button>
 
-        {/* Top Flashlight Toggle Shortcut Button */}
-        {isEntered && (
-          <button
-            onClick={toggleFlashlight}
-            className={`min-h-[40px] px-3 py-2 rounded-xl text-xs font-mono font-bold flex items-center gap-2 active:translate-y-0.5 transition-all ${
-              isFlashlightOn
-                ? isMars
-                  ? 'bg-[#D97706] text-[#1C140F] border border-[#F5E6D3]'
-                  : 'bg-[#BAE6FD] text-[#1C1D21] border border-[#BAE6FD]'
-                : isMars
-                ? 'bg-[rgba(28,20,15,0.90)] hover:bg-[#291D16] border border-[#57534E] text-[#F5E6D3]'
-                : 'bg-[rgba(28,29,33,0.94)] hover:bg-[#2A2C32] border-2 border-[#BAE6FD] text-[#F4F4F5]'
-            }`}
-            title="Toggle Flashlight (G)"
-          >
-            {isFlashlightOn ? (
-              <Flashlight className="w-4 h-4" />
-            ) : (
-              <FlashlightOff className={`w-4 h-4 ${mutedTextClass}`} />
-            )}
-            <span>Flashlight {isFlashlightOn ? 'ON' : 'OFF'} [G]</span>
-          </button>
-        )}
-      </div>
-
-      {/* Top-Right: Comprehensive Telemetry HUD */}
-      {isEntered && (
-        <div
-          className={`absolute top-3 right-3 sm:top-4 sm:right-4 z-20 pointer-events-none rounded-xl px-3.5 py-2.5 max-w-[290px] ${panelBgClass}`}
-        >
-          <div className="flex items-center justify-between gap-3 text-[10px] font-mono uppercase tracking-widest mb-1">
-            <span className={`font-bold flex items-center gap-1.5 ${accentTextClass}`}>
-              <Compass className="w-3.5 h-3.5" />
-              {isMars ? 'Mars Surface' : 'Lunar Surface'}
-            </span>
-            <span className={mutedTextClass}>{modelSourceLabel}</span>
-          </div>
-
-          <div className="text-xs sm:text-sm font-bold truncate text-[#FFFFFF]">
+        {/* Left Checklist Panel (Clean Blue #BAE6FD Headers & White Lists in Website Typography) */}
+        <div className="pointer-events-auto px-0 py-0 w-[265px] sm:w-[295px] max-h-[calc(100vh-145px)] overflow-y-auto scrollbar-none bg-transparent border-0 text-[#BAE6FD] shadow-none font-sans">
+          <h3 className="text-xs sm:text-sm font-bold truncate text-[#BAE6FD]">
             {artifact.moniker} ({artifact.year})
-          </div>
+          </h3>
 
-          <div className={`text-[11px] font-mono tabular-nums mt-0.5 ${mutedTextClass}`}>
+          <div className="text-[11px] font-sans font-medium tabular-nums mt-0.5 text-[#BAE6FD]">
             {hudCoords}
           </div>
 
-          {/* Site Log Progress */}
-          <div className="mt-1.5 pt-1.5 border-t border-dashed border-white/10 text-[11px] font-mono flex items-center justify-between">
-            <span className={mutedTextClass}>Site Debris Logged:</span>
-            <span className={`font-bold tabular-nums ${accentTextClass}`}>
-              {itemsLoggedCount}/{totalItemsCount}
-            </span>
+          {/* Site Debris Logged */}
+          <div className="mt-2 pt-2">
+            <h4 className="text-xs font-bold flex items-center justify-between text-[#BAE6FD]">
+              <span>Site Debris Logged</span>
+              <span className="tabular-nums font-semibold">
+                {seenItemIds.length}/{siteItemsList.length}
+              </span>
+            </h4>
+            {siteItemsList.length > 0 && (
+              <ul className="mt-1 space-y-0.5 pl-2">
+                {siteItemsList.map((item) => {
+                  const isDone = seenItemIdSet.has(item.id);
+                  return (
+                    <li
+                      key={item.id}
+                      className={`text-[11px] font-sans leading-snug text-[#FFFFFF] ${
+                        isDone
+                          ? 'line-through decoration-[#FFFFFF] decoration-[1.5px] opacity-75'
+                          : ''
+                      }`}
+                    >
+                      {item.name}
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
           </div>
 
-          {/* Spacecraft Components Inspected */}
-          <div className="mt-1 text-[11px] font-mono flex items-center justify-between">
-            <span className={mutedTextClass}>Components Inspected:</span>
-            <span className={`font-bold tabular-nums ${accentTextClass}`}>
-              {partsInspectedCount}/{totalPartsCount}
-            </span>
-          </div>
-
-          {/* Nearest Unread Compass Bearing */}
-          <div className={`mt-1 text-[10.5px] font-mono truncate ${accentTextClass}`}>
-            {nearestInfo}
-          </div>
-
-          {/* Distance to Center Pad */}
-          <div
-            className={`mt-1.5 pt-1.5 border-t ${dividerClass} flex items-center justify-between text-[11px] font-mono`}
-          >
-            <span className={mutedTextClass}>
-              Flashlight: <strong className={isFlashlightOn ? accentTextClass : ''}>{isFlashlightOn ? 'ON' : 'OFF'}</strong>
-            </span>
-            <span className={`font-bold tabular-nums ${accentTextClass}`}>
-              {distanceMeters === 0 ? 'AT SITE' : `${distanceMeters}m away`}
-            </span>
+          {/* Components Inspected */}
+          <div className="mt-2 pt-2">
+            <h4 className="text-xs font-bold flex items-center justify-between text-[#BAE6FD]">
+              <span>Components Inspected</span>
+              <span className="tabular-nums font-semibold">
+                {seenPartIds.length}/{craftPartsList.length}
+              </span>
+            </h4>
+            {craftPartsList.length > 0 && (
+              <ul className="mt-1 space-y-0.5 pl-2">
+                {craftPartsList.map((part) => {
+                  const isDone = seenPartIdSet.has(part.id);
+                  return (
+                    <li
+                      key={part.id}
+                      className={`text-[11px] font-sans leading-snug text-[#FFFFFF] ${
+                        isDone
+                          ? 'line-through decoration-[#FFFFFF] decoration-[1.5px] opacity-75'
+                          : ''
+                      }`}
+                    >
+                      {part.name}
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
           </div>
         </div>
-      )}
+      </div>
 
       {/* Center Reticle & Dynamic Point-to-Inspect Prompt */}
-      {isEntered && !inspectModalTarget && (
+      {!inspectModalTarget && (
         <div className="absolute inset-0 pointer-events-none flex items-center justify-center z-10">
           <div className="relative flex flex-col items-center">
             {/* Crosshair dot with dynamic targeting highlight */}
@@ -2573,7 +2516,7 @@ export const SurfaceExplorerGame: React.FC<SurfaceExplorerGameProps> = ({
             {hoveredTarget && (
               <button
                 onClick={() => openInspection(hoveredTarget)}
-                className={`mt-4 px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-mono font-bold tracking-wide pointer-events-auto flex items-center gap-2 cursor-pointer transition-all active:scale-95 ${
+                className={`mt-4 px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold tracking-wide pointer-events-auto flex items-center gap-2 cursor-pointer transition-all active:scale-95 ${
                   isMars
                     ? 'bg-[rgba(28,20,15,0.92)] border border-[#57534E] text-[#F5E6D3] shadow-[0_8px_24px_rgba(0,0,0,0.6)]'
                     : 'bg-[rgba(28,29,33,0.92)] border-2 border-[#BAE6FD] text-[#F4F4F5] shadow-none'
@@ -2581,7 +2524,7 @@ export const SurfaceExplorerGame: React.FC<SurfaceExplorerGameProps> = ({
               >
                 <Eye className={`w-4 h-4 ${accentTextClass}`} />
                 <span>
-                  Press <strong className={accentTextClass}>[E]</strong> to inspect {hoveredTarget.name}
+                  Press <strong className={accentTextClass}>[E]</strong> to hear about {hoveredTarget.name}
                 </span>
               </button>
             )}
@@ -2590,8 +2533,8 @@ export const SurfaceExplorerGame: React.FC<SurfaceExplorerGameProps> = ({
       )}
 
       {/* Point-and-Inspect Educational Modal / Plaque */}
-      {isEntered && inspectModalTarget && (
-        <div className="absolute inset-x-4 bottom-20 sm:bottom-24 z-30 flex justify-center pointer-events-none">
+      {inspectModalTarget && (
+        <div className="absolute inset-x-4 bottom-20 sm:bottom-24 z-30 flex justify-center pointer-events-none font-sans">
           <div
             className={`pointer-events-auto w-full max-w-xl rounded-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 ${panelBgClass}`}
           >
@@ -2600,11 +2543,11 @@ export const SurfaceExplorerGame: React.FC<SurfaceExplorerGameProps> = ({
             >
               <div className="min-w-0">
                 <div
-                  className={`flex items-center gap-1.5 text-[10px] font-mono font-bold uppercase tracking-widest ${accentTextClass}`}
+                  className={`flex items-center gap-1.5 text-[10px] font-sans font-bold uppercase tracking-widest ${accentTextClass}`}
                 >
                   <Info className="w-3.5 h-3.5 shrink-0" />
                   <span>
-                    {artifact.nssdcaId || artifact.catalogRef || artifact.moniker} · {artifact.year}
+                    {artifact.moniker} · {artifact.nssdcaId || artifact.catalogRef || artifact.year}
                   </span>
                 </div>
                 <h2 className="text-base sm:text-lg font-bold tracking-tight mt-0.5 leading-snug text-[#FFFFFF]">
@@ -2624,7 +2567,7 @@ export const SurfaceExplorerGame: React.FC<SurfaceExplorerGameProps> = ({
               </button>
             </div>
 
-            <div className="p-4 sm:p-5">
+            <div className="p-4 sm:p-5 font-sans">
               <p className="text-xs sm:text-sm leading-relaxed max-h-48 overflow-y-auto pr-1">
                 {inspectModalTarget.text}
               </p>
@@ -2637,19 +2580,19 @@ export const SurfaceExplorerGame: React.FC<SurfaceExplorerGameProps> = ({
                       : 'bg-[#27282D] border-[#3F3F46] text-[#E4E4E7]'
                   }`}
                 >
-                  <strong className={accentTextClass}>Why it matters: </strong>
+                  <strong className={accentTextClass}>What I Helped Prove: </strong>
                   <span>{inspectModalTarget.why}</span>
                 </div>
               )}
 
               {inspectModalTarget.status && (
-                <div className={`mt-2 text-[11px] font-mono italic ${mutedTextClass}`}>
-                  Status: {inspectModalTarget.status}
+                <div className={`mt-2 text-[11px] font-sans italic ${mutedTextClass}`}>
+                  Right now: {inspectModalTarget.status}
                 </div>
               )}
 
               <div
-                className={`mt-4 pt-3 border-t ${dividerClass} flex items-center justify-between gap-2 text-[11px] font-mono`}
+                className={`mt-4 pt-3 border-t ${dividerClass} flex items-center justify-between gap-2 text-[11px] font-sans`}
               >
                 <span className={mutedTextClass}>
                   Press <strong className={accentTextClass}>[E]</strong> or click button to close
@@ -2667,128 +2610,44 @@ export const SurfaceExplorerGame: React.FC<SurfaceExplorerGameProps> = ({
       )}
 
       {/* Bottom Controls Hint Bar (Ergonomic, non-obstructive) */}
-      {isEntered && (
-        <div className="absolute bottom-4 inset-x-4 z-20 flex justify-center pointer-events-none">
-          <div
-            className={`px-4 py-2 rounded-xl text-[11px] sm:text-xs font-mono flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 ${panelBgClass}`}
-          >
-            <span>
-              <strong className={accentTextClass}>WASD / Arrows</strong> Move
-            </span>
-            <span>
-              <strong className={accentTextClass}>
-                {isPointerLocked ? 'Mouse' : 'Click/Drag'}
-              </strong>{' '}
-              Look
-            </span>
-            <span>
-              <strong className={accentTextClass}>Shift</strong> Run
-            </span>
-            <span>
-              <strong className={accentTextClass}>Space</strong> Jump
-            </span>
-            <span>
-              <strong className={accentTextClass}>E</strong> Inspect Targeted Object
-            </span>
-            <button
-              onClick={toggleFlashlight}
-              className={`pointer-events-auto px-2 py-0.5 rounded border transition-colors ${
-                isFlashlightOn
-                  ? isMars
-                    ? 'bg-[#D97706] text-[#1C140F] border-[#F5E6D3]'
-                    : 'bg-[#BAE6FD] text-[#1C1D21] border-[#BAE6FD]'
-                  : isMars
-                  ? 'border-[#57534E] text-[#F5E6D3]'
-                  : 'border-[#BAE6FD] text-[#F4F4F5]'
-              }`}
-            >
-              <strong className={accentTextClass}>G</strong> Flashlight ({isFlashlightOn ? 'ON' : 'OFF'})
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Initial Landing Briefing Overlay */}
-      {!isEntered && (
+      <div className="absolute bottom-4 inset-x-4 z-20 flex justify-center pointer-events-none">
         <div
-          className={`absolute inset-0 z-20 flex items-center justify-center p-4 ${
-            isMars ? 'bg-[#1C140F]/65' : 'bg-[#090A0D]/65'
-          }`}
+          className={`px-4 py-2 rounded-xl text-[11px] sm:text-xs font-sans flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 ${panelBgClass}`}
         >
-          <div
-            className={`w-full max-w-md rounded-3xl overflow-hidden ${
-              isMars
-                ? 'bg-[#291D16] border border-[#57534E] text-[#F5E6D3] shadow-[0_16px_48px_rgba(0,0,0,0.65)]'
-                : 'bg-[#1C1D21] border-2 border-[#BAE6FD] text-[#F4F4F5] shadow-none'
+          <span>
+            <strong className={accentTextClass}>WASD / Arrows</strong> Move
+          </span>
+          <span>
+            <strong className={accentTextClass}>
+              {isPointerLocked ? 'Mouse' : 'Click/Drag'}
+            </strong>{' '}
+            Look
+          </span>
+          <span>
+            <strong className={accentTextClass}>Shift</strong> Run
+          </span>
+          <span>
+            <strong className={accentTextClass}>Space</strong> Jump
+          </span>
+          <span>
+            <strong className={accentTextClass}>E</strong> Inspect Targeted Object
+          </span>
+          <button
+            onClick={toggleFlashlight}
+            className={`pointer-events-auto px-2 py-0.5 rounded border transition-colors ${
+              isFlashlightOn
+                ? isMars
+                  ? 'bg-[#D97706] text-[#1C140F] border-[#F5E6D3]'
+                  : 'bg-[#BAE6FD] text-[#1C1D21] border-[#BAE6FD]'
+                : isMars
+                ? 'border-[#57534E] text-[#F5E6D3]'
+                : 'border-[#BAE6FD] text-[#F4F4F5]'
             }`}
           >
-            <div
-              className={`px-6 py-4 flex items-center justify-between gap-2 ${
-                isMars
-                  ? 'bg-[#1C140F] border-b border-[#44403C]'
-                  : 'bg-[#27282D] border-b border-[#3F3F46]'
-              }`}
-            >
-              <div className="flex items-center gap-2">
-                <span
-                  className={`px-2 py-0.5 rounded-full border text-[10px] font-mono font-bold uppercase tracking-wider ${badgeClass}`}
-                >
-                  {isMars ? 'MARS EVA' : 'LUNAR EVA'}
-                </span>
-                <span className={`text-xs font-mono ${mutedTextClass}`}>
-                  {artifact.year} • {artifact.agency}
-                </span>
-              </div>
-              <Footprints className={`w-4 h-4 ${accentTextClass}`} />
-            </div>
-
-            <div className="p-6">
-              <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-[#FFFFFF]">
-                {artifact.name}
-              </h2>
-              <p className={`text-xs font-mono mt-1 ${mutedTextClass}`}>
-                {artifact.locationName}
-              </p>
-              <p className={`text-xs font-mono mt-0.5 ${accentTextClass}`}>
-                {artifact.coordinates.display}
-              </p>
-
-              <p className="text-sm mt-4 leading-relaxed">
-                Step onto the {isMars ? 'Martian regolith' : 'lunar regolith'} to walk the historic site. Aim your crosshair at spacecraft parts and companion equipment to point and inspect what each object is!
-              </p>
-
-              <div
-                className={`mt-4 p-3.5 rounded-2xl border text-xs font-mono space-y-1.5 ${
-                  isMars
-                    ? 'bg-[#1C140F] border-[#44403C]'
-                    : 'bg-[#27282D] border-[#3F3F46]'
-                }`}
-              >
-                <div>
-                  <strong className={accentTextClass}>Aim Crosshair:</strong> Points to parts and reveals their identity
-                </div>
-                <div>
-                  <strong className={accentTextClass}>Press [E]:</strong> Inspect highlighted object in detail
-                </div>
-                <div>
-                  <strong className={accentTextClass}>Press [G]:</strong> Toggle night/shadow Flashlight
-                </div>
-                <div>
-                  <strong className={accentTextClass}>WASD / Space / Shift:</strong> Walk, Jump, Run
-                </div>
-              </div>
-
-              <button
-                onClick={handleEnterSurface}
-                className={`mt-5 w-full py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all ${buttonActionClass}`}
-              >
-                <MousePointerClick className="w-4 h-4" />
-                <span>Walk the Site</span>
-              </button>
-            </div>
-          </div>
+            <strong className={accentTextClass}>G</strong> Flashlight ({isFlashlightOn ? 'ON' : 'OFF'})
+          </button>
         </div>
-      )}
+      </div>
     </div>
   );
 };

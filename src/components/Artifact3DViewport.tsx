@@ -20,7 +20,7 @@ import {
   AlertTriangle,
   Radio,
 } from 'lucide-react';
-import { playTelemetryBeep, playSuccessChime } from '../utils/audio';
+import { playWhooshSound } from '../utils/audio';
 
 export type ModelViewportStatus = 'loading' | 'glb_loaded' | 'hologram_fallback';
 
@@ -544,7 +544,7 @@ const SpacecraftCanvas3D: React.FC<{
 
           setViewportStatus('glb_loaded');
           setShowPhotoOverlay(false);
-          playSuccessChime();
+          playWhooshSound('in');
           dracoLoader.dispose();
         })
         .catch(() => {
@@ -632,7 +632,7 @@ const SpacecraftCanvas3D: React.FC<{
   }, [artifact, asset.modelPath, isMars]);
 
   const handleResetCamera = () => {
-    playTelemetryBeep(520);
+    playWhooshSound('ui');
     if (cameraRef.current && controlsRef.current) {
       cameraRef.current.position.set(4.1, 2.1, 4.4);
       controlsRef.current.target.set(0, 0, 0);
@@ -661,7 +661,7 @@ const SpacecraftCanvas3D: React.FC<{
       <div className="absolute top-4 left-4 z-10 flex flex-wrap items-center gap-2">
         <button
           onClick={() => {
-            playTelemetryBeep(550);
+            playWhooshSound('ui');
             onToggleAutoRotate();
           }}
           className={`px-3 py-1.5 rounded-full border text-[11px] font-mono font-bold flex items-center gap-1.5 transition-colors ${
@@ -695,7 +695,7 @@ const SpacecraftCanvas3D: React.FC<{
         {artifact.imageUrl && (
           <button
             onClick={() => {
-              playTelemetryBeep(480);
+              playWhooshSound('ui');
               setShowPhotoOverlay((prev) => !prev);
             }}
             className={`px-3 py-1.5 rounded-full border text-[11px] font-mono font-bold flex items-center gap-1.5 transition-colors ${
