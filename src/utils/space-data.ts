@@ -670,6 +670,7 @@ export const MARS_ARTIFACTS: Artifact[] = [
       size: '1.6 m × 2.3 m (golf-cart sized)',
       power: 'Solar wings + Li-ion batteries',
     },
+    model3dUrl: '/models/Mars%20Exploration%20Rover%20-%20Opportunity%20(MER-B).glb',
     nasa3dResourceUrl: 'https://github.com/nasa/NASA-3D-Resources',
   },
   {
@@ -1276,7 +1277,6 @@ export const DEEP_SPACE_ARTIFACTS: Artifact[] = [
       size: '19.7 m (65 ft) solar wingspan',
       power: 'Giant twin solar arrays + 3 Xenon Ion engines',
     },
-    model3dUrl: '/models/Dawn.glb',
     nasa3dResourceUrl: 'https://github.com/nasa/NASA-3D-Resources',
   },
   {

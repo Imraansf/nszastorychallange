@@ -71,11 +71,10 @@ export const SPACECRAFT_MODEL_REGISTRY: Record<string, SpacecraftModelAsset> = {
   },
   'spirit-and-opportunity': {
     artifactId: 'spirit-and-opportunity',
-    modelPath: null,
-    pendingExportSource: 'Mars Exploration Rover - Spirit and Opportunity.blend',
-    assetLabel: 'Telemetry Hologram (Pending .blend → .glb Export)',
+    modelPath: '/models/Mars%20Exploration%20Rover%20-%20Opportunity%20(MER-B).glb',
+    assetLabel: 'Mars Exploration Rover - Opportunity (MER-B) (.glb)',
     fallbackReason:
-      'Awaiting .glb export from Mars Exploration Rover - Spirit and Opportunity.blend — showing wireframe hologram & NASA archival photo.',
+      'NASA Horizon Telemetry Wireframe & MER Spirit/Opportunity Archival Imagery active.',
   },
   'mars-pathfinder-sojourner': {
     artifactId: 'mars-pathfinder-sojourner',
@@ -95,10 +94,10 @@ export const SPACECRAFT_MODEL_REGISTRY: Record<string, SpacecraftModelAsset> = {
   // Deep Space Artifacts
   dawn: {
     artifactId: 'dawn',
-    modelPath: '/models/Dawn.glb',
-    assetLabel: 'Dawn Orbiter Spacecraft (.glb)',
+    modelPath: null,
+    assetLabel: 'Telemetry Hologram & Archival Preview',
     fallbackReason:
-      'NASA Horizon Telemetry Wireframe & Dawn Archival Imagery active.',
+      'No local .glb mapped yet — displaying Horizon telemetry hologram & official NASA archival photo.',
   },
   'near-shoemaker': {
     artifactId: 'near-shoemaker',

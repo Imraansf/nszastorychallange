@@ -525,10 +525,11 @@ const SpacecraftCanvas3D: React.FC<{
                 ? mesh.material
                 : [mesh.material];
               mats.forEach((m) => {
+                m.side = THREE.DoubleSide;
                 if (m instanceof THREE.MeshStandardMaterial) {
                   m.envMapIntensity = 1.15;
-                  m.needsUpdate = true;
                 }
+                m.needsUpdate = true;
               });
             }
           });

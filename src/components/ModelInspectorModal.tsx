@@ -332,7 +332,7 @@ export const ModelInspectorModal: React.FC<ModelInspectorModalProps> = ({
                       <CheckCircle className="w-3 h-3" /> GLB PBR ACTIVE
                     </span>
                   ) : viewportStatus === 'loading' ? (
-                    <span className={`animate-pulse font-bold ${isMars ? 'text-[#FFFFFF]' : 'text-[#BAE6FD]'}`}>
+                    <span className={`font-bold ${isMars ? 'text-[#FFFFFF]' : 'text-[#BAE6FD]'}`}>
                       STREAMING GLB...
                     </span>
                   ) : (

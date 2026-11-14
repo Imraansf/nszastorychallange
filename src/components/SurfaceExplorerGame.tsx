@@ -2,7 +2,6 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
-import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { Artifact } from '../types/space';
 import {
   ArrowLeft,
@@ -43,64 +42,56 @@ interface CraterDef {
   x: number;
   z: number;
   r: number;
-  d: number;
 }
 
 function buildCraters(seedStr: string): CraterDef[] {
-  const rand = createSeededRandom(seedStr + '-craters');
+  const rand = createSeededRandom(seedStr + '-craters-v2');
   const craters: CraterDef[] = [];
-  for (let i = 0; i < 42; i++) {
-    const angle = rand() * Math.PI * 2;
-    const dist = 16 + rand() * 98;
-    const r = 2.2 + Math.pow(rand(), 1.7) * 14;
-    const d = (0.28 + rand() * 0.72) * Math.min(2.6, r * 0.22);
+  for (let i = 0; i < 170; i++) {
+    const a = rand() * 6.283185;
+    const d = 30 + Math.pow(rand(), 0.7) * 480;
     craters.push({
-      x: Math.cos(angle) * dist,
-      z: Math.sin(angle) * dist,
-      r,
-      d,
+      x: Math.cos(a) * d,
+      z: Math.sin(a) * d,
+      r: 1.5 + Math.pow(rand(), 3) * 38,
     });
   }
+  // Landmark medium craters around the horizon
+  craters.push(
+    { x: -60, z: -40, r: 14 },
+    { x: 75, z: 30, r: 9 },
+    { x: 30, z: -95, r: 22 }
+  );
   return craters;
 }
 
 function createHeightSampler(craters: CraterDef[], isMars: boolean) {
-  const hillAmp = isMars ? 0.55 : 0.42;
+  const undulationScale = isMars ? 1.15 : 1.0;
   return (x: number, z: number): number => {
-    // Base gentle undulation
-    let y =
-      Math.sin(x * 0.045) * Math.cos(z * 0.042) * hillAmp +
-      Math.sin(x * 0.11 + z * 0.08) * 0.14 +
-      Math.cos(x * 0.23 - z * 0.19) * 0.04;
+    let h =
+      (Math.sin(x * 0.021) * Math.cos(z * 0.017) * 0.7 +
+        Math.sin(x * 0.07 + z * 0.05) * 0.12 +
+        Math.sin(x * 0.19) * Math.sin(z * 0.23) * 0.04) *
+      undulationScale;
 
-    // Craters (bowl + raised rim)
     for (let i = 0; i < craters.length; i++) {
       const c = craters[i];
       const dx = x - c.x;
       const dz = z - c.z;
       const distSq = dx * dx + dz * dz;
-      const outerR = c.r * 1.45;
-      if (distSq < outerR * outerR) {
-        const dist = Math.sqrt(distSq);
-        const norm = dist / c.r;
-        if (norm < 1.0) {
-          // Bowl
-          y -= c.d * (1 - norm * norm);
-        }
-        // Rim lip around norm ~ 1.05
-        const rimDelta = norm - 1.05;
-        y += c.d * 0.28 * Math.exp(-(rimDelta * rimDelta) / 0.045);
+      const maxDist = c.r * 1.6;
+      if (distSq < maxDist * maxDist) {
+        const r = Math.sqrt(distSq) / c.r;
+        h +=
+          r < 1
+            ? -c.r * 0.2 * (1 - r * r) + c.r * 0.03 * r * r * r
+            : c.r * 0.03 * Math.exp(-(r - 1) * 5);
       }
     }
 
-    // Flatten immediate spacecraft touchdown pad (radius 7.5m -> smooth blend to 14m)
-    const padDist = Math.hypot(x, z);
-    if (padDist < 14) {
-      const blend = THREE.MathUtils.smoothstep(padDist, 5.5, 14);
-      y *= blend;
-    }
-
-    return y;
+    // Smooth flat touchdown pad inside 14m, blending to full terrain relief by 44m
+    const f = Math.min(1, Math.max(0, (Math.hypot(x, z) - 14) / 30));
+    return h * f;
   };
 }
 
@@ -111,51 +102,24 @@ function createRegolithTexture(isMars: boolean, anisotropy: number): THREE.Canva
   canvas.height = size;
   const ctx = canvas.getContext('2d');
   if (ctx) {
-    ctx.fillStyle = isMars ? '#8e4526' : '#6c6f75';
+    // High-density micro-grit regolith used as both diffuse map and bumpMap
+    ctx.fillStyle = isMars ? '#b36b47' : '#b2afa7';
     ctx.fillRect(0, 0, size, size);
 
-    const rand = createSeededRandom(isMars ? 'mars-regolith' : 'moon-regolith');
-
-    // Subtle wind ripples on Mars or dust patches on Moon
-    for (let i = 0; i < 420; i++) {
-      const x = rand() * size;
-      const y = rand() * size;
-      const rx = isMars ? 18 + rand() * 36 : 8 + rand() * 20;
-      const ry = isMars ? 4 + rand() * 8 : rx * (0.7 + rand() * 0.5);
-      ctx.fillStyle = isMars
-        ? rand() > 0.5
-          ? 'rgba(194, 108, 63, 0.14)'
-          : 'rgba(92, 40, 20, 0.16)'
-        : rand() > 0.5
-        ? 'rgba(155, 160, 168, 0.12)'
-        : 'rgba(65, 68, 74, 0.14)';
-      ctx.beginPath();
-      ctx.ellipse(x, y, rx, ry, isMars ? 0.25 : rand() * Math.PI, 0, Math.PI * 2);
-      ctx.fill();
-    }
-
-    // Fine mineral & grit speckle
-    for (let i = 0; i < 6500; i++) {
-      const x = rand() * size;
-      const y = rand() * size;
-      const r = 0.5 + rand() * 1.8;
-      const light = rand();
+    const rand = createSeededRandom(isMars ? 'mars-regolith-v2' : 'moon-regolith-v2');
+    for (let i = 0; i < 26000; i++) {
+      const v = (88 + rand() * 155) | 0;
+      const alpha = 0.25 + rand() * 0.42;
       if (isMars) {
-        ctx.fillStyle =
-          light > 0.65
-            ? 'rgba(218, 138, 86, 0.28)'
-            : light < 0.3
-            ? 'rgba(62, 27, 14, 0.32)'
-            : 'rgba(150, 74, 42, 0.24)';
+        const r = Math.min(255, Math.round(v * 1.08));
+        const g = Math.round(v * 0.56);
+        const b = Math.round(v * 0.34);
+        ctx.fillStyle = `rgba(${r},${g},${b},${alpha})`;
       } else {
-        ctx.fillStyle =
-          light > 0.65
-            ? 'rgba(205, 210, 218, 0.24)'
-            : light < 0.3
-            ? 'rgba(42, 45, 50, 0.28)'
-            : 'rgba(120, 124, 130, 0.22)';
+        ctx.fillStyle = `rgba(${v},${v - 2},${v - 6},${alpha})`;
       }
-      ctx.fillRect(x, y, r, r);
+      const s = rand() < 0.97 ? 1 : 2 + rand() * 2;
+      ctx.fillRect(rand() * size, rand() * size, s, s);
     }
   }
 
@@ -163,32 +127,114 @@ function createRegolithTexture(isMars: boolean, anisotropy: number): THREE.Canva
   tex.colorSpace = THREE.SRGBColorSpace;
   tex.wrapS = THREE.RepeatWrapping;
   tex.wrapT = THREE.RepeatWrapping;
-  tex.repeat.set(36, 36);
-  tex.anisotropy = anisotropy;
+  tex.repeat.set(140, 140);
+  tex.anisotropy = Math.min(8, anisotropy);
   return tex;
 }
 
-function createFootprintTexture(isMars: boolean): THREE.CanvasTexture {
+function createRadialDiscSprite(
+  innerColor: string,
+  outerGlowColor: string,
+  scale: number,
+  position: THREE.Vector3
+): { sprite: THREE.Sprite; texture: THREE.CanvasTexture; material: THREE.SpriteMaterial } {
   const canvas = document.createElement('canvas');
-  canvas.width = 64;
+  canvas.width = 128;
   canvas.height = 128;
   const ctx = canvas.getContext('2d');
   if (ctx) {
-    ctx.clearRect(0, 0, 64, 128);
-    ctx.fillStyle = isMars ? 'rgba(62, 26, 12, 0.55)' : 'rgba(32, 35, 40, 0.58)';
-    ctx.beginPath();
-    ctx.ellipse(32, 64, 18, 42, 0, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Boot tread bars
-    ctx.fillStyle = isMars ? 'rgba(42, 16, 6, 0.7)' : 'rgba(18, 20, 24, 0.72)';
-    for (let y = 30; y <= 98; y += 11) {
-      ctx.fillRect(18, y, 28, 4);
-    }
+    const grad = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
+    grad.addColorStop(0, innerColor);
+    grad.addColorStop(0.55, innerColor);
+    grad.addColorStop(0.6, outerGlowColor);
+    grad.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 128, 128);
   }
-  const tex = new THREE.CanvasTexture(canvas);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  return tex;
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  const material = new THREE.SpriteMaterial({
+    map: texture,
+    depthWrite: false,
+    fog: false,
+  });
+  const sprite = new THREE.Sprite(material);
+  sprite.scale.setScalar(scale);
+  sprite.position.copy(position);
+  return { sprite, texture, material };
+}
+
+/**
+ * Builds an authentic Space/Planetary PMREM environment map for metallic reflections
+ * (Kapton gold foil, brushed aluminum, solar arrays) without white studio washout.
+ */
+function buildSpaceEnvironment(
+  renderer: THREE.WebGLRenderer,
+  sunDir: THREE.Vector3,
+  isMars: boolean
+): THREE.WebGLRenderTarget {
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  const envScene = new THREE.Scene();
+  envScene.background = new THREE.Color(isMars ? 0x3b1c0e : 0x000000);
+
+  // Bright Sun reflection hotspot in true sun direction
+  const sunSphereGeo = new THREE.SphereGeometry(4, 16, 12);
+  const sunSphereMat = new THREE.MeshBasicMaterial({
+    color: isMars ? 0xffe4c4 : 0xfff8ea,
+  });
+  const sunSphere = new THREE.Mesh(sunSphereGeo, sunSphereMat);
+  sunSphere.position.copy(sunDir).multiplyScalar(42);
+  envScene.add(sunSphere);
+
+  // Subtle ground bounce plane below horizon so undersides of metallic struts catch regolith bounce
+  const groundBounceGeo = new THREE.CircleGeometry(60, 24);
+  groundBounceGeo.rotateX(-Math.PI / 2);
+  const groundBounceMat = new THREE.MeshBasicMaterial({
+    color: isMars ? 0x6b321a : 0x262420,
+    side: THREE.DoubleSide,
+  });
+  const groundBounce = new THREE.Mesh(groundBounceGeo, groundBounceMat);
+  groundBounce.position.y = -10;
+  envScene.add(groundBounce);
+
+  let earthSphereGeo: THREE.SphereGeometry | null = null;
+  let earthSphereMat: THREE.MeshBasicMaterial | null = null;
+  if (!isMars) {
+    // Cool Earthshine reflection accent in lunar sky
+    earthSphereGeo = new THREE.SphereGeometry(3.2, 16, 12);
+    earthSphereMat = new THREE.MeshBasicMaterial({ color: 0x4f86c8 });
+    const earthSphere = new THREE.Mesh(earthSphereGeo, earthSphereMat);
+    earthSphere.position.set(-1, 2.3, 0).normalize().multiplyScalar(40);
+    envScene.add(earthSphere);
+  } else {
+    // Warm butterscotch upper atmospheric dome for Mars metallic reflections
+    const skyGlowGeo = new THREE.SphereGeometry(55, 20, 12);
+    const skyGlowMat = new THREE.MeshBasicMaterial({
+      color: 0x8f4e2e,
+      side: THREE.BackSide,
+    });
+    const skyGlow = new THREE.Mesh(skyGlowGeo, skyGlowMat);
+    envScene.add(skyGlow);
+  }
+
+  const rt = pmrem.fromScene(envScene, 0.04);
+
+  sunSphereGeo.dispose();
+  sunSphereMat.dispose();
+  groundBounceGeo.dispose();
+  groundBounceMat.dispose();
+  earthSphereGeo?.dispose();
+  earthSphereMat?.dispose();
+  envScene.traverse((obj) => {
+    const mesh = obj as THREE.Mesh;
+    mesh.geometry?.dispose?.();
+    if (mesh.material && !Array.isArray(mesh.material)) {
+      mesh.material.dispose();
+    }
+  });
+  pmrem.dispose();
+
+  return rt;
 }
 
 function disposeObject3D(root: THREE.Object3D) {
@@ -204,6 +250,7 @@ function disposeObject3D(root: THREE.Object3D) {
         const std = m as THREE.MeshStandardMaterial;
         std.map?.dispose();
         std.normalMap?.dispose();
+        std.bumpMap?.dispose();
         std.roughnessMap?.dispose();
         std.metalnessMap?.dispose();
         std.emissiveMap?.dispose();
@@ -225,24 +272,24 @@ function buildProceduralSpacecraft(artifact: Artifact): {
   const companionGroup = new THREE.Group();
 
   const goldKaptonMat = new THREE.MeshStandardMaterial({
-    color: 0xeab308,
-    metalness: 0.88,
-    roughness: 0.25,
+    color: 0xc9a24b,
+    metalness: 0.9,
+    roughness: 0.35,
   });
   const silverAluminumMat = new THREE.MeshStandardMaterial({
-    color: 0xdbe2ea,
-    metalness: 0.84,
-    roughness: 0.34,
+    color: 0xd0d4da,
+    metalness: 0.78,
+    roughness: 0.38,
   });
   const darkSolarCellMat = new THREE.MeshStandardMaterial({
     color: 0x0f172a,
-    metalness: 0.9,
-    roughness: 0.18,
+    metalness: 0.85,
+    roughness: 0.22,
   });
   const blackCompositeMat = new THREE.MeshStandardMaterial({
-    color: 0x1e293b,
-    metalness: 0.35,
-    roughness: 0.72,
+    color: 0x1a1a1c,
+    metalness: 0.25,
+    roughness: 0.65,
   });
   const copperMat = new THREE.MeshStandardMaterial({
     color: 0xd97706,
@@ -250,33 +297,32 @@ function buildProceduralSpacecraft(artifact: Artifact): {
     roughness: 0.28,
   });
   const whiteThermalMat = new THREE.MeshStandardMaterial({
-    color: 0xf1f5f9,
-    metalness: 0.15,
-    roughness: 0.55,
+    color: 0xe9e9e6,
+    metalness: 0.05,
+    roughness: 0.78,
   });
   const lensCyanMat = new THREE.MeshStandardMaterial({
     color: 0x38bdf8,
-    metalness: 0.9,
-    roughness: 0.1,
+    metalness: 0.85,
+    roughness: 0.15,
     emissive: 0x0284c7,
-    emissiveIntensity: 0.35,
+    emissiveIntensity: 0.3,
   });
 
   const id = artifact.id;
-  let targetScale = 3.6;
+  let targetScale = 3.4;
   let craftRadius = 3.2;
 
   if (artifact.category === 'apollo_crewed') {
-    targetScale = 5.4;
-    craftRadius = 3.8;
+    targetScale = 7.0;
+    craftRadius = 4.4;
 
-    // Octagonal Descent Stage sitting on 4 splayed legs (footpads at y = 0)
+    // Octagonal Descent Stage sitting on 4 splayed legs
     const octGeo = new THREE.CylinderGeometry(1.75, 1.75, 1.35, 8);
     const octMesh = new THREE.Mesh(octGeo, goldKaptonMat);
     octMesh.position.y = 1.65;
     craftGroup.add(octMesh);
 
-    // Top deck thermal shield & ascent ring
     const deckGeo = new THREE.CylinderGeometry(1.55, 1.72, 0.18, 8);
     const deck = new THREE.Mesh(deckGeo, silverAluminumMat);
     deck.position.y = 2.4;
@@ -288,13 +334,11 @@ function buildProceduralSpacecraft(artifact: Artifact): {
     ring.position.y = 2.54;
     craftGroup.add(ring);
 
-    // Descent Engine Bell
     const engineGeo = new THREE.ConeGeometry(0.82, 1.15, 24, 1, true);
     const engine = new THREE.Mesh(engineGeo, blackCompositeMat);
     engine.position.y = 0.85;
     craftGroup.add(engine);
 
-    // 4 Outrigger Legs + Footpads
     const legAngles = [
       Math.PI / 4,
       (3 * Math.PI) / 4,
@@ -308,7 +352,6 @@ function buildProceduralSpacecraft(artifact: Artifact): {
       const tx = Math.cos(angle) * 1.45;
       const tz = Math.sin(angle) * 1.45;
 
-      // Primary vertical-angled strut
       const pTop = new THREE.Vector3(tx, 2.05, tz);
       const pBot = new THREE.Vector3(fx, 0.14, fz);
       const dir = new THREE.Vector3().subVectors(pBot, pTop);
@@ -319,7 +362,6 @@ function buildProceduralSpacecraft(artifact: Artifact): {
       strut.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.clone().normalize());
       craftGroup.add(strut);
 
-      // Horizontal brace strut
       const pMid = new THREE.Vector3(tx * 1.05, 1.05, tz * 1.05);
       const braceDir = new THREE.Vector3().subVectors(pBot, pMid);
       const braceGeo = new THREE.CylinderGeometry(0.04, 0.04, braceDir.length(), 8);
@@ -331,13 +373,11 @@ function buildProceduralSpacecraft(artifact: Artifact): {
       );
       craftGroup.add(brace);
 
-      // Circular lunar footpad
       const padGeo = new THREE.CylinderGeometry(0.42, 0.48, 0.09, 18);
       const pad = new THREE.Mesh(padGeo, goldKaptonMat);
       pad.position.set(fx, 0.045, fz);
       craftGroup.add(pad);
 
-      // Ladder & Lunar Plaque on forward leg (idx === 0)
       if (idx === 0) {
         const railGeo = new THREE.CylinderGeometry(0.02, 0.02, 1.85, 8);
         const r1 = new THREE.Mesh(railGeo, silverAluminumMat);
@@ -356,55 +396,135 @@ function buildProceduralSpacecraft(artifact: Artifact): {
       }
     });
 
-    // Companion surface artifacts placed safely at ~5m from center
+    // Companion surface artifacts
     if (id === 'apollo-11-eagle-easep') {
-      // Lunar Flag Assembly
+      // United States flag (rests knocked over in dust from ascent exhaust)
+      const flagCanvas = document.createElement('canvas');
+      flagCanvas.width = 260;
+      flagCanvas.height = 170;
+      const fctx = flagCanvas.getContext('2d');
+      if (fctx) {
+        for (let i = 0; i < 13; i++) {
+          fctx.fillStyle = i % 2 ? '#f2f2f2' : '#b22234';
+          fctx.fillRect(0, i * 13, 260, 13);
+        }
+        fctx.fillStyle = '#3c3b6e';
+        fctx.fillRect(0, 0, 104, 91);
+        fctx.fillStyle = '#ffffff';
+        for (let i = 0; i < 9; i++) {
+          for (let j = 0; j < 6; j++) {
+            fctx.fillRect(8 + j * 16, 6 + i * 9, 3, 3);
+          }
+        }
+      }
+      const flagTex = new THREE.CanvasTexture(flagCanvas);
+      flagTex.colorSpace = THREE.SRGBColorSpace;
       const flagGroup = new THREE.Group();
-      flagGroup.position.set(5.2, 0, 3.6);
-      const pole = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.025, 0.025, 2.2, 8),
+      flagGroup.position.set(-8.5, 0, -5);
+      const flagMesh = new THREE.Mesh(
+        new THREE.PlaneGeometry(1.5, 0.95),
+        new THREE.MeshStandardMaterial({
+          map: flagTex,
+          side: THREE.DoubleSide,
+          roughness: 0.95,
+        })
+      );
+      flagMesh.rotation.x = -Math.PI / 2 + 0.12;
+      flagMesh.position.set(0.9, 0.1, 0);
+      const flagPole = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.015, 0.015, 2.1, 6),
         silverAluminumMat
       );
-      pole.position.y = 1.1;
-      const crossbar = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.015, 0.015, 1.15, 8),
-        silverAluminumMat
-      );
-      crossbar.rotation.z = Math.PI / 2;
-      crossbar.position.set(0.57, 2.16, 0);
-      const banner = new THREE.Mesh(
-        new THREE.BoxGeometry(1.1, 0.68, 0.02),
-        new THREE.MeshStandardMaterial({ color: 0xb91c1c, roughness: 0.8 })
-      );
-      banner.position.set(0.57, 1.82, 0);
-      const canton = new THREE.Mesh(
-        new THREE.BoxGeometry(0.46, 0.36, 0.026),
-        new THREE.MeshStandardMaterial({ color: 0x1d4ed8, roughness: 0.8 })
-      );
-      canton.position.set(0.25, 1.98, 0);
-      flagGroup.add(pole, crossbar, banner, canton);
+      flagPole.rotation.z = Math.PI / 2;
+      flagPole.position.set(0.3, 0.08, -0.5);
+      flagGroup.add(flagMesh, flagPole);
       companionGroup.add(flagGroup);
 
-      // EASEP Laser Ranging Retroreflector (LRRR)
-      const lrrrGroup = new THREE.Group();
-      lrrrGroup.position.set(-4.6, 0, 4.2);
-      const lrrrStand = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.18, 0.32, 0.35, 8),
+      // PSEP Gold Foil Seismometer
+      const psep = new THREE.Group();
+      psep.position.set(16, 0, -4);
+      const psepBox = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.35, 0.7), goldKaptonMat);
+      psepBox.position.y = 0.3;
+      const psepDish = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.3, 0.3, 0.03, 12),
         silverAluminumMat
       );
-      lrrrStand.position.y = 0.175;
-      const lrrrArray = new THREE.Mesh(
-        new THREE.BoxGeometry(0.55, 0.08, 0.45),
-        lensCyanMat
+      psepDish.position.y = 0.5;
+      psepDish.rotation.x = 0.15;
+      psep.add(psepBox, psepDish);
+      companionGroup.add(psep);
+
+      // EASEP Laser Ranging Retroreflector (LRRR)
+      const lrrrCanvas = document.createElement('canvas');
+      lrrrCanvas.width = 128;
+      lrrrCanvas.height = 128;
+      const lctx = lrrrCanvas.getContext('2d');
+      if (lctx) {
+        lctx.fillStyle = '#b9bcc2';
+        lctx.fillRect(0, 0, 128, 128);
+        lctx.fillStyle = '#1a1d22';
+        for (let i = 0; i < 10; i++) {
+          for (let j = 0; j < 10; j++) {
+            lctx.fillRect(8 + i * 11.5, 8 + j * 11.5, 8, 8);
+          }
+        }
+      }
+      const lrrrTex = new THREE.CanvasTexture(lrrrCanvas);
+      lrrrTex.colorSpace = THREE.SRGBColorSpace;
+      const lrrrGroup = new THREE.Group();
+      lrrrGroup.position.set(20, 0, 2);
+      const lrrrPanel = new THREE.Mesh(
+        new THREE.BoxGeometry(0.6, 0.6, 0.04),
+        new THREE.MeshStandardMaterial({
+          map: lrrrTex,
+          metalness: 0.5,
+          roughness: 0.45,
+        })
       );
-      lrrrArray.position.y = 0.42;
-      lrrrArray.rotation.x = -0.45;
-      lrrrGroup.add(lrrrStand, lrrrArray);
+      lrrrPanel.position.y = 0.55;
+      lrrrPanel.rotation.x = -0.5;
+      const lrrrLeg = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.02, 0.02, 0.5, 6),
+        silverAluminumMat
+      );
+      lrrrLeg.position.y = 0.25;
+      lrrrGroup.add(lrrrPanel, lrrrLeg);
       companionGroup.add(lrrrGroup);
+
+      // Lunar Surface TV Camera on Tripod
+      const tvGroup = new THREE.Group();
+      tvGroup.position.set(-3, 0, -16);
+      [0, 2.1, 4.2].forEach((a) => {
+        const leg = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.012, 0.012, 0.8, 5),
+          silverAluminumMat
+        );
+        leg.position.set(Math.cos(a) * 0.3, 0.3, Math.sin(a) * 0.3);
+        leg.rotation.set(Math.sin(a) * 0.4, 0, -Math.cos(a) * 0.4);
+        tvGroup.add(leg);
+      });
+      const tvBody = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, 0.35), whiteThermalMat);
+      tvBody.position.y = 0.7;
+      tvGroup.add(tvBody);
+      companionGroup.add(tvGroup);
+
+      // Jettisoned PLSS Backpacks
+      const plssGroup = new THREE.Group();
+      plssGroup.position.set(9, 0, 12);
+      [0, 1].forEach((i) => {
+        const pack = new THREE.Mesh(
+          new THREE.BoxGeometry(0.55, 0.75, 0.25),
+          whiteThermalMat
+        );
+        pack.position.set(i * 0.9, 0.14, i * 0.3);
+        pack.rotation.set(1.3, i * 1.1, 0.3);
+        plssGroup.add(pack);
+      });
+      companionGroup.add(plssGroup);
     } else if (id === 'apollo-15-falcon-lrv-alsep') {
-      // LRV-1 Electric Moon Buggy parked 5.2m away
+      // LRV-1 Electric Moon Buggy parked 7.2m away
       const lrv = new THREE.Group();
-      lrv.position.set(5.4, 0, 2.8);
+      lrv.position.set(6.8, 0, 3.6);
       lrv.rotation.y = -0.6;
       const chassis = new THREE.Mesh(
         new THREE.BoxGeometry(2.1, 0.14, 1.3),
@@ -448,7 +568,7 @@ function buildProceduralSpacecraft(artifact: Artifact): {
     } else {
       // Apollo 12 ALSEP Station
       const alsep = new THREE.Group();
-      alsep.position.set(-5.0, 0, 3.2);
+      alsep.position.set(-6.4, 0, 4.2);
       const box = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.45, 0.55), whiteThermalMat);
       box.position.y = 0.225;
       const rtg = new THREE.Mesh(
@@ -465,16 +585,13 @@ function buildProceduralSpacecraft(artifact: Artifact): {
       companionGroup.add(alsep);
     }
   } else if (id.includes('ingenuity')) {
-    // --- INGENUITY MARS HELICOPTER ---
-    targetScale = 2.0;
+    targetScale = 1.8;
     craftRadius = 2.0;
 
-    // Fuselage Electronics Cube
     const body = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.34, 0.38), goldKaptonMat);
     body.position.y = 0.58;
     craftGroup.add(body);
 
-    // Central Rotor Mast
     const mast = new THREE.Mesh(
       new THREE.CylinderGeometry(0.035, 0.04, 0.72, 12),
       blackCompositeMat
@@ -482,7 +599,6 @@ function buildProceduralSpacecraft(artifact: Artifact): {
     mast.position.y = 0.96;
     craftGroup.add(mast);
 
-    // Dual Counter-Rotating Carbon-Fiber Rotors (1.2m span)
     const bladeGeo = new THREE.BoxGeometry(1.65, 0.018, 0.11);
     const bladeTop = new THREE.Mesh(bladeGeo, blackCompositeMat);
     bladeTop.position.y = 1.24;
@@ -492,12 +608,10 @@ function buildProceduralSpacecraft(artifact: Artifact): {
     bladeBot.rotation.y = 1.9;
     craftGroup.add(bladeTop, bladeBot);
 
-    // Top Square Solar Panel above rotors
     const solar = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.03, 0.42), darkSolarCellMat);
     solar.position.y = 1.35;
     craftGroup.add(solar);
 
-    // 4 Splayed Carbon-Fiber Landing Legs
     for (let i = 0; i < 4; i++) {
       const a = (i * Math.PI) / 2 + Math.PI / 4;
       const pTop = new THREE.Vector3(Math.cos(a) * 0.16, 0.52, Math.sin(a) * 0.16);
@@ -515,11 +629,9 @@ function buildProceduralSpacecraft(artifact: Artifact): {
       craftGroup.add(leg);
     }
   } else if (id.includes('pathfinder')) {
-    // --- MARS PATHFINDER PETAL LANDER & SOJOURNER ROVER ---
     targetScale = 3.2;
     craftRadius = 3.2;
 
-    // Central triangular deck + 3 opened triangular solar petals
     const centerBase = new THREE.Mesh(
       new THREE.CylinderGeometry(0.95, 1.05, 0.32, 3),
       goldKaptonMat
@@ -538,7 +650,6 @@ function buildProceduralSpacecraft(artifact: Artifact): {
       craftGroup.add(petal);
     }
 
-    // Electronics prism + IMP Camera Mast + Dish
     const prism = new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.5, 0.65), whiteThermalMat);
     prism.position.y = 0.56;
     const mast = new THREE.Mesh(
@@ -556,7 +667,6 @@ function buildProceduralSpacecraft(artifact: Artifact): {
     dish.rotation.x = -Math.PI / 3;
     craftGroup.add(prism, mast, camHead, dish);
 
-    // Companion: Sojourner Rover standing on Martian dirt nearby!
     const sojourner = new THREE.Group();
     sojourner.position.set(3.4, 0, 2.3);
     sojourner.rotation.y = -0.5;
@@ -576,11 +686,9 @@ function buildProceduralSpacecraft(artifact: Artifact): {
     });
     companionGroup.add(sojourner);
   } else if (artifact.category === 'rover') {
-    // --- MARS EXPLORATION ROVER (SPIRIT & OPPORTUNITY) ---
-    targetScale = 3.0;
+    targetScale = 2.8;
     craftRadius = 2.8;
 
-    // 6 Wheels resting at y = 0 (wheel radius = 0.22)
     const wheelGeo = new THREE.CylinderGeometry(0.22, 0.22, 0.16, 18);
     const wheelCoords = [
       [-0.85, 0.22, 0.72],
@@ -605,12 +713,10 @@ function buildProceduralSpacecraft(artifact: Artifact): {
       craftGroup.add(strut);
     });
 
-    // Warm Electronics Box
     const web = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.52, 0.95), goldKaptonMat);
     web.position.y = 0.85;
     craftGroup.add(web);
 
-    // Solar Array Wings
     const wing = new THREE.Mesh(new THREE.BoxGeometry(2.3, 0.05, 1.55), darkSolarCellMat);
     wing.position.y = 1.13;
     const divider = new THREE.Mesh(
@@ -620,7 +726,6 @@ function buildProceduralSpacecraft(artifact: Artifact): {
     divider.position.y = 1.14;
     craftGroup.add(wing, divider);
 
-    // Pancam Mast & Stereo Head
     const mast = new THREE.Mesh(
       new THREE.CylinderGeometry(0.04, 0.04, 1.15, 12),
       whiteThermalMat
@@ -636,7 +741,6 @@ function buildProceduralSpacecraft(artifact: Artifact): {
     eyeR.position.set(0.66, 2.32, 0.16);
     craftGroup.add(mast, head, eyeL, eyeR);
 
-    // High-Gain Dish
     const dish = new THREE.Mesh(
       new THREE.SphereGeometry(0.35, 20, 10, 0, Math.PI * 2, 0, Math.PI * 0.42),
       silverAluminumMat
@@ -645,14 +749,12 @@ function buildProceduralSpacecraft(artifact: Artifact): {
     dish.rotation.x = -Math.PI / 4;
     craftGroup.add(dish);
   } else {
-    // --- UNCREWED LANDERS (Surveyor 3, Viking 1, Phoenix, InSight) ---
     targetScale = 3.4;
     craftRadius = 3.0;
 
     const isSurveyor = id === 'surveyor-3';
     const isViking = id === 'viking-1-lander';
 
-    // Main Deck
     const body = new THREE.Mesh(
       new THREE.CylinderGeometry(isSurveyor ? 0.95 : 1.15, 1.25, 0.65, 6),
       isSurveyor ? whiteThermalMat : isViking ? whiteThermalMat : goldKaptonMat
@@ -660,7 +762,6 @@ function buildProceduralSpacecraft(artifact: Artifact): {
     body.position.y = 1.05;
     craftGroup.add(body);
 
-    // 3 Tripod Landing Legs & Footpads
     for (let k = 0; k < 3; k++) {
       const a = (k * Math.PI * 2) / 3;
       const lx = Math.cos(a) * 1.65;
@@ -689,7 +790,6 @@ function buildProceduralSpacecraft(artifact: Artifact): {
     }
 
     if (isSurveyor) {
-      // Mast + Top Solar Panel + High-Gain Planar Array + TV Camera
       const mast = new THREE.Mesh(
         new THREE.CylinderGeometry(0.04, 0.04, 1.5, 10),
         silverAluminumMat
@@ -705,7 +805,6 @@ function buildProceduralSpacecraft(artifact: Artifact): {
       tvCam.position.set(0.45, 1.6, 0.35);
       craftGroup.add(mast, solar, tvCam);
     } else if (isViking) {
-      // Twin RTG Nuclear Covers + High-Gain Dish + Dual Camera Turrets
       [-1.05, 1.05].forEach((xOff) => {
         const rtg = new THREE.Mesh(
           new THREE.CylinderGeometry(0.2, 0.2, 0.6, 10),
@@ -728,7 +827,6 @@ function buildProceduralSpacecraft(artifact: Artifact): {
       cam1.position.set(0.45, 1.65, 0.4);
       craftGroup.add(dish, cam1);
     } else {
-      // Phoenix / InSight Twin Decagonal Solar Arrays
       [-1.85, 1.85].forEach((xOff) => {
         const solar = new THREE.Mesh(
           new THREE.CylinderGeometry(0.95, 0.95, 0.04, 10),
@@ -750,7 +848,6 @@ function buildProceduralSpacecraft(artifact: Artifact): {
       mast.position.set(-0.35, 1.8, -0.3);
       craftGroup.add(mast);
 
-      // InSight SEIS Seismometer Dome placed on Martian dirt beside lander
       if (id === 'insight-lander') {
         const seis = new THREE.Group();
         seis.position.set(2.9, 0, 2.2);
@@ -786,13 +883,19 @@ function buildProceduralSpacecraft(artifact: Artifact): {
   return { craftGroup, companionGroup, targetScale, craftRadius };
 }
 
-function formatOffsetCoords(baseLat: number, baseLon: number, xMeters: number, zMeters: number) {
-  const radiusKm = 1737.4; // Moon approx scale; Mars 3389.5 — visually responsive telemetry delta
-  const degPerMeter = 180 / (Math.PI * radiusKm * 1000);
-  const lat = baseLat - zMeters * degPerMeter * 15;
-  const lon = baseLon + xMeters * degPerMeter * 15;
-  const latStr = `${Math.abs(lat).toFixed(4)}° ${lat >= 0 ? 'N' : 'S'}`;
-  const lonStr = `${Math.abs(lon).toFixed(4)}° ${lon >= 0 ? 'E' : 'W'}`;
+function formatOffsetCoords(
+  baseLat: number,
+  baseLon: number,
+  xMeters: number,
+  zMeters: number,
+  isMars: boolean
+) {
+  const radiusM = isMars ? 3389500 : 1737400;
+  const lat = baseLat - (zMeters * 180) / (Math.PI * radiusM);
+  const cosLat = Math.max(0.2, Math.cos((baseLat * Math.PI) / 180));
+  const lon = baseLon + (xMeters * 180) / (Math.PI * radiusM * cosLat);
+  const latStr = `${Math.abs(lat).toFixed(5)}° ${lat >= 0 ? 'N' : 'S'}`;
+  const lonStr = `${Math.abs(lon).toFixed(5)}° ${lon >= 0 ? 'E' : 'W'}`;
   return `${latStr}, ${lonStr}`;
 }
 
@@ -807,9 +910,9 @@ export const SurfaceExplorerGame: React.FC<SurfaceExplorerGameProps> = ({
   const [isPointerLocked, setIsPointerLocked] = useState(false);
   const [showInfoPopup, setShowInfoPopup] = useState(false);
   const [isNearCraft, setIsNearCraft] = useState(false);
-  const [distanceMeters, setDistanceMeters] = useState<number>(14);
+  const [distanceMeters, setDistanceMeters] = useState<number>(22);
   const [hudCoords, setHudCoords] = useState<string>(
-    formatOffsetCoords(artifact.coordinates.lat, artifact.coordinates.lon, 9, 11)
+    formatOffsetCoords(artifact.coordinates.lat, artifact.coordinates.lon, 14, 20, isMars)
   );
   const [modelSourceLabel, setModelSourceLabel] = useState<'CAD' | 'NASA GLB'>('CAD');
 
@@ -847,31 +950,37 @@ export const SurfaceExplorerGame: React.FC<SurfaceExplorerGameProps> = ({
     const isSoftwareGl = /SwiftShader|llvmpipe|Software|Mesa/i.test(rendererString);
 
     renderer.setPixelRatio(isSoftwareGl ? 1 : Math.min(window.devicePixelRatio, 2));
-    renderer.setSize(container.clientWidth || window.innerWidth, container.clientHeight || window.innerHeight);
+    renderer.setSize(
+      container.clientWidth || window.innerWidth,
+      container.clientHeight || window.innerHeight
+    );
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = isMars ? 1.08 : 1.15;
+    renderer.toneMappingExposure = isMars ? 1.05 : 1.1;
     renderer.shadowMap.enabled = !isSoftwareGl;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
     container.innerHTML = '';
     container.appendChild(renderer.domElement);
 
-    // 2. SCENE & ENVIRONMENT
+    // 2. SCENE & SPACE REFLECTION ENVIRONMENT
     const scene = new THREE.Scene();
     if (isMars) {
       scene.background = new THREE.Color(0xc27d56);
-      scene.fog = new THREE.FogExp2(0x9e5936, 0.011);
+      scene.fog = new THREE.FogExp2(0x9e5936, 0.0032);
     } else {
       scene.background = new THREE.Color(0x000000);
     }
 
-    const pmremGenerator = new THREE.PMREMGenerator(renderer);
-    const roomEnv = new RoomEnvironment();
-    const envRT = pmremGenerator.fromScene(roomEnv, 0.04);
+    // Grazing solar direction from Tranquility Base code (low sun angle = long lunar shadows)
+    const sunDir = isMars
+      ? new THREE.Vector3(Math.cos(0.3) * 0.95, Math.sin(0.3), -0.22).normalize()
+      : new THREE.Vector3(Math.cos(0.2) * 0.98, Math.sin(0.2), -0.18).normalize();
+
+    // Custom dark-space PMREM reflection environment so metallic gold foil & struts reflect sun/ground without studio washout
+    const envRT = buildSpaceEnvironment(renderer, sunDir, isMars);
     scene.environment = envRT.texture;
-    roomEnv.dispose();
-    pmremGenerator.dispose();
+    scene.environmentIntensity = isMars ? 0.42 : 0.28;
 
     // 3. CAMERA
     const camera = new THREE.PerspectiveCamera(
@@ -879,89 +988,100 @@ export const SurfaceExplorerGame: React.FC<SurfaceExplorerGameProps> = ({
       (container.clientWidth || window.innerWidth) /
         (container.clientHeight || window.innerHeight),
       0.1,
-      450
+      4000
     );
     camera.rotation.order = 'YXZ';
 
-    // 4. LIGHTING & SKY
-    const sunDir = new THREE.Vector3(48, isMars ? 34 : 26, -38);
+    // 4. LIGHTING (Exact Tranquility Base Rig on Moon, Atmospheric Sun Rig on Mars)
     const sunLight = new THREE.DirectionalLight(
-      isMars ? 0xffdfc2 : 0xfff8ee,
-      isMars ? 2.5 : 3.2
+      isMars ? 0xffe4cc : 0xfff4e6,
+      isMars ? 3.2 : 3.6
     );
-    sunLight.position.copy(sunDir);
+    sunLight.position.copy(sunDir).multiplyScalar(150);
     if (!isSoftwareGl) {
       sunLight.castShadow = true;
-      sunLight.shadow.mapSize.width = 2048;
-      sunLight.shadow.mapSize.height = 2048;
-      sunLight.shadow.camera.near = 5;
-      sunLight.shadow.camera.far = 160;
-      const d = 28;
-      sunLight.shadow.camera.left = -d;
-      sunLight.shadow.camera.right = d;
-      sunLight.shadow.camera.top = d;
-      sunLight.shadow.camera.bottom = -d;
+      sunLight.shadow.mapSize.set(2048, 2048);
+      sunLight.shadow.camera.left = -45;
+      sunLight.shadow.camera.right = 45;
+      sunLight.shadow.camera.top = 45;
+      sunLight.shadow.camera.bottom = -45;
+      sunLight.shadow.camera.near = 1;
+      sunLight.shadow.camera.far = 400;
       sunLight.shadow.bias = -0.0004;
-      sunLight.shadow.normalBias = 0.03;
     }
-    scene.add(sunLight);
+    scene.add(sunLight, sunLight.target);
 
     const hemiLight = new THREE.HemisphereLight(
-      isMars ? 0xc27d56 : 0x263449,
-      isMars ? 0x8c4a27 : 0x1e2229,
-      isMars ? 0.95 : 0.32
+      isMars ? 0xd99b72 : 0x8fa4c8,
+      isMars ? 0x3b1c0e : 0x1a1714,
+      isMars ? 0.36 : 0.07
     );
     scene.add(hemiLight);
 
-    // Sky Elements (Sun, Earth for Moon, Stars for Moon, Hazy Dome for Mars)
+    if (!isMars) {
+      // Cool blue Earthshine fill in lunar sky
+      const earthLight = new THREE.DirectionalLight(0xa8c4ff, 0.06);
+      earthLight.position.set(-1, 2.3, 0);
+      scene.add(earthLight);
+    }
+
+    // 5. SKY ELEMENTS (Stars, Radial Sun Disc, Radial Earth Disc on Moon, Sky Dome on Mars)
     const skyGeometries: THREE.BufferGeometry[] = [];
     const skyMaterials: THREE.Material[] = [];
+    const skyTextures: THREE.Texture[] = [];
 
     if (!isMars) {
-      // Starfield
-      const starCount = 1800;
-      const starPos = new Float32Array(starCount * 3);
-      const starCol = new Float32Array(starCount * 3);
-      const randStar = createSeededRandom('lunar-stars');
+      const starCount = 2500;
+      const starPos: number[] = [];
+      const randStar = createSeededRandom('lunar-stars-v2');
       for (let i = 0; i < starCount; i++) {
-        const theta = randStar() * Math.PI * 2;
-        const phi = Math.acos(randStar() * 0.96 + 0.02); // Above horizon
-        const r = 260;
-        starPos[i * 3] = r * Math.sin(phi) * Math.cos(theta);
-        starPos[i * 3 + 1] = r * Math.cos(phi);
-        starPos[i * 3 + 2] = r * Math.sin(phi) * Math.sin(theta);
-        const tint = 0.78 + randStar() * 0.22;
-        starCol[i * 3] = tint;
-        starCol[i * 3 + 1] = tint;
-        starCol[i * 3 + 2] = Math.min(1, tint + randStar() * 0.12);
+        const v = new THREE.Vector3(
+          randStar() - 0.5,
+          randStar() - 0.5,
+          randStar() - 0.5
+        )
+          .normalize()
+          .multiplyScalar(3000);
+        starPos.push(v.x, Math.abs(v.y) * 0.9 + v.y * 0.1, v.z);
       }
       const starGeo = new THREE.BufferGeometry();
-      starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
-      starGeo.setAttribute('color', new THREE.BufferAttribute(starCol, 3));
+      starGeo.setAttribute('position', new THREE.Float32BufferAttribute(starPos, 3));
       const starMat = new THREE.PointsMaterial({
-        size: 1.35,
-        vertexColors: true,
+        color: 0xffffff,
+        size: 2.2,
         sizeAttenuation: false,
+        fog: false,
       });
-      const stars = new THREE.Points(starGeo, starMat);
-      scene.add(stars);
+      scene.add(new THREE.Points(starGeo, starMat));
       skyGeometries.push(starGeo);
       skyMaterials.push(starMat);
 
-      // Glowing Blue Earth in Lunar Sky
-      const earthGeo = new THREE.SphereGeometry(5.5, 24, 24);
-      const earthMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
-      const earth = new THREE.Mesh(earthGeo, earthMat);
-      earth.position.set(-72, 68, -110);
-      scene.add(earth);
-      skyGeometries.push(earthGeo);
-      skyMaterials.push(earthMat);
+      // Sun & Earth glowing radial sprites
+      const sunDisc = createRadialDiscSprite(
+        '#fffbe8',
+        'rgba(255,240,200,0.25)',
+        300,
+        sunDir.clone().multiplyScalar(3500)
+      );
+      scene.add(sunDisc.sprite);
+      skyMaterials.push(sunDisc.material);
+      skyTextures.push(sunDisc.texture);
+
+      const earthDisc = createRadialDiscSprite(
+        '#4f86c8',
+        'rgba(120,170,255,0.2)',
+        95,
+        new THREE.Vector3(-1, 2.3, 0).normalize().multiplyScalar(3400)
+      );
+      scene.add(earthDisc.sprite);
+      skyMaterials.push(earthDisc.material);
+      skyTextures.push(earthDisc.texture);
     } else {
-      // Warm Butterscotch-to-Rust Sky Dome for Mars
-      const domeGeo = new THREE.SphereGeometry(280, 24, 16);
+      const domeGeo = new THREE.SphereGeometry(3200, 24, 16);
       const domeMat = new THREE.ShaderMaterial({
         side: THREE.BackSide,
         depthWrite: false,
+        fog: false,
         uniforms: {
           topColor: { value: new THREE.Color(0x8c4a27) },
           horizonColor: { value: new THREE.Color(0xc27d56) },
@@ -984,38 +1104,29 @@ export const SurfaceExplorerGame: React.FC<SurfaceExplorerGameProps> = ({
           }
         `,
       });
-      const dome = new THREE.Mesh(domeGeo, domeMat);
-      scene.add(dome);
+      scene.add(new THREE.Mesh(domeGeo, domeMat));
       skyGeometries.push(domeGeo);
       skyMaterials.push(domeMat);
+
+      const marsSunDisc = createRadialDiscSprite(
+        '#fff2dc',
+        'rgba(255,205,155,0.28)',
+        240,
+        sunDir.clone().multiplyScalar(3100)
+      );
+      scene.add(marsSunDisc.sprite);
+      skyMaterials.push(marsSunDisc.material);
+      skyTextures.push(marsSunDisc.texture);
     }
 
-    // Sun Disc
-    const sunDiscGeo = new THREE.SphereGeometry(isMars ? 2.8 : 4.2, 16, 16);
-    const sunDiscMat = new THREE.MeshBasicMaterial({
-      color: isMars ? 0xffe4c4 : 0xffffff,
-      fog: false,
-    });
-    const sunDisc = new THREE.Mesh(sunDiscGeo, sunDiscMat);
-    sunDisc.position.copy(sunDir).normalize().multiplyScalar(220);
-    scene.add(sunDisc);
-    skyGeometries.push(sunDiscGeo);
-    skyMaterials.push(sunDiscMat);
-
-    // 5. TERRAIN & ROCKS
+    // 6. TERRAIN (1200x1200 with Regolith Grit Map + Bump Map Relief)
     const craters = buildCraters(artifact.id);
     const sampleH = createHeightSampler(craters, isMars);
     const maxAnisotropy = renderer.capabilities.getMaxAnisotropy();
     const regolithTex = createRegolithTexture(isMars, maxAnisotropy);
 
-    const terrainSize = 260;
-    const terrainSegs = 128;
-    const terrainGeo = new THREE.PlaneGeometry(
-      terrainSize,
-      terrainSize,
-      terrainSegs,
-      terrainSegs
-    );
+    const terrainSegs = isSoftwareGl ? 160 : 300;
+    const terrainGeo = new THREE.PlaneGeometry(1200, 1200, terrainSegs, terrainSegs);
     terrainGeo.rotateX(-Math.PI / 2);
     const posAttr = terrainGeo.attributes.position;
     for (let i = 0; i < posAttr.count; i++) {
@@ -1027,50 +1138,53 @@ export const SurfaceExplorerGame: React.FC<SurfaceExplorerGameProps> = ({
 
     const terrainMat = new THREE.MeshStandardMaterial({
       map: regolithTex,
-      roughness: isMars ? 0.94 : 0.96,
-      metalness: 0.03,
+      bumpMap: regolithTex,
+      bumpScale: isMars ? 1.8 : 2.0,
+      roughness: 1.0,
+      metalness: 0.0,
+      color: isMars ? 0xc27b56 : 0xb8b4aa,
     });
     const terrainMesh = new THREE.Mesh(terrainGeo, terrainMat);
     terrainMesh.receiveShadow = true;
     scene.add(terrainMesh);
 
-    // Instanced Surface Boulders & Pebbles
-    const rockCount = 260;
-    const rockGeo = new THREE.DodecahedronGeometry(0.45, 0);
+    // 7. INSTANCED ROCKS & PEBBLES (Power-Law Distribution)
+    const rockCount = isSoftwareGl ? 650 : 2600;
+    const rockGeo = new THREE.DodecahedronGeometry(1, 0);
     const rockMat = new THREE.MeshStandardMaterial({
-      color: isMars ? 0x6c3520 : 0x5c6068,
-      roughness: 0.92,
-      metalness: 0.06,
+      color: isMars ? 0x733a24 : 0x6f6c66,
+      roughness: 1.0,
       flatShading: true,
     });
     const rockInstances = new THREE.InstancedMesh(rockGeo, rockMat, rockCount);
     rockInstances.castShadow = !isSoftwareGl;
     rockInstances.receiveShadow = true;
 
-    const randRock = createSeededRandom(artifact.id + '-rocks');
-    const rockDummy = new THREE.Object3D();
+    const randRock = createSeededRandom(artifact.id + '-rocks-v2');
+    const rockMatrix = new THREE.Matrix4();
+    const rockQuat = new THREE.Quaternion();
+    const rockEuler = new THREE.Euler();
+    const rockPos = new THREE.Vector3();
+    const rockScale = new THREE.Vector3();
+
     for (let i = 0; i < rockCount; i++) {
-      const angle = randRock() * Math.PI * 2;
-      const dist = 7.5 + randRock() * 105;
-      const rx = Math.cos(angle) * dist;
-      const rz = Math.sin(angle) * dist;
-      const ry = sampleH(rx, rz);
-      const s = 0.25 + Math.pow(randRock(), 2.2) * 2.1;
-      rockDummy.position.set(rx, ry + s * 0.12, rz);
-      rockDummy.rotation.set(randRock() * Math.PI, randRock() * Math.PI, randRock() * Math.PI);
-      rockDummy.scale.set(
-        s * (0.8 + randRock() * 0.6),
-        s * (0.55 + randRock() * 0.55),
-        s * (0.8 + randRock() * 0.6)
-      );
-      rockDummy.updateMatrix();
-      rockInstances.setMatrixAt(i, rockDummy.matrix);
+      const a = randRock() * 6.283185;
+      const d = 5.5 + Math.pow(randRock(), 0.8) * 360;
+      const rx = Math.cos(a) * d;
+      const rz = Math.sin(a) * d;
+      const s = 0.04 + Math.pow(randRock(), 5) * 1.1;
+      rockEuler.set(randRock() * 6, randRock() * 6, randRock() * 6);
+      rockQuat.setFromEuler(rockEuler);
+      rockPos.set(rx, sampleH(rx, rz) + s * 0.2, rz);
+      rockScale.set(s * (0.8 + randRock() * 0.6), s * 0.6, s * (0.8 + randRock() * 0.6));
+      rockMatrix.compose(rockPos, rockQuat, rockScale);
+      rockInstances.setMatrixAt(i, rockMatrix);
     }
     rockInstances.instanceMatrix.needsUpdate = true;
     rockInstances.computeBoundingSphere();
     scene.add(rockInstances);
 
-    // 6. SPACECRAFT & COMPANION ARTIFACTS AT (0, H(0,0), 0)
+    // 8. SPACECRAFT & COMPANION ARTIFACTS AT (0, H(0,0), 0)
     const siteAnchor = new THREE.Group();
     const centerGroundY = sampleH(0, 0);
     siteAnchor.position.set(0, centerGroundY, 0);
@@ -1080,13 +1194,11 @@ export const SurfaceExplorerGame: React.FC<SurfaceExplorerGameProps> = ({
       buildProceduralSpacecraft(artifact);
     siteAnchor.add(craftGroup);
 
-    // Seat companion props at their actual terrain height
     companionGroup.children.forEach((prop) => {
       prop.position.y = sampleH(prop.position.x, prop.position.z) - centerGroundY;
     });
     siteAnchor.add(companionGroup);
 
-    // Asynchronously load local/NASA 3D GLB model if configured
     let gltfRoot: THREE.Object3D | null = null;
     const glbAbortController = new AbortController();
     const modelAsset = getSpacecraftModelAsset(artifact.id);
@@ -1107,17 +1219,19 @@ export const SurfaceExplorerGame: React.FC<SurfaceExplorerGameProps> = ({
           }
           const loaded = gltf.scene;
           const box = new THREE.Box3().setFromObject(loaded);
-          const center = box.getCenter(new THREE.Vector3());
           const size = box.getSize(new THREE.Vector3());
-          const maxDim = Math.max(size.x, size.y, size.z) || 1.0;
-          const scale = targetScale / maxDim;
+
+          // Match exact realistic 7m Eagle height formula on Apollo LM, and physical targetScale on other craft
+          const scale =
+            artifact.category === 'apollo_crewed'
+              ? 7 / Math.max(size.y, size.x * 0.75, 0.001)
+              : targetScale / Math.max(size.x, size.y, size.z, 0.001);
 
           loaded.scale.setScalar(scale);
-          loaded.position.set(
-            -center.x * scale,
-            -box.min.y * scale,
-            -center.z * scale
-          );
+          box.setFromObject(loaded);
+          const center = box.getCenter(new THREE.Vector3());
+
+          loaded.position.set(-center.x, -box.min.y + 0.02, -center.z);
 
           loaded.traverse((child) => {
             if ((child as THREE.Mesh).isMesh) {
@@ -1129,15 +1243,16 @@ export const SurfaceExplorerGame: React.FC<SurfaceExplorerGameProps> = ({
                   ? mesh.material
                   : [mesh.material];
                 mats.forEach((m) => {
+                  m.side = THREE.DoubleSide;
                   if (m instanceof THREE.MeshStandardMaterial) {
-                    m.envMapIntensity = 1.1;
+                    m.envMapIntensity = isMars ? 0.95 : 1.05;
                   }
+                  m.needsUpdate = true;
                 });
               }
             }
           });
 
-          // Remove procedural fallback and swap in loaded GLB
           siteAnchor.remove(craftGroup);
           disposeObject3D(craftGroup);
           siteAnchor.add(loaded);
@@ -1150,14 +1265,14 @@ export const SurfaceExplorerGame: React.FC<SurfaceExplorerGameProps> = ({
         });
     }
 
-    // 7. FOOTPRINTS TRAIL (Instanced decals left while walking)
-    const footprintTex = createFootprintTexture(isMars);
-    const maxPrints = 70;
-    const printGeo = new THREE.PlaneGeometry(0.18, 0.34);
+    // 9. FOOTPRINTS TRAIL (Darkened circular boot impressions matching pasted code)
+    const maxPrints = 400;
+    const printGeo = new THREE.CircleGeometry(0.13, 10);
     printGeo.rotateX(-Math.PI / 2);
     const printMat = new THREE.MeshBasicMaterial({
-      map: footprintTex,
+      color: isMars ? 0x451e10 : 0x2a2926,
       transparent: true,
+      opacity: 0.55,
       depthWrite: false,
       polygonOffset: true,
       polygonOffsetFactor: -2,
@@ -1172,20 +1287,21 @@ export const SurfaceExplorerGame: React.FC<SurfaceExplorerGameProps> = ({
     scene.add(footprintMesh);
     let printCursor = 0;
     let printStepSide = 1;
-    let lastPrintPos = new THREE.Vector3(9, centerGroundY, 11);
+    const startX = artifact.category === 'apollo_crewed' ? 14 : 10;
+    const startZ = artifact.category === 'apollo_crewed' ? 22 : 16;
+    const lastPrintPos = new THREE.Vector3(startX, sampleH(startX, startZ), startZ);
 
-    // 8. PLAYER STATE & INPUTS
-    const EYE_HEIGHT = 1.72;
-    const WORLD_RADIUS = 115;
-    const PROXIMITY_RADIUS = Math.max(6.8, craftRadius + 3.8);
+    // 10. PLAYER STATE & INPUTS
+    const EYE_HEIGHT = 1.7;
+    const WORLD_LIMIT = 580;
+    const PROXIMITY_RADIUS = Math.max(7.2, craftRadius + 4.0);
 
     const player = {
-      pos: new THREE.Vector3(9.5, sampleH(9.5, 11.5), 11.5),
-      velY: 0,
+      pos: new THREE.Vector3(startX, sampleH(startX, startZ), startZ),
+      vel: new THREE.Vector3(),
       onGround: true,
-      yaw: Math.atan2(9.5, 11.5), // Face directly toward (0,0) spacecraft
-      pitch: -0.06,
-      walkPhase: 0,
+      yaw: Math.atan2(startX, startZ),
+      pitch: -0.05,
     };
 
     const keys: Record<string, boolean> = {};
@@ -1201,18 +1317,14 @@ export const SurfaceExplorerGame: React.FC<SurfaceExplorerGameProps> = ({
           playTelemetryBeep(620);
           setShowInfoPopup((prev) => {
             const next = !prev;
-            if (!next) {
-              userDismissedProximityRef.current = true;
-            } else {
-              userDismissedProximityRef.current = false;
-            }
+            userDismissedProximityRef.current = !next;
             return next;
           });
         }
       }
       if (e.code === 'Space' && isEnteredRef.current && player.onGround) {
         e.preventDefault();
-        player.velY = isMars ? 3.2 : 2.85;
+        player.vel.y = isMars ? 3.8 : 3.4;
         player.onGround = false;
       }
     };
@@ -1227,20 +1339,16 @@ export const SurfaceExplorerGame: React.FC<SurfaceExplorerGameProps> = ({
         player.yaw -= e.movementX * 0.0022;
         player.pitch = THREE.MathUtils.clamp(
           player.pitch - e.movementY * 0.0022,
-          -Math.PI * 0.46,
-          Math.PI * 0.46
+          -1.45,
+          1.45
         );
       } else if (isDraggingLook) {
         const dx = e.clientX - lastDragX;
         const dy = e.clientY - lastDragY;
         lastDragX = e.clientX;
         lastDragY = e.clientY;
-        player.yaw -= dx * 0.0035;
-        player.pitch = THREE.MathUtils.clamp(
-          player.pitch - dy * 0.0035,
-          -Math.PI * 0.46,
-          Math.PI * 0.46
-        );
+        player.yaw -= dx * 0.0032;
+        player.pitch = THREE.MathUtils.clamp(player.pitch - dy * 0.0032, -1.45, 1.45);
       }
     };
 
@@ -1271,7 +1379,7 @@ export const SurfaceExplorerGame: React.FC<SurfaceExplorerGameProps> = ({
     window.addEventListener('mouseup', onMouseUp);
     document.addEventListener('pointerlockchange', onPointerLockChange);
 
-    // 9. RESIZE OBSERVER
+    // 11. RESIZE OBSERVER
     const handleResize = () => {
       if (isDisposed || !container) return;
       const w = container.clientWidth || window.innerWidth;
@@ -1285,9 +1393,6 @@ export const SurfaceExplorerGame: React.FC<SurfaceExplorerGameProps> = ({
     window.addEventListener('resize', handleResize);
 
     // Pre-allocated math objects for render loop
-    const forwardVec = new THREE.Vector3();
-    const rightVec = new THREE.Vector3();
-    const moveVec = new THREE.Vector3();
     const printDummy = new THREE.Object3D();
 
     let prevNearCraft = false;
@@ -1330,80 +1435,61 @@ export const SurfaceExplorerGame: React.FC<SurfaceExplorerGameProps> = ({
       prevTime = now;
 
       if (isEnteredRef.current) {
-        const fwdInput =
+        const fw =
           (keys['KeyW'] || keys['ArrowUp'] ? 1 : 0) -
           (keys['KeyS'] || keys['ArrowDown'] ? 1 : 0);
-        const strafeInput =
+        const st =
           (keys['KeyD'] || keys['ArrowRight'] ? 1 : 0) -
           (keys['KeyA'] || keys['ArrowLeft'] ? 1 : 0);
+        const sp = keys['ShiftLeft'] || keys['ShiftRight'] ? 6.5 : 3.2;
 
-        forwardVec.set(-Math.sin(player.yaw), 0, -Math.cos(player.yaw));
-        rightVec.set(Math.cos(player.yaw), 0, -Math.sin(player.yaw));
+        const wx = -Math.sin(player.yaw) * fw + Math.cos(player.yaw) * st;
+        const wz = -Math.cos(player.yaw) * fw - Math.sin(player.yaw) * st;
+        const n = Math.hypot(wx, wz) || 1;
+        const k = player.onGround ? Math.min(1, dt * 7) : dt * 0.25;
 
-        moveVec.set(0, 0, 0);
-        moveVec.addScaledVector(forwardVec, fwdInput);
-        moveVec.addScaledVector(rightVec, strafeInput);
+        player.vel.x += ((wx / n) * sp * (fw || st ? 1 : 0) - player.vel.x) * k;
+        player.vel.z += ((wz / n) * sp * (fw || st ? 1 : 0) - player.vel.z) * k;
 
-        const isMoving = moveVec.lengthSq() > 0.001;
-        if (isMoving) {
-          moveVec.normalize();
-          const speed =
-            keys['ShiftLeft'] || keys['ShiftRight'] ? 4.8 : 2.55;
-          player.pos.x += moveVec.x * speed * dt;
-          player.pos.z += moveVec.z * speed * dt;
-          if (player.onGround) {
-            player.walkPhase += speed * dt * 2.8;
-          }
-        }
-
-        // World boundary clamp
-        const radialDist = Math.hypot(player.pos.x, player.pos.z);
-        if (radialDist > WORLD_RADIUS) {
-          const clampScale = WORLD_RADIUS / radialDist;
-          player.pos.x *= clampScale;
-          player.pos.z *= clampScale;
-        }
+        const gravity = isMars ? 3.72 : 1.62;
+        player.vel.y -= gravity * dt;
+        player.pos.addScaledVector(player.vel, dt);
 
         // Spacecraft collision pushout
         const craftDist = Math.hypot(player.pos.x, player.pos.z);
-        if (craftDist < craftRadius && craftDist > 0.001) {
-          const pushScale = craftRadius / craftDist;
-          player.pos.x *= pushScale;
-          player.pos.z *= pushScale;
+        if (craftDist < craftRadius && craftDist > 0.001 && player.pos.y < centerGroundY + 5) {
+          player.pos.x *= craftRadius / craftDist;
+          player.pos.z *= craftRadius / craftDist;
         }
 
-        // Gravity & ground clamping
-        const gravity = isMars ? 3.72 : 1.62;
+        // Ground clamping
         const groundY = sampleH(player.pos.x, player.pos.z);
-        if (!player.onGround || player.velY > 0) {
-          player.velY -= gravity * dt;
-          player.pos.y += player.velY * dt;
-          if (player.pos.y <= groundY) {
-            player.pos.y = groundY;
-            player.velY = 0;
-            player.onGround = true;
-          }
-        } else {
+        if (player.pos.y <= groundY) {
           player.pos.y = groundY;
+          player.vel.y = 0;
+          player.onGround = true;
+        } else if (player.pos.y > groundY + 0.05) {
+          player.onGround = false;
         }
 
-        // Leave boot footprints when walking on regolith
-        if (isMoving && player.onGround) {
-          const stepDist = player.pos.distanceTo(lastPrintPos);
-          if (stepDist >= 0.92) {
-            lastPrintPos.copy(player.pos);
-            printStepSide *= -1;
-            const px = player.pos.x + rightVec.x * 0.16 * printStepSide;
-            const pz = player.pos.z + rightVec.z * 0.16 * printStepSide;
-            printDummy.position.set(px, sampleH(px, pz) + 0.02, pz);
-            printDummy.rotation.set(0, player.yaw, 0);
-            printDummy.scale.set(1, 1, 1);
-            printDummy.updateMatrix();
-            footprintMesh.setMatrixAt(printCursor, printDummy.matrix);
-            footprintMesh.instanceMatrix.needsUpdate = true;
-            printCursor = (printCursor + 1) % maxPrints;
-          }
+        // Leave boot footprints along regolith every 0.85m
+        if (player.onGround && Math.hypot(player.pos.x - lastPrintPos.x, player.pos.z - lastPrintPos.z) > 0.85) {
+          lastPrintPos.copy(player.pos);
+          printStepSide *= -1;
+          const fx = player.pos.x + Math.cos(player.yaw) * printStepSide * 0.18;
+          const fz = player.pos.z - Math.sin(player.yaw) * printStepSide * 0.18;
+          printDummy.position.set(fx, sampleH(fx, fz) + 0.03, fz);
+          printDummy.rotation.set(0, player.yaw, 0);
+          printDummy.scale.set(1, 1, 2.1);
+          printDummy.updateMatrix();
+          footprintMesh.setMatrixAt(printCursor, printDummy.matrix);
+          footprintMesh.instanceMatrix.needsUpdate = true;
+          printCursor = (printCursor + 1) % maxPrints;
         }
+
+        // World perimeter clamp
+        player.pos.x = Math.max(-WORLD_LIMIT, Math.min(WORLD_LIMIT, player.pos.x));
+        player.pos.z = Math.max(-WORLD_LIMIT, Math.min(WORLD_LIMIT, player.pos.z));
 
         // Proximity detection
         const distFromCraft = Math.hypot(player.pos.x, player.pos.z);
@@ -1429,23 +1515,21 @@ export const SurfaceExplorerGame: React.FC<SurfaceExplorerGameProps> = ({
               artifact.coordinates.lat,
               artifact.coordinates.lon,
               player.pos.x,
-              player.pos.z
+              player.pos.z,
+              isMars
             )
           );
         }
       }
 
-      const bobOffset =
-        player.onGround && isEnteredRef.current
-          ? Math.sin(player.walkPhase) * 0.042
-          : 0;
-      camera.position.set(
-        player.pos.x,
-        player.pos.y + EYE_HEIGHT + bobOffset,
-        player.pos.z
-      );
-      camera.rotation.y = player.yaw;
-      camera.rotation.x = player.pitch;
+      // First-person camera pose
+      camera.position.set(player.pos.x, player.pos.y + EYE_HEIGHT, player.pos.z);
+      camera.rotation.set(player.pitch, player.yaw, 0);
+
+      // Keep crisp 2048x2048 shadow frustum locked around player as they explore 1200m plain
+      sunLight.position.copy(player.pos).addScaledVector(sunDir, 150);
+      sunLight.target.position.copy(player.pos);
+      sunLight.target.updateMatrixWorld();
 
       renderer.render(scene, camera);
       afterDraw(tick);
@@ -1479,9 +1563,9 @@ export const SurfaceExplorerGame: React.FC<SurfaceExplorerGameProps> = ({
       rockMat.dispose();
       printGeo.dispose();
       printMat.dispose();
-      footprintTex.dispose();
       skyGeometries.forEach((g) => g.dispose());
       skyMaterials.forEach((m) => m.dispose());
+      skyTextures.forEach((t) => t.dispose());
       envRT.dispose();
       scene.clear();
       renderer.dispose();
@@ -1559,7 +1643,9 @@ export const SurfaceExplorerGame: React.FC<SurfaceExplorerGameProps> = ({
           <div className={`text-[11px] font-mono tabular-nums mt-0.5 ${mutedTextClass}`}>
             {hudCoords}
           </div>
-          <div className={`mt-1.5 pt-1.5 border-t ${dividerClass} flex items-center justify-between text-[11px] font-mono`}>
+          <div
+            className={`mt-1.5 pt-1.5 border-t ${dividerClass} flex items-center justify-between text-[11px] font-mono`}
+          >
             <span className={mutedTextClass}>
               Gravity: {isMars ? '3.72 m/s²' : '1.62 m/s²'}
             </span>
@@ -1610,7 +1696,9 @@ export const SurfaceExplorerGame: React.FC<SurfaceExplorerGameProps> = ({
           <div
             className={`pointer-events-auto w-full max-w-xl rounded-2xl overflow-hidden ${panelBgClass}`}
           >
-            <div className={`px-4 sm:px-5 py-3 flex items-start justify-between gap-3 ${headerBarClass}`}>
+            <div
+              className={`px-4 sm:px-5 py-3 flex items-start justify-between gap-3 ${headerBarClass}`}
+            >
               <div className="min-w-0">
                 <div
                   className={`flex items-center gap-1.5 text-[10px] font-mono font-bold uppercase tracking-widest ${accentTextClass}`}
@@ -1649,7 +1737,9 @@ export const SurfaceExplorerGame: React.FC<SurfaceExplorerGameProps> = ({
                 {surfaceDescription}
               </p>
 
-              <div className={`mt-3 pt-2.5 border-t ${dividerClass} flex items-center justify-between gap-2 text-[11px] font-mono`}>
+              <div
+                className={`mt-3 pt-2.5 border-t ${dividerClass} flex items-center justify-between gap-2 text-[11px] font-mono`}
+              >
                 <span className={mutedTextClass}>
                   Press <span className={`font-bold ${accentTextClass}`}>[E]</span> to toggle
                 </span>
@@ -1713,13 +1803,17 @@ export const SurfaceExplorerGame: React.FC<SurfaceExplorerGameProps> = ({
                 : 'bg-[#1C1D21] border-2 border-[#BAE6FD] text-[#F4F4F5] shadow-none'
             }`}
           >
-            <div className={`px-6 py-4 flex items-center justify-between gap-2 ${
-              isMars
-                ? 'bg-[#1C140F] border-b border-[#44403C]'
-                : 'bg-[#27282D] border-b border-[#3F3F46]'
-            }`}>
+            <div
+              className={`px-6 py-4 flex items-center justify-between gap-2 ${
+                isMars
+                  ? 'bg-[#1C140F] border-b border-[#44403C]'
+                  : 'bg-[#27282D] border-b border-[#3F3F46]'
+              }`}
+            >
               <div className="flex items-center gap-2">
-                <span className={`px-2 py-0.5 rounded-full border text-[10px] font-mono font-bold uppercase tracking-wider ${badgeClass}`}>
+                <span
+                  className={`px-2 py-0.5 rounded-full border text-[10px] font-mono font-bold uppercase tracking-wider ${badgeClass}`}
+                >
                   {isMars ? 'MARS EVA' : 'LUNAR EVA'}
                 </span>
                 <span className={`text-xs font-mono ${mutedTextClass}`}>
@@ -1741,8 +1835,8 @@ export const SurfaceExplorerGame: React.FC<SurfaceExplorerGameProps> = ({
               </p>
 
               <p className="text-sm mt-4 leading-relaxed">
-                Walk across the {isMars ? 'Martian regolith' : 'lunar regolith'} to inspect the
-                landing site. Approach the spacecraft to trigger its surface log.
+                Walk across the {isMars ? 'Martian regolith' : 'lunar regolith'} to inspect
+                the landing site. Approach the spacecraft to trigger its surface log.
               </p>
 
               <div
@@ -1753,13 +1847,15 @@ export const SurfaceExplorerGame: React.FC<SurfaceExplorerGameProps> = ({
                 }`}
               >
                 <div>
-                  <strong className={accentTextClass}>WASD / Arrow Keys:</strong> Walk across site
+                  <strong className={accentTextClass}>WASD / Arrow Keys:</strong> Walk across
+                  site
                 </div>
                 <div>
                   <strong className={accentTextClass}>Mouse / Drag:</strong> Look around
                 </div>
                 <div>
-                  <strong className={accentTextClass}>Shift / Space / E:</strong> Run, Jump, Toggle Info
+                  <strong className={accentTextClass}>Shift / Space / E:</strong> Run, Jump,
+                  Toggle Info
                 </div>
               </div>
 
