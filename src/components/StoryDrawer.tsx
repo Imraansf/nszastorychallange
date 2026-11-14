@@ -286,7 +286,7 @@ export const StoryDrawer: React.FC<StoryDrawerProps> = ({
           </div>
 
           <div className="flex items-center gap-2.5 shrink-0 ml-auto">
-            {onInspectModel && artifact.model3dUrl && (
+            {onInspectModel && (
               <button
                 onClick={() => onInspectModel(artifact)}
                 className={`min-h-[40px] px-3.5 py-2 rounded-xl border-2 active:translate-y-0.5 active:shadow-none text-xs font-black flex items-center gap-1.5 transition-all ${

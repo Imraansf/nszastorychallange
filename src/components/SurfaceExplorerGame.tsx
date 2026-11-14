@@ -13,6 +13,11 @@ import {
   MousePointerClick,
 } from 'lucide-react';
 import { playTelemetryBeep, playSuccessChime } from '../utils/audio';
+import {
+  DRACO_DECODER_CDN_URL,
+  getSpacecraftModelAsset,
+  loadValidatedGltf,
+} from '../utils/spacecraft-models';
 
 export interface SurfaceExplorerGameProps {
   artifact: Artifact;
@@ -1081,19 +1086,20 @@ export const SurfaceExplorerGame: React.FC<SurfaceExplorerGameProps> = ({
     });
     siteAnchor.add(companionGroup);
 
-    // Asynchronously load official NASA 3D GLB model if configured
+    // Asynchronously load local/NASA 3D GLB model if configured
     let gltfRoot: THREE.Object3D | null = null;
-    if (artifact.model3dUrl) {
+    const glbAbortController = new AbortController();
+    const modelAsset = getSpacecraftModelAsset(artifact.id);
+    const targetModelUrl = modelAsset.modelPath || artifact.model3dUrl || null;
+
+    if (targetModelUrl) {
       const dracoLoader = new DRACOLoader();
-      dracoLoader.setDecoderPath(
-        'https://www.gstatic.com/draco/versioned/decoders/1.5.6/'
-      );
+      dracoLoader.setDecoderPath(DRACO_DECODER_CDN_URL);
       const gltfLoader = new GLTFLoader();
       gltfLoader.setDRACOLoader(dracoLoader);
 
-      gltfLoader.load(
-        artifact.model3dUrl,
-        (gltf) => {
+      loadValidatedGltf(targetModelUrl, gltfLoader, glbAbortController.signal)
+        .then((gltf) => {
           if (isDisposed) {
             disposeObject3D(gltf.scene);
             dracoLoader.dispose();
@@ -1124,26 +1130,24 @@ export const SurfaceExplorerGame: React.FC<SurfaceExplorerGameProps> = ({
                   : [mesh.material];
                 mats.forEach((m) => {
                   if (m instanceof THREE.MeshStandardMaterial) {
-                    m.envMapIntensity = 1.05;
+                    m.envMapIntensity = 1.1;
                   }
                 });
               }
             }
           });
 
-          // Remove procedural fallback and swap in official NASA GLB
+          // Remove procedural fallback and swap in loaded GLB
           siteAnchor.remove(craftGroup);
           disposeObject3D(craftGroup);
           siteAnchor.add(loaded);
           gltfRoot = loaded;
           setModelSourceLabel('NASA GLB');
           dracoLoader.dispose();
-        },
-        undefined,
-        () => {
+        })
+        .catch(() => {
           dracoLoader.dispose();
-        }
-      );
+        });
     }
 
     // 7. FOOTPRINTS TRAIL (Instanced decals left while walking)
@@ -1451,6 +1455,7 @@ export const SurfaceExplorerGame: React.FC<SurfaceExplorerGameProps> = ({
 
     return () => {
       isDisposed = true;
+      glbAbortController.abort();
       cancelAnimationFrame(rafId);
       resizeObserver.disconnect();
       window.removeEventListener('resize', handleResize);

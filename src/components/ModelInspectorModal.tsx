@@ -1,20 +1,19 @@
-import React, { useEffect, useRef, useState, useMemo } from 'react';
-import * as THREE from 'three';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { Artifact } from '../types/space';
 import {
   X,
-  RotateCw,
   Cpu,
-  Compass,
   Zap,
   Weight,
   Ruler,
   Radio,
   ExternalLink,
   CheckCircle,
+  Sparkles,
 } from 'lucide-react';
-import { playTelemetryBeep, playSuccessChime } from '../utils/audio';
+import { playTelemetryBeep } from '../utils/audio';
+import { Artifact3DViewport, ModelViewportStatus } from './Artifact3DViewport';
+import { getSpacecraftModelAsset } from '../utils/spacecraft-models';
 
 export interface ModelInspectorModalProps {
   artifact: Artifact | null;
@@ -25,20 +24,16 @@ export const ModelInspectorModal: React.FC<ModelInspectorModalProps> = ({
   artifact,
   onClose,
 }) => {
-  const mountRef = useRef<HTMLDivElement>(null);
-  const sceneRef = useRef<THREE.Scene | null>(null);
-  const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
-  const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
-  const modelGroupRef = useRef<THREE.Group | null>(null);
-
-  const [isAutoRotating, setIsAutoRotating] = useState(true);
-  const isAutoRotatingRef = useRef(isAutoRotating);
-  const [isLoadingGltf, setIsLoadingGltf] = useState(false);
-  const [loadedGltfSuccess, setLoadedGltfSuccess] = useState(false);
+  const [viewportStatus, setViewportStatus] =
+    useState<ModelViewportStatus>('loading');
+  const [assetLabel, setAssetLabel] = useState<string>('');
 
   useEffect(() => {
-    isAutoRotatingRef.current = isAutoRotating;
-  }, [isAutoRotating]);
+    if (!artifact) return;
+    const asset = getSpacecraftModelAsset(artifact.id);
+    setViewportStatus(asset.modelPath ? 'loading' : 'hologram_fallback');
+    setAssetLabel(asset.assetLabel);
+  }, [artifact]);
 
   useEffect(() => {
     if (!artifact) return;
@@ -52,16 +47,15 @@ export const ModelInspectorModal: React.FC<ModelInspectorModalProps> = ({
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [artifact, onClose]);
 
-  // Mouse orbit state
-  const orbitState = useRef({
-    isDragging: false,
-    previousMousePosition: { x: 0, y: 0 },
-    rotationX: 0.25,
-    rotationY: -0.6,
-    distance: 5.5,
-  });
+  const handleStatusChange = useCallback(
+    (status: ModelViewportStatus, label: string) => {
+      setViewportStatus(status);
+      setAssetLabel(label);
+    },
+    []
+  );
 
-  // Calculate technical specs
+  // Technical engineering specifications
   const specs = useMemo(() => {
     if (!artifact) return null;
 
@@ -125,706 +119,10 @@ export const ModelInspectorModal: React.FC<ModelInspectorModalProps> = ({
     };
   }, [artifact]);
 
-  // 1. Initialize Three.js Scene, Camera, Renderer, and Procedural CAD Model
-  useEffect(() => {
-    if (!artifact || !mountRef.current) return;
-
-    let isDisposed = false;
-    setIsLoadingGltf(false);
-    setLoadedGltfSuccess(false);
-
-    const container = mountRef.current;
-    const width = container.clientWidth;
-    const height = container.clientHeight;
-
-    // SCENE
-    const scene = new THREE.Scene();
-    sceneRef.current = scene;
-
-    // CAMERA
-    const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100);
-    camera.position.set(0, 1.5, orbitState.current.distance);
-    cameraRef.current = camera;
-
-    // RENDERER
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setSize(width, height);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.25;
-    container.innerHTML = '';
-    container.appendChild(renderer.domElement);
-    rendererRef.current = renderer;
-
-    // LIGHTING (Space Environment)
-    // 1. Direct Harsh Space Sunlight
-    const sunLight = new THREE.DirectionalLight(0xffffff, 2.8);
-    sunLight.position.set(6, 9, 7);
-    sunLight.castShadow = true;
-    sunLight.shadow.mapSize.width = 1024;
-    sunLight.shadow.mapSize.height = 1024;
-    scene.add(sunLight);
-
-    // 2. Ambient Planetary Surface Reflection (Mars reddish or Lunar grey)
-    const bounceColor = artifact.body === 'mars' ? 0x6e2814 : 0x1e2638;
-    const groundBounceLight = new THREE.DirectionalLight(bounceColor, 1.2);
-    groundBounceLight.position.set(-5, -6, -4);
-    scene.add(groundBounceLight);
-
-    // 3. Ambient Starfield Low Fill
-    const hemiLight = new THREE.HemisphereLight(0x0f172a, bounceColor, 0.65);
-    scene.add(hemiLight);
-
-    // 4. Rim Light (Mars Warm Sand/Brown vs Moon/Deep Space Pale Light Blue)
-    const rimPoint = new THREE.PointLight(
-      artifact.body === 'mars' ? 0xd97706 : 0xbae6fd,
-      1.8,
-      20
-    );
-    rimPoint.position.set(-4, 3, -4);
-    scene.add(rimPoint);
-
-    // BUILD PROCEDURAL CAD HARDWARE MESH (Wireframe by default)
-    const modelGroup = new THREE.Group();
-    modelGroupRef.current = modelGroup;
-    const wireframeColorHex = artifact.body === 'mars' ? 0xf5e6d3 : 0xbae6fd;
-
-    const registerMaterial = (mesh: THREE.Mesh, baseMat: THREE.Material) => {
-      if (baseMat instanceof THREE.MeshStandardMaterial) {
-        baseMat.color.set(0x050608);
-        baseMat.wireframe = true;
-        baseMat.emissive.set(wireframeColorHex);
-        baseMat.emissiveIntensity = 0.9;
-        baseMat.needsUpdate = true;
-      } else if ('wireframe' in baseMat) {
-        (baseMat as any).wireframe = true;
-        (baseMat as any).needsUpdate = true;
-      }
-      mesh.castShadow = true;
-      mesh.receiveShadow = true;
-    };
-
-    // Material Library
-    const goldKaptonMat = new THREE.MeshStandardMaterial({
-      color: 0xeab308,
-      metalness: 0.9,
-      roughness: 0.22,
-    });
-    const silverAluminumMat = new THREE.MeshStandardMaterial({
-      color: 0xe2e8f0,
-      metalness: 0.85,
-      roughness: 0.35,
-    });
-    const darkSolarCellMat = new THREE.MeshStandardMaterial({
-      color: 0x0f172a,
-      metalness: 0.95,
-      roughness: 0.15,
-    });
-    const blackCompositeMat = new THREE.MeshStandardMaterial({
-      color: 0x1e293b,
-      metalness: 0.4,
-      roughness: 0.7,
-    });
-    const copperAntennaMat = new THREE.MeshStandardMaterial({
-      color: 0xf97316,
-      metalness: 0.88,
-      roughness: 0.3,
-    });
-    const lensCyanMat = new THREE.MeshStandardMaterial({
-      color: 0x38bdf8,
-      metalness: 0.9,
-      roughness: 0.1,
-      emissive: 0x0284c7,
-      emissiveIntensity: 0.3,
-    });
-
-    // 1. Circular Starfield Platform / Telemetry Grid & Surface Regolith Plane
-    const gridGeo = new THREE.RingGeometry(2.8, 2.85, 64);
-    const gridMat = new THREE.MeshBasicMaterial({
-      color: artifact.body === 'mars' ? 0xf5e6d3 : 0xbae6fd,
-      side: THREE.DoubleSide,
-      transparent: true,
-      opacity: 0.35,
-    });
-    const gridMesh = new THREE.Mesh(gridGeo, gridMat);
-    gridMesh.rotation.x = Math.PI / 2;
-    gridMesh.position.y = -1.2;
-    modelGroup.add(gridMesh);
-
-    // Planetary Surface Regolith Ground Stage
-    const groundCanvas = document.createElement('canvas');
-    groundCanvas.width = 512;
-    groundCanvas.height = 512;
-    const gctx = groundCanvas.getContext('2d');
-    if (gctx) {
-      const isMars = artifact.body === 'mars';
-      const bg = gctx.createRadialGradient(256, 256, 10, 256, 256, 256);
-      if (isMars) {
-        bg.addColorStop(0, '#7c2d12');
-        bg.addColorStop(0.5, '#451a03');
-        bg.addColorStop(1, '#1c1917');
-      } else {
-        bg.addColorStop(0, '#3f3f46');
-        bg.addColorStop(0.5, '#27272a');
-        bg.addColorStop(1, '#09090b');
-      }
-      gctx.fillStyle = bg;
-      gctx.fillRect(0, 0, 512, 512);
-
-      for (let i = 0; i < 1800; i++) {
-        const x = Math.random() * 512;
-        const y = Math.random() * 512;
-        const r = Math.random() * 2 + 0.5;
-        const alpha = Math.random() * 0.3;
-        gctx.fillStyle = isMars ? `rgba(217, 119, 6, ${alpha})` : `rgba(228, 228, 231, ${alpha})`;
-        gctx.beginPath();
-        gctx.arc(x, y, r, 0, Math.PI * 2);
-        gctx.fill();
-      }
-    }
-    const groundTexture = new THREE.CanvasTexture(groundCanvas);
-    groundTexture.colorSpace = THREE.SRGBColorSpace;
-    groundTexture.wrapS = THREE.RepeatWrapping;
-    groundTexture.wrapT = THREE.RepeatWrapping;
-    groundTexture.repeat.set(2, 2);
-
-    const groundGeo = new THREE.CylinderGeometry(4.2, 4.5, 0.08, 48);
-    const groundMat = new THREE.MeshStandardMaterial({
-      map: groundTexture,
-      roughness: 0.95,
-      metalness: 0.05,
-    });
-    const groundMesh = new THREE.Mesh(groundGeo, groundMat);
-    groundMesh.position.y = -1.24;
-    groundMesh.receiveShadow = true;
-    modelGroup.add(groundMesh);
-
-    // Procedural Assembly based on Artifact Category
-    const category = artifact.category;
-
-    if (category === 'rover') {
-      // --- MARS ROVER (Opportunity / Curiosity / Sojourner archetype) ---
-      // 1. Warm Electronics Box (WEB)
-      const bodyGeo = new THREE.BoxGeometry(1.6, 0.7, 1.2);
-      const bodyMesh = new THREE.Mesh(bodyGeo, goldKaptonMat);
-      registerMaterial(bodyMesh, goldKaptonMat);
-      bodyMesh.position.y = -0.2;
-      modelGroup.add(bodyMesh);
-
-      // 2. Solar Array Wings
-      const wingGeo = new THREE.BoxGeometry(2.4, 0.05, 1.6);
-      const wingMesh = new THREE.Mesh(wingGeo, darkSolarCellMat);
-      registerMaterial(wingMesh, darkSolarCellMat);
-      wingMesh.position.set(0, 0.2, 0);
-      modelGroup.add(wingMesh);
-
-      // Solar Panel Cell Dividers (Accent line)
-      const dividerGeo = new THREE.BoxGeometry(2.42, 0.06, 0.04);
-      const dividerMesh = new THREE.Mesh(dividerGeo, silverAluminumMat);
-      registerMaterial(dividerMesh, silverAluminumMat);
-      dividerMesh.position.set(0, 0.21, 0);
-      modelGroup.add(dividerMesh);
-
-      // 3. Pancam / Navcam Mast
-      const mastPoleGeo = new THREE.CylinderGeometry(0.04, 0.04, 1.3, 16);
-      const mastPole = new THREE.Mesh(mastPoleGeo, silverAluminumMat);
-      registerMaterial(mastPole, silverAluminumMat);
-      mastPole.position.set(0.4, 0.85, 0.35);
-      modelGroup.add(mastPole);
-
-      // Mast Head (Pancam stereo eyes)
-      const mastHeadGeo = new THREE.BoxGeometry(0.35, 0.15, 0.2);
-      const mastHead = new THREE.Mesh(mastHeadGeo, blackCompositeMat);
-      registerMaterial(mastHead, blackCompositeMat);
-      mastHead.position.set(0.4, 1.5, 0.35);
-      modelGroup.add(mastHead);
-
-      const eyeGeo = new THREE.CylinderGeometry(0.04, 0.04, 0.08, 16);
-      const leftEye = new THREE.Mesh(eyeGeo, lensCyanMat);
-      leftEye.rotation.x = Math.PI / 2;
-      leftEye.position.set(0.3, 1.5, 0.45);
-      const rightEye = leftEye.clone();
-      rightEye.position.set(0.5, 1.5, 0.45);
-      modelGroup.add(leftEye, rightEye);
-
-      // 4. High-Gain Dish Antenna
-      const dishGeo = new THREE.SphereGeometry(0.35, 24, 12, 0, Math.PI * 2, 0, Math.PI * 0.4);
-      const dishMesh = new THREE.Mesh(dishGeo, silverAluminumMat);
-      registerMaterial(dishMesh, silverAluminumMat);
-      dishMesh.rotation.x = -Math.PI / 4;
-      dishMesh.position.set(-0.5, 0.55, -0.3);
-      modelGroup.add(dishMesh);
-
-      const dishHornGeo = new THREE.CylinderGeometry(0.02, 0.02, 0.35, 8);
-      const dishHorn = new THREE.Mesh(dishHornGeo, copperAntennaMat);
-      registerMaterial(dishHorn, copperAntennaMat);
-      dishHorn.position.set(-0.5, 0.65, -0.2);
-      modelGroup.add(dishHorn);
-
-      // 5. Rocker-Bogie Suspension & 6 Wheels
-      const wheelGeo = new THREE.CylinderGeometry(0.2, 0.2, 0.15, 20);
-      const wheelPositions = [
-        [-0.9, -0.85, 0.7],
-        [0.0, -0.85, 0.75],
-        [0.9, -0.85, 0.7],
-        [-0.9, -0.85, -0.7],
-        [0.0, -0.85, -0.75],
-        [0.9, -0.85, -0.7],
-      ];
-
-      wheelPositions.forEach((pos) => {
-        const wheel = new THREE.Mesh(wheelGeo, blackCompositeMat);
-        wheel.rotation.z = Math.PI / 2;
-        wheel.position.set(pos[0], pos[1], pos[2]);
-        registerMaterial(wheel, blackCompositeMat);
-        modelGroup.add(wheel);
-
-        // Suspension strut connecting to chassis
-        const strutGeo = new THREE.CylinderGeometry(0.025, 0.025, 0.65, 8);
-        const strut = new THREE.Mesh(strutGeo, silverAluminumMat);
-        strut.position.set(pos[0] * 0.6, pos[1] + 0.3, pos[2] * 0.7);
-        strut.rotation.z = pos[0] > 0 ? 0.3 : -0.3;
-        registerMaterial(strut, silverAluminumMat);
-        modelGroup.add(strut);
-      });
-
-      // 6. Instrument Deployment Device (Robotic Arm)
-      const armGeo1 = new THREE.CylinderGeometry(0.03, 0.03, 0.6, 8);
-      const arm1 = new THREE.Mesh(armGeo1, silverAluminumMat);
-      arm1.rotation.z = Math.PI / 3;
-      arm1.position.set(0.9, -0.1, 0.0);
-      registerMaterial(arm1, silverAluminumMat);
-      modelGroup.add(arm1);
-
-      const armTurretGeo = new THREE.CylinderGeometry(0.08, 0.08, 0.15, 12);
-      const armTurret = new THREE.Mesh(armTurretGeo, blackCompositeMat);
-      armTurret.position.set(1.2, -0.35, 0.0);
-      registerMaterial(armTurret, blackCompositeMat);
-      modelGroup.add(armTurret);
-    } else if (category === 'apollo_crewed' || artifact.id.includes('lunar-module')) {
-      // --- APOLLO LUNAR MODULE DESCENT STAGE ---
-      // 1. Octagonal Main Descent Chassis
-      const octGeo = new THREE.CylinderGeometry(1.4, 1.4, 0.9, 8);
-      const octMesh = new THREE.Mesh(octGeo, goldKaptonMat);
-      registerMaterial(octMesh, goldKaptonMat);
-      octMesh.position.y = 0.0;
-      modelGroup.add(octMesh);
-
-      // Central Descent Rocket Engine Bell
-      const engineGeo = new THREE.ConeGeometry(0.75, 1.1, 24, 1, true);
-      const engineMesh = new THREE.Mesh(engineGeo, blackCompositeMat);
-      registerMaterial(engineMesh, blackCompositeMat);
-      engineMesh.rotation.x = Math.PI;
-      engineMesh.position.y = -0.7;
-      modelGroup.add(engineMesh);
-
-      // Ascent Stage Docking Interface Ring
-      const ringGeo = new THREE.TorusGeometry(0.9, 0.08, 16, 32);
-      const ringMesh = new THREE.Mesh(ringGeo, silverAluminumMat);
-      registerMaterial(ringMesh, silverAluminumMat);
-      ringMesh.rotation.x = Math.PI / 2;
-      ringMesh.position.y = 0.5;
-      modelGroup.add(ringMesh);
-
-      // 4 Outrigger Landing Gear Struts & Footpads
-      const legAngles = [Math.PI / 4, (3 * Math.PI) / 4, (5 * Math.PI) / 4, (7 * Math.PI) / 4];
-      legAngles.forEach((angle, idx) => {
-        const radius = 2.0;
-        const x = Math.cos(angle) * radius;
-        const z = Math.sin(angle) * radius;
-
-        // Primary Landing Strut
-        const strutGeo = new THREE.CylinderGeometry(0.05, 0.05, 1.8, 12);
-        const strut = new THREE.Mesh(strutGeo, goldKaptonMat);
-        strut.position.set(x * 0.6, -0.45, z * 0.6);
-        strut.lookAt(x, -1.1, z);
-        strut.rotateX(Math.PI / 2);
-        registerMaterial(strut, goldKaptonMat);
-        modelGroup.add(strut);
-
-        // Circular Lunar Footpad Dish
-        const footpadGeo = new THREE.CylinderGeometry(0.3, 0.35, 0.06, 16);
-        const footpad = new THREE.Mesh(footpadGeo, goldKaptonMat);
-        footpad.position.set(x, -1.1, z);
-        registerMaterial(footpad, goldKaptonMat);
-        modelGroup.add(footpad);
-
-        // Ingress/Egress Ladder on Forward Gear
-        if (idx === 0) {
-          const ladderRailGeo = new THREE.CylinderGeometry(0.015, 0.015, 1.4, 8);
-          const rail1 = new THREE.Mesh(ladderRailGeo, silverAluminumMat);
-          rail1.position.set(x * 0.7 - 0.08, -0.4, z * 0.7);
-          const rail2 = rail1.clone();
-          rail2.position.set(x * 0.7 + 0.08, -0.4, z * 0.7);
-          modelGroup.add(rail1, rail2);
-        }
-      });
-    } else if (
-      category === 'interstellar_probe' ||
-      category === 'space_telescope' ||
-      category === 'planetary_orbiter'
-    ) {
-      // --- INTERSTELLAR PROBE / DEEP SPACE ORBITER (Voyager / Cassini / New Horizons) ---
-      // 1. High-Gain Parabolic Reflector Dish (3.7m Archetype)
-      const dishGeo = new THREE.SphereGeometry(1.6, 32, 16, 0, Math.PI * 2, 0, Math.PI * 0.38);
-      const dishMesh = new THREE.Mesh(dishGeo, silverAluminumMat);
-      registerMaterial(dishMesh, silverAluminumMat);
-      dishMesh.rotation.x = -Math.PI / 2;
-      dishMesh.position.set(0, 0.6, 0);
-      modelGroup.add(dishMesh);
-
-      // Central Subreflector Feed Horn
-      const feedGeo = new THREE.ConeGeometry(0.2, 0.6, 16);
-      const feedMesh = new THREE.Mesh(feedGeo, goldKaptonMat);
-      registerMaterial(feedMesh, goldKaptonMat);
-      feedMesh.rotation.x = Math.PI;
-      feedMesh.position.set(0, 1.25, 0);
-      modelGroup.add(feedMesh);
-
-      // Feed Support Tripod
-      for (let i = 0; i < 3; i++) {
-        const angle = (i * Math.PI * 2) / 3;
-        const leg = new THREE.CylinderGeometry(0.02, 0.02, 0.9, 8);
-        const legMesh = new THREE.Mesh(leg, blackCompositeMat);
-        legMesh.position.set(Math.cos(angle) * 0.6, 0.9, Math.sin(angle) * 0.6);
-        legMesh.lookAt(0, 1.2, 0);
-        legMesh.rotateX(Math.PI / 2);
-        registerMaterial(legMesh, blackCompositeMat);
-        modelGroup.add(legMesh);
-      }
-
-      // 2. 10-Sided Bus Electronics Chassis
-      const busGeo = new THREE.CylinderGeometry(0.9, 0.9, 0.7, 10);
-      const busMesh = new THREE.Mesh(busGeo, goldKaptonMat);
-      registerMaterial(busMesh, goldKaptonMat);
-      busMesh.position.set(0, -0.2, 0);
-      modelGroup.add(busMesh);
-
-      // 3. Radioisotope Thermoelectric Generator (RTG) Boom
-      const rtgBoomGeo = new THREE.CylinderGeometry(0.04, 0.04, 2.2, 8);
-      const rtgBoom = new THREE.Mesh(rtgBoomGeo, blackCompositeMat);
-      rtgBoom.rotation.z = Math.PI / 2.3;
-      rtgBoom.position.set(-1.1, -0.2, 0);
-      registerMaterial(rtgBoom, blackCompositeMat);
-      modelGroup.add(rtgBoom);
-
-      // 3 Canister RTGs with cooling fins
-      for (let j = 0; j < 3; j++) {
-        const canGeo = new THREE.CylinderGeometry(0.14, 0.14, 0.45, 12);
-        const canMesh = new THREE.Mesh(canGeo, blackCompositeMat);
-        canMesh.position.set(-2.0 - j * 0.35, -0.6 - j * 0.15, 0);
-        registerMaterial(canMesh, blackCompositeMat);
-        modelGroup.add(canMesh);
-      }
-
-      // 4. Magnetometer Boom (Deployable Triangular Truss)
-      const magBoomGeo = new THREE.CylinderGeometry(0.02, 0.02, 3.2, 6);
-      const magBoom = new THREE.Mesh(magBoomGeo, silverAluminumMat);
-      magBoom.rotation.z = -Math.PI / 2.2;
-      magBoom.position.set(1.5, -0.1, 0);
-      registerMaterial(magBoom, silverAluminumMat);
-      modelGroup.add(magBoom);
-
-      const magSensorGeo = new THREE.SphereGeometry(0.12, 12, 12);
-      const magSensor = new THREE.Mesh(magSensorGeo, goldKaptonMat);
-      magSensor.position.set(3.0, -0.5, 0);
-      registerMaterial(magSensor, goldKaptonMat);
-      modelGroup.add(magSensor);
-    } else {
-      // --- UNCREWED LANDER / PROBE / INSTRUMENT (Viking / Surveyor / InSight archetype) ---
-      // 1. Hexagonal Main Bus
-      const hexGeo = new THREE.CylinderGeometry(1.2, 1.3, 0.8, 6);
-      const hexMesh = new THREE.Mesh(hexGeo, silverAluminumMat);
-      registerMaterial(hexMesh, silverAluminumMat);
-      hexMesh.position.y = 0.0;
-      modelGroup.add(hexMesh);
-
-      // 2. Dual Decagonal Solar Arrays (InSight / Phoenix style)
-      [-1.8, 1.8].forEach((xOffset) => {
-        const solarGeo = new THREE.CylinderGeometry(0.9, 0.9, 0.04, 10);
-        const solar = new THREE.Mesh(solarGeo, darkSolarCellMat);
-        solar.position.set(xOffset, 0.1, 0);
-        registerMaterial(solar, darkSolarCellMat);
-        modelGroup.add(solar);
-
-        const strutGeo = new THREE.CylinderGeometry(0.03, 0.03, 0.7, 8);
-        const strut = new THREE.Mesh(strutGeo, silverAluminumMat);
-        strut.rotation.z = Math.PI / 2;
-        strut.position.set(xOffset * 0.55, 0.1, 0);
-        registerMaterial(strut, silverAluminumMat);
-        modelGroup.add(strut);
-      });
-
-      // 3. Instrument Domes & Meteorology Mast
-      const domeGeo = new THREE.SphereGeometry(0.3, 16, 12, 0, Math.PI * 2, 0, Math.PI * 0.5);
-      const domeMesh = new THREE.Mesh(domeGeo, copperAntennaMat);
-      domeMesh.position.set(0.3, 0.4, 0.2);
-      registerMaterial(domeMesh, copperAntennaMat);
-      modelGroup.add(domeMesh);
-
-      const mastGeo = new THREE.CylinderGeometry(0.03, 0.03, 1.2, 8);
-      const mast = new THREE.Mesh(mastGeo, silverAluminumMat);
-      mast.position.set(-0.3, 0.9, -0.3);
-      registerMaterial(mast, silverAluminumMat);
-      modelGroup.add(mast);
-
-      // 4. Tripod Landing Legs
-      for (let k = 0; k < 3; k++) {
-        const angle = (k * Math.PI * 2) / 3;
-        const lx = Math.cos(angle) * 1.6;
-        const lz = Math.sin(angle) * 1.6;
-
-        const legGeo = new THREE.CylinderGeometry(0.04, 0.04, 1.4, 8);
-        const leg = new THREE.Mesh(legGeo, goldKaptonMat);
-        leg.position.set(lx * 0.6, -0.45, lz * 0.6);
-        leg.lookAt(lx, -1.0, lz);
-        leg.rotateX(Math.PI / 2);
-        registerMaterial(leg, goldKaptonMat);
-        modelGroup.add(leg);
-
-        const padGeo = new THREE.CylinderGeometry(0.25, 0.28, 0.05, 12);
-        const pad = new THREE.Mesh(padGeo, goldKaptonMat);
-        pad.position.set(lx, -1.0, lz);
-        registerMaterial(pad, goldKaptonMat);
-        modelGroup.add(pad);
-      }
-    }
-
-    scene.add(modelGroup);
-
-    // Load official NASA 3D Resources GLTF/GLB model if available
-    if (artifact.model3dUrl) {
-      setIsLoadingGltf(true);
-      const loader = new GLTFLoader();
-      loader.load(
-        artifact.model3dUrl,
-        (gltf) => {
-          if (isDisposed || !modelGroupRef.current) return;
-          const gltfScene = gltf.scene;
-
-          // Clear procedural meshes and replace with official NASA GLTF geometry
-          while (modelGroup.children.length > 0) {
-            const child = modelGroup.children[0];
-            modelGroup.remove(child);
-          }
-          // Re-add environment grid ring and surface ground mesh
-          modelGroup.add(gridMesh);
-          modelGroup.add(groundMesh);
-
-          // Center & Normalize Scale to 3.0 units max dimension
-          const box = new THREE.Box3().setFromObject(gltfScene);
-          const center = box.getCenter(new THREE.Vector3());
-          const size = box.getSize(new THREE.Vector3());
-          const maxDim = Math.max(size.x, size.y, size.z) || 1.0;
-          const scale = 3.0 / maxDim;
-
-          const bottomY = (box.min.y - center.y) * scale;
-          gltfScene.position.set(-center.x * scale, -bottomY - 1.2, -center.z * scale);
-          gltfScene.scale.setScalar(scale);
-
-          gltfScene.traverse((child) => {
-            if ((child as THREE.Mesh).isMesh) {
-              const mesh = child as THREE.Mesh;
-              mesh.castShadow = true;
-              mesh.receiveShadow = true;
-              if (mesh.material) {
-                const mat = Array.isArray(mesh.material) ? mesh.material[0] : mesh.material;
-                registerMaterial(mesh, mat);
-              }
-            }
-          });
-
-          modelGroup.add(gltfScene);
-          setIsLoadingGltf(false);
-          setLoadedGltfSuccess(true);
-          playSuccessChime();
-        },
-        undefined,
-        (err) => {
-          if (isDisposed) return;
-          console.warn('NASA 3D GLTF Model load fallback to procedural CAD:', err);
-          setIsLoadingGltf(false);
-          setLoadedGltfSuccess(false);
-        }
-      );
-    }
-
-    // RENDER LOOP
-    let animationFrameId: number;
-    let clock = new THREE.Clock();
-
-    const animate = () => {
-      animationFrameId = requestAnimationFrame(animate);
-      const delta = clock.getDelta();
-
-      if (modelGroupRef.current) {
-        if (isAutoRotatingRef.current && !orbitState.current.isDragging) {
-          orbitState.current.rotationY += delta * 0.35;
-        }
-
-        // Apply orbit rotations
-        modelGroupRef.current.rotation.y = orbitState.current.rotationY;
-        modelGroupRef.current.rotation.x = orbitState.current.rotationX;
-
-        // Subtle zero-g space float
-        modelGroupRef.current.position.y = Math.sin(clock.getElapsedTime() * 0.8) * 0.05;
-      }
-
-      if (cameraRef.current) {
-        cameraRef.current.position.z = orbitState.current.distance;
-      }
-
-      if (rendererRef.current && sceneRef.current && cameraRef.current) {
-        rendererRef.current.render(sceneRef.current, cameraRef.current);
-      }
-    };
-
-    animate();
-
-    // RESIZE LISTENER
-    const handleResize = () => {
-      if (!container || !cameraRef.current || !rendererRef.current) return;
-      const w = container.clientWidth;
-      const h = container.clientHeight;
-      cameraRef.current.aspect = w / h;
-      cameraRef.current.updateProjectionMatrix();
-      rendererRef.current.setSize(w, h);
-    };
-
-    window.addEventListener('resize', handleResize);
-
-    return () => {
-      isDisposed = true;
-      cancelAnimationFrame(animationFrameId);
-      window.removeEventListener('resize', handleResize);
-      groundTexture.dispose();
-      if (rendererRef.current) {
-        rendererRef.current.dispose();
-      }
-      scene.clear();
-    };
-  }, [artifact]);
-
-  // 2. Mouse Drag & Scroll Zoom Event Listeners for Orbit Controls
-  useEffect(() => {
-    const container = mountRef.current;
-    if (!container) return;
-
-    const onMouseDown = (e: MouseEvent) => {
-      orbitState.current.isDragging = true;
-      orbitState.current.previousMousePosition = { x: e.clientX, y: e.clientY };
-    };
-
-    const onMouseMove = (e: MouseEvent) => {
-      if (!orbitState.current.isDragging) return;
-      const deltaX = e.clientX - orbitState.current.previousMousePosition.x;
-      const deltaY = e.clientY - orbitState.current.previousMousePosition.y;
-
-      orbitState.current.rotationY += deltaX * 0.008;
-      orbitState.current.rotationX = Math.max(
-        -Math.PI / 2.3,
-        Math.min(Math.PI / 2.3, orbitState.current.rotationX + deltaY * 0.008)
-      );
-
-      orbitState.current.previousMousePosition = { x: e.clientX, y: e.clientY };
-    };
-
-    const onMouseUp = () => {
-      orbitState.current.isDragging = false;
-    };
-
-    const onWheel = (e: WheelEvent) => {
-      e.preventDefault();
-      orbitState.current.distance = Math.max(
-        2.6,
-        Math.min(10.0, orbitState.current.distance + e.deltaY * 0.005)
-      );
-    };
-
-    // Touch controls for mobile / tablet
-    let initialTouchDistance = 0;
-
-    const onTouchStart = (e: TouchEvent) => {
-      if (e.touches.length === 1) {
-        orbitState.current.isDragging = true;
-        orbitState.current.previousMousePosition = {
-          x: e.touches[0].clientX,
-          y: e.touches[0].clientY,
-        };
-      } else if (e.touches.length === 2) {
-        initialTouchDistance = Math.hypot(
-          e.touches[0].clientX - e.touches[1].clientX,
-          e.touches[0].clientY - e.touches[1].clientY
-        );
-      }
-    };
-
-    const onTouchMove = (e: TouchEvent) => {
-      if (e.touches.length === 1 && orbitState.current.isDragging) {
-        const deltaX = e.touches[0].clientX - orbitState.current.previousMousePosition.x;
-        const deltaY = e.touches[0].clientY - orbitState.current.previousMousePosition.y;
-
-        orbitState.current.rotationY += deltaX * 0.008;
-        orbitState.current.rotationX = Math.max(
-          -Math.PI / 2.3,
-          Math.min(Math.PI / 2.3, orbitState.current.rotationX + deltaY * 0.008)
-        );
-
-        orbitState.current.previousMousePosition = {
-          x: e.touches[0].clientX,
-          y: e.touches[0].clientY,
-        };
-      } else if (e.touches.length === 2) {
-        const currentDist = Math.hypot(
-          e.touches[0].clientX - e.touches[1].clientX,
-          e.touches[0].clientY - e.touches[1].clientY
-        );
-        const diff = initialTouchDistance - currentDist;
-        orbitState.current.distance = Math.max(
-          2.6,
-          Math.min(10.0, orbitState.current.distance + diff * 0.01)
-        );
-        initialTouchDistance = currentDist;
-      }
-    };
-
-    const onTouchEnd = () => {
-      orbitState.current.isDragging = false;
-    };
-
-    container.addEventListener('mousedown', onMouseDown);
-    window.addEventListener('mousemove', onMouseMove);
-    window.addEventListener('mouseup', onMouseUp);
-    container.addEventListener('wheel', onWheel, { passive: false });
-
-    container.addEventListener('touchstart', onTouchStart);
-    window.addEventListener('touchmove', onTouchMove);
-    window.addEventListener('touchend', onTouchEnd);
-
-    return () => {
-      container.removeEventListener('mousedown', onMouseDown);
-      window.removeEventListener('mousemove', onMouseMove);
-      window.removeEventListener('mouseup', onMouseUp);
-      container.removeEventListener('wheel', onWheel);
-
-      container.removeEventListener('touchstart', onTouchStart);
-      window.removeEventListener('touchmove', onTouchMove);
-      window.removeEventListener('touchend', onTouchEnd);
-    };
-  }, []);
-
-  const handleResetCamera = () => {
-    playTelemetryBeep(520);
-    orbitState.current.rotationX = 0.25;
-    orbitState.current.rotationY = -0.6;
-    orbitState.current.distance = 5.5;
-  };
-
   if (!artifact) return null;
 
   const isMars = artifact.body === 'mars';
+  const modelAsset = getSpacecraftModelAsset(artifact.id);
 
   return (
     <div
@@ -878,11 +176,7 @@ export const ModelInspectorModal: React.FC<ModelInspectorModalProps> = ({
                   {artifact.agency} • {artifact.date}
                 </span>
               </div>
-              <h3
-                className={`text-base sm:text-lg font-bold tracking-wide truncate mt-0.5 ${
-                  isMars ? 'text-[#FFFFFF]' : 'text-[#FFFFFF]'
-                }`}
-              >
+              <h3 className="text-base sm:text-lg font-bold tracking-wide truncate mt-0.5 text-[#FFFFFF]">
                 {artifact.name} ({artifact.moniker})
               </h3>
             </div>
@@ -907,61 +201,12 @@ export const ModelInspectorModal: React.FC<ModelInspectorModalProps> = ({
 
         {/* Main Content: 3D Viewport on Left, Telemetry Specs on Right */}
         <div className="flex-1 flex flex-col lg:flex-row overflow-hidden relative">
-          {/* 3D WebGL Canvas Viewport */}
-          <div className={`flex-1 relative h-64 sm:h-80 lg:h-full ${isMars ? 'bg-[#1C140F]' : 'bg-[#16171B]'}`}>
-            {/* Three.js Container */}
-            <div
-              ref={mountRef}
-              className="w-full h-full cursor-grab active:cursor-grabbing select-none"
+          {/* 3D WebGL Canvas Viewport with ErrorBoundary + Suspense + Draco GLB Loader */}
+          <div className="flex-1 relative h-64 sm:h-80 lg:h-full">
+            <Artifact3DViewport
+              artifact={artifact}
+              onStatusChange={handleStatusChange}
             />
-
-            {/* View Controls Toolbar (Floating on 3D canvas) */}
-            <div className="absolute top-4 left-4 z-10 flex flex-wrap items-center gap-2">
-              {/* Autorotation Toggle */}
-              <button
-                onClick={() => {
-                  playTelemetryBeep(550);
-                  setIsAutoRotating(!isAutoRotating);
-                }}
-                className={`p-2 rounded-full border backdrop-blur-md transition-colors ${
-                  isMars
-                    ? isAutoRotating
-                      ? 'bg-[#F5E6D3] border-[#F5E6D3] text-[#1C140F] shadow-lg'
-                      : 'bg-[rgba(28,20,15,0.88)] border-[#57534E] text-[#F5E6D3] hover:text-[#FFFFFF] shadow-lg'
-                    : isAutoRotating
-                    ? 'bg-[#BAE6FD] border-[#BAE6FD] text-[#1C1D21] shadow-none'
-                    : 'bg-[rgba(28,29,33,0.92)] border-[#BAE6FD] text-[#D4D4D8] hover:text-[#FFFFFF] shadow-none'
-                }`}
-                title={isAutoRotating ? 'Pause Auto-Rotation' : 'Resume Auto-Rotation'}
-              >
-                <RotateCw className={`w-3.5 h-3.5 ${isAutoRotating ? 'animate-spin' : ''}`} />
-              </button>
-
-              {/* Reset Camera View */}
-              <button
-                onClick={handleResetCamera}
-                className={`p-2 rounded-full border backdrop-blur-md transition-colors ${
-                  isMars
-                    ? 'bg-[rgba(28,20,15,0.88)] hover:bg-[#291D16] border-[#57534E] text-[#F5E6D3] hover:text-[#FFFFFF] shadow-lg'
-                    : 'bg-[rgba(28,29,33,0.92)] hover:bg-[#34363C] border-[#BAE6FD] text-[#D4D4D8] hover:text-[#FFFFFF] shadow-none'
-                }`}
-                title="Reset Camera View"
-              >
-                <Compass className="w-3.5 h-3.5" />
-              </button>
-            </div>
-
-            {/* Bottom Orbit Help Overlay */}
-            <div
-              className={`absolute bottom-4 left-4 z-10 pointer-events-none text-[10px] font-medium border rounded-full px-3 py-1 backdrop-blur-md ${
-                isMars
-                  ? 'text-[#F5E6D3] bg-[rgba(28,20,15,0.88)] border-[#57534E]'
-                  : 'text-[#F4F4F5] bg-[rgba(28,29,33,0.92)] border-[#BAE6FD]'
-              }`}
-            >
-              <span className={isMars ? 'text-[#FFFFFF] font-bold' : 'text-[#BAE6FD] font-bold'}>Drag</span> to orbit •{' '}
-              <span className={isMars ? 'text-[#FFFFFF] font-bold' : 'text-[#BAE6FD] font-bold'}>Scroll</span> to zoom
-            </div>
           </div>
 
           {/* Telemetry Side Panel: NASA Spec Sheet */}
@@ -1072,33 +317,45 @@ export const ModelInspectorModal: React.FC<ModelInspectorModalProps> = ({
                 </div>
               </div>
 
-              {/* NASA 3D Resources Repository Link & CAD Status */}
+              {/* 3D Asset Registry Status */}
               <div
-                className={`p-4 rounded-2xl border space-y-3 ${
+                className={`p-4 rounded-2xl border space-y-2.5 ${
                   isMars ? 'bg-[#1C140F] border-[#44403C]' : 'bg-[#1C1D21] border-[#3F3F46]'
                 }`}
               >
-                <div className="flex items-center justify-between text-[10px] font-bold tracking-wider">
+                <div className="flex items-center justify-between gap-2 text-[10px] font-bold tracking-wider">
                   <span className={`uppercase ${isMars ? 'text-[#A8A29E]' : 'text-[#A1A1AA]'}`}>
-                    NASA 3D RESOURCES
+                    3D ASSET PIPELINE
                   </span>
-                  {loadedGltfSuccess ? (
-                    <span className={`flex items-center gap-1 font-bold ${isMars ? 'text-[#F5E6D3]' : 'text-[#BAE6FD]'}`}>
-                      <CheckCircle className="w-3 h-3" /> GLTF LOADED
+                  {viewportStatus === 'glb_loaded' ? (
+                    <span className={`flex items-center gap-1 font-bold ${isMars ? 'text-[#D97706]' : 'text-[#BAE6FD]'}`}>
+                      <CheckCircle className="w-3 h-3" /> GLB PBR ACTIVE
                     </span>
-                  ) : isLoadingGltf ? (
+                  ) : viewportStatus === 'loading' ? (
                     <span className={`animate-pulse font-bold ${isMars ? 'text-[#FFFFFF]' : 'text-[#BAE6FD]'}`}>
-                      FETCHING GLTF...
+                      STREAMING GLB...
                     </span>
                   ) : (
-                    <span className="font-bold text-[#FFFFFF]">
-                      WIREFRAME CAD ACTIVE
+                    <span className={`flex items-center gap-1 font-bold ${isMars ? 'text-[#F5E6D3]' : 'text-[#BAE6FD]'}`}>
+                      <Sparkles className="w-3 h-3" /> HOLOGRAM MODE
                     </span>
                   )}
                 </div>
-                <p className={`text-[10px] font-sans leading-relaxed ${isMars ? 'text-[#A8A29E]' : 'text-[#D4D4D8]'}`}>
-                  Model assets curated from NASA's official 3D Resources GitHub repository (`nasa/NASA-3D-Resources`).
-                </p>
+
+                <div className={`text-[11px] font-mono truncate ${isMars ? 'text-[#F5E6D3]' : 'text-[#F4F4F5]'}`}>
+                  {assetLabel || modelAsset.assetLabel}
+                </div>
+
+                {modelAsset.modelPath ? (
+                  <div className={`text-[10px] font-mono break-all ${isMars ? 'text-[#A8A29E]' : 'text-[#A1A1AA]'}`}>
+                    Path: {modelAsset.modelPath}
+                  </div>
+                ) : (
+                  <p className={`text-[10px] font-sans leading-relaxed ${isMars ? 'text-[#A8A29E]' : 'text-[#D4D4D8]'}`}>
+                    {modelAsset.fallbackReason}
+                  </p>
+                )}
+
                 <a
                   href={artifact.nasa3dResourceUrl || 'https://github.com/nasa/NASA-3D-Resources'}
                   target="_blank"

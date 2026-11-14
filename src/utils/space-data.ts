@@ -111,8 +111,6 @@ export const MOON_ARTIFACTS: Artifact[] = [
       size: '1.5 m (5 ft) sampler arm',
       power: 'Solar panel + silver-zinc battery',
     },
-    model3dUrl:
-      'https://raw.githubusercontent.com/nasa/NASA-3D-Resources/main/3D%20Models/Surveyor/Surveyor.glb',
     nasa3dResourceUrl: 'https://github.com/nasa/NASA-3D-Resources',
   },
   {
@@ -194,8 +192,7 @@ export const MOON_ARTIFACTS: Artifact[] = [
       size: '9.4 m across footpads',
       power: 'Batteries + 2 EASEP solar panels',
     },
-    model3dUrl:
-      'https://raw.githubusercontent.com/nasa/NASA-3D-Resources/main/3D%20Models/Apollo_11_Lunar_Module/Apollo_11_LM.glb',
+    model3dUrl: '/models/Apollo%20Lunar%20Module.glb',
     nasa3dResourceUrl: 'https://github.com/nasa/NASA-3D-Resources',
   },
   {
@@ -290,8 +287,7 @@ export const MOON_ARTIFACTS: Artifact[] = [
       size: '9.4 m LM footpad span',
       power: 'SNAP-27 Pu-238 RTG (~70 W DC)',
     },
-    model3dUrl:
-      'https://raw.githubusercontent.com/nasa/NASA-3D-Resources/main/3D%20Models/Apollo_11_Lunar_Module/Apollo_11_LM.glb',
+    model3dUrl: '/models/Apollo%20Lunar%20Module.glb',
     nasa3dResourceUrl: 'https://github.com/nasa/NASA-3D-Resources',
   },
   {
@@ -395,8 +391,7 @@ export const MOON_ARTIFACTS: Artifact[] = [
       size: '3.1 m long electric Moon buggy',
       power: 'SNAP-27 RTG (~70 W) + two 36V batteries',
     },
-    model3dUrl:
-      'https://raw.githubusercontent.com/nasa/NASA-3D-Resources/main/3D%20Models/Apollo_11_Lunar_Module/Apollo_11_LM.glb',
+    model3dUrl: '/models/Apollo%20Lunar%20Module.glb',
     nasa3dResourceUrl: 'https://github.com/nasa/NASA-3D-Resources',
   },
 ];
@@ -489,8 +484,7 @@ export const MARS_ARTIFACTS: Artifact[] = [
       size: '3.0 m wide × 2.1 m tall',
       power: 'Two SNAP-19 Pu-238 RTG generators',
     },
-    model3dUrl:
-      'https://raw.githubusercontent.com/nasa/NASA-3D-Resources/main/3D%20Models/Viking_Lander/Viking.glb',
+    model3dUrl: '/models/Viking%20Lander.glb',
     nasa3dResourceUrl: 'https://github.com/nasa/NASA-3D-Resources',
   },
   {
@@ -579,8 +573,6 @@ export const MARS_ARTIFACTS: Artifact[] = [
       size: '65 cm long × 30 cm tall (microwave-sized)',
       power: 'Solar panels + primary batteries',
     },
-    model3dUrl:
-      'https://raw.githubusercontent.com/nasa/NASA-3D-Resources/main/3D%20Models/Pathfinder/Pathfinder.glb',
     nasa3dResourceUrl: 'https://github.com/nasa/NASA-3D-Resources',
   },
   {
@@ -678,8 +670,6 @@ export const MARS_ARTIFACTS: Artifact[] = [
       size: '1.6 m × 2.3 m (golf-cart sized)',
       power: 'Solar wings + Li-ion batteries',
     },
-    model3dUrl:
-      'https://raw.githubusercontent.com/nasa/NASA-3D-Resources/main/3D%20Models/MER_Opportunity/Opportunity.glb',
     nasa3dResourceUrl: 'https://github.com/nasa/NASA-3D-Resources',
   },
   {
@@ -764,8 +754,6 @@ export const MARS_ARTIFACTS: Artifact[] = [
       size: '5.5 m span × 2.35 m digging arm',
       power: 'Twin octagonal solar arrays + NiH2 battery',
     },
-    model3dUrl:
-      'https://raw.githubusercontent.com/nasa/NASA-3D-Resources/main/3D%20Models/Phoenix/Phoenix.glb',
     nasa3dResourceUrl: 'https://github.com/nasa/NASA-3D-Resources',
   },
   {
@@ -850,8 +838,7 @@ export const MARS_ARTIFACTS: Artifact[] = [
       size: '6.0 m solar span × 1.8 m arm',
       power: 'Two circular 2.15 m solar arrays',
     },
-    model3dUrl:
-      'https://raw.githubusercontent.com/nasa/NASA-3D-Resources/main/3D%20Models/InSight/InSight.glb',
+    model3dUrl: '/models/InSight%20Cruise%20Lander%20(arm%20deployed).glb',
     nasa3dResourceUrl: 'https://github.com/nasa/NASA-3D-Resources',
   },
   {
@@ -937,8 +924,7 @@ export const MARS_ARTIFACTS: Artifact[] = [
       size: '1.2 m (4 ft) twin carbon-fiber rotors',
       power: 'Top solar panel + Li-ion batteries',
     },
-    model3dUrl:
-      'https://raw.githubusercontent.com/nasa/NASA-3D-Resources/main/3D%20Models/Ingenuity/Ingenuity.glb',
+    model3dUrl: '/models/Ingenuity%20Mars%20Helicopter.glb',
     nasa3dResourceUrl: 'https://github.com/nasa/NASA-3D-Resources',
   },
 ];
@@ -1032,8 +1018,6 @@ export const DEEP_SPACE_ARTIFACTS: Artifact[] = [
       size: '2.74 m (9 ft) dish + long RTG booms',
       power: 'Two SNAP-19 Pu-238 RTGs (~155 W)',
     },
-    model3dUrl:
-      'https://raw.githubusercontent.com/nasa/NASA-3D-Resources/main/3D%20Models/Pioneer_10/Pioneer.glb',
     nasa3dResourceUrl: 'https://github.com/nasa/NASA-3D-Resources',
   },
   {
@@ -1121,8 +1105,6 @@ export const DEEP_SPACE_ARTIFACTS: Artifact[] = [
       size: '2.74 m (9 ft) high-gain dish',
       power: 'Two SNAP-19 Pu-238 RTGs',
     },
-    model3dUrl:
-      'https://raw.githubusercontent.com/nasa/NASA-3D-Resources/main/3D%20Models/Pioneer_10/Pioneer.glb',
     nasa3dResourceUrl: 'https://github.com/nasa/NASA-3D-Resources',
   },
   {
@@ -1294,6 +1276,8 @@ export const DEEP_SPACE_ARTIFACTS: Artifact[] = [
       size: '19.7 m (65 ft) solar wingspan',
       power: 'Giant twin solar arrays + 3 Xenon Ion engines',
     },
+    model3dUrl: '/models/Dawn.glb',
+    nasa3dResourceUrl: 'https://github.com/nasa/NASA-3D-Resources',
   },
   {
     id: 'kepler',
@@ -1373,8 +1357,6 @@ export const DEEP_SPACE_ARTIFACTS: Artifact[] = [
       size: '4.7 m tall × 1.4 m mirror',
       power: 'Four solar panels (~1,100 W)',
     },
-    model3dUrl:
-      'https://raw.githubusercontent.com/nasa/NASA-3D-Resources/main/3D%20Models/Kepler/Kepler.glb',
     nasa3dResourceUrl: 'https://github.com/nasa/NASA-3D-Resources',
   },
 ];
