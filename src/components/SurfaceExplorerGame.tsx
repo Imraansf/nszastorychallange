@@ -3,7 +3,17 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 import { Artifact } from '../types/space';
-import { ArrowLeft, X } from 'lucide-react';
+import {
+  ArrowLeft,
+  Compass,
+  Info,
+  X,
+  Footprints,
+  MousePointerClick,
+  Flashlight,
+  FlashlightOff,
+  Eye,
+} from 'lucide-react';
 import { playTelemetryBeep, playSuccessChime } from '../utils/audio';
 import {
   DRACO_DECODER_CDN_URL,
@@ -11,9 +21,10 @@ import {
   loadValidatedGltf,
 } from '../utils/spacecraft-models';
 import {
-  CraftBounds,
-  MeshPartStats,
   getSpacecraftInspectionConfig,
+  MeshPartStats,
+  CraftBounds,
+  SurfaceInspectionPart,
 } from '../utils/surface-inspection-data';
 
 export interface SurfaceExplorerGameProps {
@@ -21,32 +32,34 @@ export interface SurfaceExplorerGameProps {
   onClose: () => void;
 }
 
-interface CompanionSurfaceItem {
+export interface SiteItemDef {
   id: string;
   name: string;
-  text: string;
-  status: string;
-  center: THREE.Vector3;
+  group: THREE.Group;
   radius: number;
-}
-
-interface InspectedPanelData {
-  nssdcLabel: string | null;
-  name: string;
+  center: THREE.Vector3;
   text: string;
-  highlightNote: string;
+  why?: string;
+  status: string;
+  seen: boolean;
+  mesh?: THREE.Mesh | null;
 }
 
-interface ActiveTarget {
-  kind: 'part' | 'item';
+export interface InspectableTarget {
+  type: 'craft_part' | 'site_item';
   id: string;
   name: string;
-  nssdcLabel: string | null;
   text: string;
-  highlightNote: string;
+  why?: string;
+  status?: string;
+  mesh?: THREE.Mesh | null;
+  partRef?: SurfaceInspectionPart;
+  itemRef?: SiteItemDef;
 }
 
-// Deterministic PRNG seeded by artifact id so each landing site has repeatable terrain
+// ---------------------------------------------------------------------------
+// 1. PROCEDURAL TERRAIN & ENVIRONMENT SAMPLERS
+// ---------------------------------------------------------------------------
 function createSeededRandom(seedStr: string) {
   let h = 2166136261 >>> 0;
   for (let i = 0; i < seedStr.length; i++) {
@@ -68,7 +81,7 @@ interface CraterDef {
 }
 
 function buildCraters(seedStr: string): CraterDef[] {
-  const rand = createSeededRandom(seedStr + '-craters-v2');
+  const rand = createSeededRandom(seedStr + '-craters-v4');
   const craters: CraterDef[] = [];
   for (let i = 0; i < 170; i++) {
     const a = rand() * 6.283185;
@@ -126,7 +139,7 @@ function createRegolithTexture(isMars: boolean, anisotropy: number): THREE.Canva
     ctx.fillStyle = isMars ? '#b36b47' : '#b2afa7';
     ctx.fillRect(0, 0, size, size);
 
-    const rand = createSeededRandom(isMars ? 'mars-regolith-v2' : 'moon-regolith-v2');
+    const rand = createSeededRandom(isMars ? 'mars-regolith-v4' : 'moon-regolith-v4');
     for (let i = 0; i < 26000; i++) {
       const v = (88 + rand() * 155) | 0;
       const alpha = 0.25 + rand() * 0.42;
@@ -255,10 +268,6 @@ function disposeObject3D(root: THREE.Object3D) {
     if (mesh.geometry) {
       mesh.geometry.dispose();
     }
-    const hlMat = mesh.userData?.hlMat as THREE.Material | THREE.Material[] | undefined;
-    if (hlMat) {
-      (Array.isArray(hlMat) ? hlMat : [hlMat]).forEach((m) => m.dispose());
-    }
     const mat = mesh.material;
     if (mat) {
       const mats = Array.isArray(mat) ? mat : [mat];
@@ -275,52 +284,21 @@ function disposeObject3D(root: THREE.Object3D) {
         m.dispose();
       });
     }
+    if (mesh.userData?.highlightMat) {
+      mesh.userData.highlightMat.dispose();
+    }
   });
 }
 
-function isGoldMaterial(mat: THREE.Material | THREE.Material[] | undefined): boolean {
-  const m = Array.isArray(mat) ? mat[0] : mat;
-  const col = (m as THREE.MeshStandardMaterial | undefined)?.color;
-  return !!col && col.r > 0.55 && col.g > 0.35 && col.b < 0.2;
-}
-
-function buildProceduralSpacecraft(
-  artifact: Artifact,
-  sampleH: (x: number, z: number) => number,
-  centerGroundY: number
-): {
+// ---------------------------------------------------------------------------
+// 2. PROCEDURAL HERO SPACECRAFT CREATION
+// ---------------------------------------------------------------------------
+function buildProceduralSpacecraft(artifact: Artifact): {
   craftGroup: THREE.Group;
-  companionGroup: THREE.Group;
-  companionItems: CompanionSurfaceItem[];
   targetScale: number;
   craftRadius: number;
 } {
   const craftGroup = new THREE.Group();
-  const companionGroup = new THREE.Group();
-  const companionItems: CompanionSurfaceItem[] = [];
-
-  const registerCompanion = (
-    id: string,
-    name: string,
-    x: number,
-    z: number,
-    radius: number,
-    text: string,
-    status: string,
-    group: THREE.Group
-  ) => {
-    const groundY = sampleH(x, z);
-    group.position.set(x, groundY - centerGroundY, z);
-    companionGroup.add(group);
-    companionItems.push({
-      id,
-      name,
-      text,
-      status,
-      center: new THREE.Vector3(x, groundY + 0.5, z),
-      radius,
-    });
-  };
 
   const goldKaptonMat = new THREE.MeshStandardMaterial({
     color: 0xc9a24b,
@@ -342,32 +320,10 @@ function buildProceduralSpacecraft(
     metalness: 0.25,
     roughness: 0.65,
   });
-  const copperMat = new THREE.MeshStandardMaterial({
-    color: 0xd97706,
-    metalness: 0.85,
-    roughness: 0.28,
-  });
   const whiteThermalMat = new THREE.MeshStandardMaterial({
     color: 0xe9e9e6,
     metalness: 0.05,
     roughness: 0.78,
-  });
-  const lensCyanMat = new THREE.MeshStandardMaterial({
-    color: 0x38bdf8,
-    metalness: 0.85,
-    roughness: 0.15,
-    emissive: 0x0284c7,
-    emissiveIntensity: 0.3,
-  });
-  const bootDustMat = new THREE.MeshStandardMaterial({
-    color: 0x5a5a58,
-    metalness: 0,
-    roughness: 0.9,
-  });
-  const medalMat = new THREE.MeshStandardMaterial({
-    color: 0xb9ab86,
-    metalness: 0.2,
-    roughness: 0.75,
   });
 
   const id = artifact.id;
@@ -378,26 +334,36 @@ function buildProceduralSpacecraft(
     targetScale = 7.0;
     craftRadius = 4.4;
 
-    // Octagonal Descent Stage
-    const octGeo = new THREE.CylinderGeometry(1.75, 1.75, 1.35, 8);
-    const octMesh = new THREE.Mesh(octGeo, goldKaptonMat);
+    const octMesh = new THREE.Mesh(
+      new THREE.CylinderGeometry(1.75, 1.75, 1.35, 8),
+      goldKaptonMat
+    );
     octMesh.position.y = 1.65;
+    octMesh.userData.partId = 'dstage';
     craftGroup.add(octMesh);
 
-    const deckGeo = new THREE.CylinderGeometry(1.55, 1.72, 0.18, 8);
-    const deck = new THREE.Mesh(deckGeo, silverAluminumMat);
+    const deck = new THREE.Mesh(
+      new THREE.CylinderGeometry(1.55, 1.72, 0.18, 8),
+      silverAluminumMat
+    );
     deck.position.y = 2.4;
+    deck.userData.partId = 'interface';
     craftGroup.add(deck);
 
-    const ringGeo = new THREE.TorusGeometry(0.92, 0.08, 12, 32);
-    const ring = new THREE.Mesh(ringGeo, silverAluminumMat);
-    ring.rotation.x = Math.PI / 2;
-    ring.position.y = 2.54;
-    craftGroup.add(ring);
+    const cabinMesh = new THREE.Mesh(
+      new THREE.BoxGeometry(2.4, 1.8, 2.2),
+      silverAluminumMat
+    );
+    cabinMesh.position.y = 3.4;
+    cabinMesh.userData.partId = 'cabin';
+    craftGroup.add(cabinMesh);
 
-    const engineGeo = new THREE.ConeGeometry(0.82, 1.15, 24, 1, true);
-    const engine = new THREE.Mesh(engineGeo, blackCompositeMat);
+    const engine = new THREE.Mesh(
+      new THREE.ConeGeometry(0.82, 1.15, 24, 1, true),
+      blackCompositeMat
+    );
     engine.position.y = 0.85;
+    engine.userData.partId = 'dps';
     craftGroup.add(engine);
 
     const legAngles = [
@@ -406,7 +372,7 @@ function buildProceduralSpacecraft(
       (5 * Math.PI) / 4,
       (7 * Math.PI) / 4,
     ];
-    legAngles.forEach((angle, idx) => {
+    legAngles.forEach((angle) => {
       const rFoot = 2.95;
       const fx = Math.cos(angle) * rFoot;
       const fz = Math.sin(angle) * rFoot;
@@ -417,650 +383,64 @@ function buildProceduralSpacecraft(
       const pBot = new THREE.Vector3(fx, 0.14, fz);
       const dir = new THREE.Vector3().subVectors(pBot, pTop);
       const len = dir.length();
-      const strutGeo = new THREE.CylinderGeometry(0.065, 0.065, len, 10);
-      const strut = new THREE.Mesh(strutGeo, goldKaptonMat);
-      strut.position.copy(pTop).addScaledVector(dir, 0.5);
-      strut.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.clone().normalize());
-      craftGroup.add(strut);
-
-      const pMid = new THREE.Vector3(tx * 1.05, 1.05, tz * 1.05);
-      const braceDir = new THREE.Vector3().subVectors(pBot, pMid);
-      const braceGeo = new THREE.CylinderGeometry(0.04, 0.04, braceDir.length(), 8);
-      const brace = new THREE.Mesh(braceGeo, silverAluminumMat);
-      brace.position.copy(pMid).addScaledVector(braceDir, 0.5);
-      brace.quaternion.setFromUnitVectors(
-        new THREE.Vector3(0, 1, 0),
-        braceDir.clone().normalize()
-      );
-      craftGroup.add(brace);
-
-      const padGeo = new THREE.CylinderGeometry(0.42, 0.48, 0.09, 18);
-      const pad = new THREE.Mesh(padGeo, goldKaptonMat);
-      pad.position.set(fx, 0.045, fz);
-      craftGroup.add(pad);
-
-      if (idx === 0) {
-        const railGeo = new THREE.CylinderGeometry(0.02, 0.02, 1.85, 8);
-        const r1 = new THREE.Mesh(railGeo, silverAluminumMat);
-        r1.position.set(fx * 0.72 - 0.11, 1.25, fz * 0.72 + 0.11);
-        r1.rotation.z = -0.52;
-        r1.rotation.x = 0.52;
-        const r2 = r1.clone();
-        r2.position.set(fx * 0.72 + 0.11, 1.25, fz * 0.72 - 0.11);
-        craftGroup.add(r1, r2);
-
-        const plaqueGeo = new THREE.BoxGeometry(0.32, 0.22, 0.03);
-        const plaque = new THREE.Mesh(plaqueGeo, silverAluminumMat);
-        plaque.position.set(fx * 0.72, 1.35, fz * 0.72);
-        plaque.lookAt(fx * 2, 1.35, fz * 2);
-        craftGroup.add(plaque);
-      }
-    });
-
-    if (id === 'apollo-11-eagle-easep') {
-      // United States flag
-      const flagCanvas = document.createElement('canvas');
-      flagCanvas.width = 260;
-      flagCanvas.height = 170;
-      const fctx = flagCanvas.getContext('2d');
-      if (fctx) {
-        for (let i = 0; i < 13; i++) {
-          fctx.fillStyle = i % 2 ? '#f2f2f2' : '#b22234';
-          fctx.fillRect(0, i * 13, 260, 13);
-        }
-        fctx.fillStyle = '#3c3b6e';
-        fctx.fillRect(0, 0, 104, 91);
-        fctx.fillStyle = '#ffffff';
-        for (let i = 0; i < 9; i++) {
-          for (let j = 0; j < 6; j++) {
-            fctx.fillRect(8 + j * 16, 6 + i * 9, 3, 3);
-          }
-        }
-      }
-      const flagTex = new THREE.CanvasTexture(flagCanvas);
-      flagTex.colorSpace = THREE.SRGBColorSpace;
-      const flagGroup = new THREE.Group();
-      const flagMesh = new THREE.Mesh(
-        new THREE.PlaneGeometry(1.5, 0.95),
-        new THREE.MeshStandardMaterial({
-          map: flagTex,
-          side: THREE.DoubleSide,
-          roughness: 0.95,
-        })
-      );
-      flagMesh.rotation.x = -Math.PI / 2 + 0.12;
-      flagMesh.position.set(0.9, 0.1, 0);
-      const flagPole = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.015, 0.015, 2.1, 6),
-        silverAluminumMat
-      );
-      flagPole.rotation.z = Math.PI / 2;
-      flagPole.position.set(0.3, 0.08, -0.5);
-      flagGroup.add(flagMesh, flagPole);
-      registerCompanion(
-        'flag',
-        'United States flag',
-        -8.5,
-        -5,
-        2.5,
-        'The American flag planted on the Moon. Because there is no wind in space, a rod along the top held the flag out flat. When Eagle blasted off, its rocket blast probably knocked the flag over, and after 50+ years of strong sunlight its colors have likely faded to white.',
-        'Probably fallen over and faded in the dust.',
-        flagGroup
-      );
-
-      // PSEP Gold Foil Seismometer
-      const psep = new THREE.Group();
-      const psepBox = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.35, 0.7), goldKaptonMat);
-      psepBox.position.y = 0.3;
-      const psepDish = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.3, 0.3, 0.03, 12),
-        silverAluminumMat
-      );
-      psepDish.position.y = 0.5;
-      psepDish.rotation.x = 0.15;
-      psep.add(psepBox, psepDish);
-      registerCompanion(
-        'psep',
-        'Passive Seismic Experiment Package',
-        16,
-        -4,
-        2.5,
-        'The very first earthquake detector on the Moon! It listened for moonquakes. Shiny gold foil helped keep it warm, though the freezing two-week Moon night eventually made it stop after about three weeks.',
-        'Quiet since 1969, still sitting in the Moon dust.',
-        psep
-      );
-
-      // EASEP Laser Ranging Retroreflector (LRRR)
-      const lrrrCanvas = document.createElement('canvas');
-      lrrrCanvas.width = 128;
-      lrrrCanvas.height = 128;
-      const lctx = lrrrCanvas.getContext('2d');
-      if (lctx) {
-        lctx.fillStyle = '#b9bcc2';
-        lctx.fillRect(0, 0, 128, 128);
-        lctx.fillStyle = '#1a1d22';
-        for (let i = 0; i < 10; i++) {
-          for (let j = 0; j < 10; j++) {
-            lctx.fillRect(8 + i * 11.5, 8 + j * 11.5, 8, 8);
-          }
-        }
-      }
-      const lrrrTex = new THREE.CanvasTexture(lrrrCanvas);
-      lrrrTex.colorSpace = THREE.SRGBColorSpace;
-      const lrrrGroup = new THREE.Group();
-      const lrrrPanel = new THREE.Mesh(
-        new THREE.BoxGeometry(0.6, 0.6, 0.04),
-        new THREE.MeshStandardMaterial({
-          map: lrrrTex,
-          metalness: 0.5,
-          roughness: 0.45,
-        })
-      );
-      lrrrPanel.position.y = 0.55;
-      lrrrPanel.rotation.x = -0.5;
-      const lrrrLeg = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.02, 0.02, 0.5, 6),
-        silverAluminumMat
-      );
-      lrrrLeg.position.y = 0.25;
-      lrrrGroup.add(lrrrPanel, lrrrLeg);
-      registerCompanion(
-        'lrrr',
-        'Laser Ranging Retroreflector',
-        20,
-        2,
-        2.5,
-        'A tray of 100 special corner mirrors. Scientists on Earth shine lasers at it and time how long the light takes to bounce back! That shows how far away the Moon is down to a few millimeters—and proves the Moon is slowly drifting away about as fast as your fingernails grow.',
-        'Still working today without any batteries!',
-        lrrrGroup
-      );
-
-      // Lunar Surface TV Camera on Tripod
-      const tvGroup = new THREE.Group();
-      [0, 2.1, 4.2].forEach((a) => {
-        const leg = new THREE.Mesh(
-          new THREE.CylinderGeometry(0.012, 0.012, 0.8, 5),
-          silverAluminumMat
-        );
-        leg.position.set(Math.cos(a) * 0.3, 0.3, Math.sin(a) * 0.3);
-        leg.rotation.set(Math.sin(a) * 0.4, 0, -Math.cos(a) * 0.4);
-        tvGroup.add(leg);
-      });
-      const tvBody = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, 0.35), whiteThermalMat);
-      tvBody.position.y = 0.7;
-      tvGroup.add(tvBody);
-      registerCompanion(
-        'tv',
-        'Lunar surface TV camera',
-        -3,
-        -16,
-        2.5,
-        'The TV camera that beamed Neil Armstrong’s very first Moon steps to about 600 million people watching on Earth. The astronauts set it up on this tripod to film the moonwalk, then left it behind.',
-        'Left standing on its tripod in the Sea of Tranquility.',
-        tvGroup
-      );
-
-      // Jettisoned PLSS Backpacks
-      const plssGroup = new THREE.Group();
-      [0, 1].forEach((i) => {
-        const pack = new THREE.Mesh(
-          new THREE.BoxGeometry(0.55, 0.75, 0.25),
-          whiteThermalMat
-        );
-        pack.position.set(i * 0.9, 0.14, i * 0.3);
-        pack.rotation.set(1.3, i * 1.1, 0.3);
-        plssGroup.add(pack);
-      });
-      registerCompanion(
-        'plss',
-        'Portable life support backpacks',
-        9,
-        12,
-        3.0,
-        'The backpacks that gave Neil and Buzz cool oxygen to breathe outside on the Moon. Before blasting off, they tossed them out along with heavy extra gear so Eagle would be lighter and easier to fly back up!',
-        'Lying right where the crew dropped them before liftoff.',
-        plssGroup
-      );
-
-      // Overshoes & jettisoned gear
-      const bootsGroup = new THREE.Group();
-      [0, 1].forEach((i) => {
-        const boot = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.14, 0.14), bootDustMat);
-        boot.position.set(i * 0.5, 0.07, i * 0.1);
-        boot.rotation.y = i * 0.8;
-        bootsGroup.add(boot);
-      });
-      const camShell = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.1, 0.12), blackCompositeMat);
-      camShell.position.set(0.5, 0.05, 0.7);
-      camShell.rotation.y = 0.3;
-      bootsGroup.add(camShell);
-      registerCompanion(
-        'boots',
-        'Overshoes and jettisoned gear',
-        -12,
-        9,
-        2.5,
-        'Special rubber overshoes that kept sharp Moon dust off the astronauts’ boots, plus camera bodies they left behind to save weight. They took the film magazines home, and with no wind or rain on the Moon, their bootprints could last millions of years!',
-        'Resting beside crisp 1969 bootprints in the dust.',
-        bootsGroup
-      );
-
-      // Apollo 1 and cosmonaut memorial items
-      const memorialGroup = new THREE.Group();
-      const siliconDisc = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.04, 0.04, 0.01, 24),
-        silverAluminumMat
-      );
-      siliconDisc.position.y = 0.04;
-      const memorialBox = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.04, 0.08), medalMat);
-      memorialBox.position.set(0.2, 0.03, 0.1);
-      memorialGroup.add(siliconDisc, memorialBox);
-      registerCompanion(
-        'memorial',
-        'Apollo 1 and cosmonaut memorial items',
-        13,
-        -14,
-        2.5,
-        'Small gifts left to remember fallen space explorers: a tiny silicon disc etched with messages from 73 world leaders, a patch for the three Apollo 1 astronauts, a golden olive-branch pin for peace, and medals honoring Soviet cosmonauts Yuri Gagarin and Vladimir Komarov.',
-        'Left quietly on the Moon as a peaceful tribute.',
-        memorialGroup
-      );
-
-      // Waste bags
-      const wasteGroup = new THREE.Group();
-      for (let i = 0; i < 4; i++) {
-        const bag = new THREE.Mesh(
-          new THREE.CylinderGeometry(0.12, 0.12, 0.2, 8),
-          whiteThermalMat
-        );
-        bag.position.set(i * 0.25, 0.1, (i % 2) * 0.2);
-        bag.rotation.z = 1 + i;
-        wasteGroup.add(bag);
-      }
-      registerCompanion(
-        'waste',
-        'Jettisoned waste bags',
-        -6,
-        18,
-        2.5,
-        'Bags of astronaut trash and waste tossed out before liftoff to keep Eagle as light as possible for the ride home. Scientists today wonder if any tiny microbes inside could survive decades in space.',
-        'Still sitting untouched in the lunar dust.',
-        wasteGroup
-      );
-    } else if (id === 'apollo-15-falcon-lrv-alsep') {
-      const lrv = new THREE.Group();
-      lrv.rotation.y = -0.6;
-      const chassis = new THREE.Mesh(
-        new THREE.BoxGeometry(2.1, 0.14, 1.3),
-        silverAluminumMat
-      );
-      chassis.position.y = 0.55;
-      lrv.add(chassis);
-      const seat1 = new THREE.Mesh(
-        new THREE.BoxGeometry(0.5, 0.5, 0.45),
-        whiteThermalMat
-      );
-      seat1.position.set(-0.2, 0.85, 0.32);
-      const seat2 = seat1.clone();
-      seat2.position.set(-0.2, 0.85, -0.32);
-      lrv.add(seat1, seat2);
-      const wheelGeo = new THREE.CylinderGeometry(0.32, 0.32, 0.22, 16);
-      [
-        [-0.78, 0.32, 0.72],
-        [0.78, 0.32, 0.72],
-        [-0.78, 0.32, -0.72],
-        [0.78, 0.32, -0.72],
-      ].forEach(([wx, wy, wz]) => {
-        const w = new THREE.Mesh(wheelGeo, copperMat);
-        w.rotation.x = Math.PI / 2;
-        w.position.set(wx, wy, wz);
-        lrv.add(w);
-      });
-      const dish = new THREE.Mesh(
-        new THREE.SphereGeometry(0.45, 16, 10, 0, Math.PI * 2, 0, Math.PI * 0.42),
+      const strut = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.065, 0.065, len, 10),
         goldKaptonMat
       );
-      dish.position.set(0.65, 1.35, 0.3);
-      dish.rotation.x = Math.PI * 0.75;
-      const mast = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.03, 0.03, 0.85, 8),
-        silverAluminumMat
+      strut.position.copy(pTop).addScaledVector(dir, 0.5);
+      strut.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.clone().normalize());
+      strut.userData.partId = 'gear';
+      craftGroup.add(strut);
+
+      const pad = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.42, 0.48, 0.09, 18),
+        goldKaptonMat
       );
-      mast.position.set(0.65, 0.95, 0.3);
-      lrv.add(dish, mast);
-      registerCompanion(
-        'lrv1',
-        'Lunar Roving Vehicle (LRV-1)',
-        6.8,
-        3.6,
-        3.0,
-        'The very first electric Moon buggy! It folded up like origami inside Falcon’s side bay, then unfolded so astronauts Dave Scott and Jim Irwin could drive almost 28 kilometers across valleys and craters. Its woven wire wheels never go flat!',
-        'Parked facing Falcon so its TV camera could film liftoff.',
-        lrv
-      );
-    } else {
-      // Apollo 12 ALSEP Station
-      const alsep = new THREE.Group();
-      const box = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.45, 0.55), whiteThermalMat);
-      box.position.y = 0.225;
-      const rtg = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.18, 0.18, 0.5, 10),
-        blackCompositeMat
-      );
-      rtg.position.set(0.85, 0.25, 0);
-      const ant = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.025, 0.025, 1.2, 8),
-        silverAluminumMat
-      );
-      ant.position.y = 0.9;
-      alsep.add(box, rtg, ant);
-      registerCompanion(
-        'alsep12',
-        'Apollo 12 ALSEP science station',
-        -6.4,
-        4.2,
-        2.8,
-        'A nuclear-powered science weather station left behind by Apollo 12. Using warm plutonium heat instead of solar panels, it kept measuring moonquakes and solar wind day and night for nearly eight full years!',
-        'Worked continuously from 1969 until September 1977.',
-        alsep
-      );
-    }
-  } else if (id.includes('ingenuity')) {
-    targetScale = 1.8;
-    craftRadius = 2.0;
-
-    const body = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.34, 0.38), goldKaptonMat);
-    body.position.y = 0.58;
-    craftGroup.add(body);
-
-    const mast = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.035, 0.04, 0.72, 12),
-      blackCompositeMat
-    );
-    mast.position.y = 0.96;
-    craftGroup.add(mast);
-
-    const bladeGeo = new THREE.BoxGeometry(1.65, 0.018, 0.11);
-    const bladeTop = new THREE.Mesh(bladeGeo, blackCompositeMat);
-    bladeTop.position.y = 1.24;
-    bladeTop.rotation.y = 0.35;
-    const bladeBot = new THREE.Mesh(bladeGeo, blackCompositeMat);
-    bladeBot.position.y = 1.12;
-    bladeBot.rotation.y = 1.9;
-    craftGroup.add(bladeTop, bladeBot);
-
-    const solar = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.03, 0.42), darkSolarCellMat);
-    solar.position.y = 1.35;
-    craftGroup.add(solar);
-
-    for (let i = 0; i < 4; i++) {
-      const a = (i * Math.PI) / 2 + Math.PI / 4;
-      const pTop = new THREE.Vector3(Math.cos(a) * 0.16, 0.52, Math.sin(a) * 0.16);
-      const pBot = new THREE.Vector3(Math.cos(a) * 0.62, 0.02, Math.sin(a) * 0.62);
-      const dir = new THREE.Vector3().subVectors(pBot, pTop);
-      const leg = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.018, 0.015, dir.length(), 8),
-        blackCompositeMat
-      );
-      leg.position.copy(pTop).addScaledVector(dir, 0.5);
-      leg.quaternion.setFromUnitVectors(
-        new THREE.Vector3(0, 1, 0),
-        dir.clone().normalize()
-      );
-      craftGroup.add(leg);
-    }
-  } else if (id.includes('pathfinder')) {
-    targetScale = 3.2;
-    craftRadius = 3.2;
-
-    const centerBase = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.95, 1.05, 0.32, 3),
-      goldKaptonMat
-    );
-    centerBase.position.y = 0.18;
-    craftGroup.add(centerBase);
-
-    for (let i = 0; i < 3; i++) {
-      const a = (i * Math.PI * 2) / 3;
-      const petal = new THREE.Mesh(
-        new THREE.BoxGeometry(1.35, 0.06, 1.15),
-        darkSolarCellMat
-      );
-      petal.position.set(Math.cos(a) * 1.15, 0.07, Math.sin(a) * 1.15);
-      petal.rotation.y = -a;
-      craftGroup.add(petal);
-    }
-
-    const prism = new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.5, 0.65), whiteThermalMat);
-    prism.position.y = 0.56;
-    const mast = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.03, 0.03, 1.0, 8),
-      silverAluminumMat
-    );
-    mast.position.set(0.15, 1.2, 0.1);
-    const camHead = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.14, 0.16), blackCompositeMat);
-    camHead.position.set(0.15, 1.72, 0.1);
-    const dish = new THREE.Mesh(
-      new THREE.SphereGeometry(0.32, 18, 10, 0, Math.PI * 2, 0, Math.PI * 0.4),
-      silverAluminumMat
-    );
-    dish.position.set(-0.22, 0.96, -0.15);
-    dish.rotation.x = -Math.PI / 3;
-    craftGroup.add(prism, mast, camHead, dish);
-
-    const sojourner = new THREE.Group();
-    sojourner.rotation.y = -0.5;
-    const sBody = new THREE.Mesh(new THREE.BoxGeometry(0.75, 0.24, 0.55), goldKaptonMat);
-    sBody.position.y = 0.24;
-    const sSolar = new THREE.Mesh(new THREE.BoxGeometry(0.82, 0.03, 0.62), darkSolarCellMat);
-    sSolar.position.y = 0.37;
-    sojourner.add(sBody, sSolar);
-    const sWheelGeo = new THREE.CylinderGeometry(0.09, 0.09, 0.07, 12);
-    [-0.3, 0, 0.3].forEach((wx) => {
-      [-0.3, 0.3].forEach((wz) => {
-        const w = new THREE.Mesh(sWheelGeo, silverAluminumMat);
-        w.rotation.x = Math.PI / 2;
-        w.position.set(wx, 0.09, wz);
-        sojourner.add(w);
-      });
+      pad.position.set(fx, 0.045, fz);
+      pad.userData.partId = 'pad';
+      craftGroup.add(pad);
     });
-    registerCompanion(
-      'sojourner',
-      'Sojourner Mars Rover',
-      3.4,
-      2.3,
-      2.5,
-      'The very first wheeled rover ever to drive on Mars! About the size of a microwave oven, this tiny six-wheeled robot rolled down Pathfinder’s ramp in 1997 and sniffed Martian rocks like Yogi and Barnacle Bill to show Mars once had flowing water.',
-      'Parked beside Pathfinder after an unforgettable 83-day mission.',
-      sojourner
-    );
   } else if (artifact.category === 'rover') {
     targetScale = 2.8;
     craftRadius = 2.8;
 
-    const wheelGeo = new THREE.CylinderGeometry(0.22, 0.22, 0.16, 18);
-    const wheelCoords = [
-      [-0.85, 0.22, 0.72],
-      [0.0, 0.22, 0.78],
-      [0.85, 0.22, 0.72],
-      [-0.85, 0.22, -0.72],
-      [0.0, 0.22, -0.78],
-      [0.85, 0.22, -0.72],
-    ];
-    wheelCoords.forEach(([wx, wy, wz]) => {
-      const wheel = new THREE.Mesh(wheelGeo, blackCompositeMat);
-      wheel.rotation.x = Math.PI / 2;
-      wheel.position.set(wx, wy, wz);
-      craftGroup.add(wheel);
-
-      const strut = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.025, 0.025, 0.62, 8),
-        silverAluminumMat
-      );
-      strut.position.set(wx * 0.75, 0.52, wz * 0.75);
-      strut.rotation.x = wz > 0 ? -0.35 : 0.35;
-      craftGroup.add(strut);
-    });
-
     const web = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.52, 0.95), goldKaptonMat);
     web.position.y = 0.85;
+    web.userData.partId = id === 'mars-pathfinder-sojourner' ? 'core' : 'body';
     craftGroup.add(web);
 
     const wing = new THREE.Mesh(new THREE.BoxGeometry(2.3, 0.05, 1.55), darkSolarCellMat);
     wing.position.y = 1.13;
-    const divider = new THREE.Mesh(
-      new THREE.BoxGeometry(2.32, 0.06, 0.04),
-      silverAluminumMat
-    );
-    divider.position.y = 1.14;
-    craftGroup.add(wing, divider);
+    wing.userData.partId = id === 'mars-pathfinder-sojourner' ? 'petals' : 'solar';
+    craftGroup.add(wing);
 
-    const mast = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.04, 0.04, 1.15, 12),
-      whiteThermalMat
-    );
+    const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.15, 12), whiteThermalMat);
     mast.position.set(0.48, 1.72, 0.25);
-    const head = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.16, 0.2), whiteThermalMat);
-    head.position.set(0.48, 2.32, 0.25);
-    const eyeGeo = new THREE.CylinderGeometry(0.04, 0.04, 0.08, 12);
-    const eyeL = new THREE.Mesh(eyeGeo, lensCyanMat);
-    eyeL.rotation.z = Math.PI / 2;
-    eyeL.position.set(0.66, 2.32, 0.34);
-    const eyeR = eyeL.clone();
-    eyeR.position.set(0.66, 2.32, 0.16);
-    craftGroup.add(mast, head, eyeL, eyeR);
-
-    const dish = new THREE.Mesh(
-      new THREE.SphereGeometry(0.35, 20, 10, 0, Math.PI * 2, 0, Math.PI * 0.42),
-      silverAluminumMat
-    );
-    dish.position.set(-0.55, 1.42, -0.25);
-    dish.rotation.x = -Math.PI / 4;
-    craftGroup.add(dish);
+    mast.userData.partId = 'mast';
+    craftGroup.add(mast);
   } else {
     targetScale = 3.4;
     craftRadius = 3.0;
 
-    const isSurveyor = id === 'surveyor-3';
-    const isViking = id === 'viking-1-lander';
-
     const body = new THREE.Mesh(
-      new THREE.CylinderGeometry(isSurveyor ? 0.95 : 1.15, 1.25, 0.65, 6),
-      isSurveyor ? whiteThermalMat : isViking ? whiteThermalMat : goldKaptonMat
+      new THREE.CylinderGeometry(1.15, 1.25, 0.65, 6),
+      id === 'viking-1-lander' ? whiteThermalMat : goldKaptonMat
     );
     body.position.y = 1.05;
+    body.userData.partId = id === 'viking-1-lander' ? 'body' : id === 'insight-lander' ? 'deck' : 'frame';
     craftGroup.add(body);
 
     for (let k = 0; k < 3; k++) {
       const a = (k * Math.PI * 2) / 3;
       const lx = Math.cos(a) * 1.65;
       const lz = Math.sin(a) * 1.65;
-      const pTop = new THREE.Vector3(Math.cos(a) * 0.9, 1.0, Math.sin(a) * 0.9);
-      const pBot = new THREE.Vector3(lx, 0.06, lz);
-      const dir = new THREE.Vector3().subVectors(pBot, pTop);
-
-      const leg = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.045, 0.04, dir.length(), 10),
-        isSurveyor ? silverAluminumMat : goldKaptonMat
-      );
-      leg.position.copy(pTop).addScaledVector(dir, 0.5);
-      leg.quaternion.setFromUnitVectors(
-        new THREE.Vector3(0, 1, 0),
-        dir.clone().normalize()
-      );
-      craftGroup.add(leg);
-
       const pad = new THREE.Mesh(
         new THREE.CylinderGeometry(0.28, 0.32, 0.07, 14),
         goldKaptonMat
       );
       pad.position.set(lx, 0.035, lz);
+      pad.userData.partId = 'legs';
       craftGroup.add(pad);
-    }
-
-    if (isSurveyor) {
-      const mast = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.04, 0.04, 1.5, 10),
-        silverAluminumMat
-      );
-      mast.position.y = 2.0;
-      const solar = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.04, 0.8), darkSolarCellMat);
-      solar.position.set(0, 2.75, 0);
-      solar.rotation.x = 0.35;
-      const tvCam = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.11, 0.11, 0.55, 12),
-        whiteThermalMat
-      );
-      tvCam.position.set(0.45, 1.6, 0.35);
-      craftGroup.add(mast, solar, tvCam);
-    } else if (isViking) {
-      [-1.05, 1.05].forEach((xOff) => {
-        const rtg = new THREE.Mesh(
-          new THREE.CylinderGeometry(0.2, 0.2, 0.6, 10),
-          blackCompositeMat
-        );
-        rtg.rotation.z = Math.PI / 2;
-        rtg.position.set(xOff, 1.25, 0);
-        craftGroup.add(rtg);
-      });
-      const dish = new THREE.Mesh(
-        new THREE.SphereGeometry(0.75, 22, 12, 0, Math.PI * 2, 0, Math.PI * 0.4),
-        whiteThermalMat
-      );
-      dish.position.set(-0.2, 1.9, -0.35);
-      dish.rotation.x = -Math.PI / 3;
-      const cam1 = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.11, 0.11, 0.48, 12),
-        silverAluminumMat
-      );
-      cam1.position.set(0.45, 1.65, 0.4);
-      craftGroup.add(dish, cam1);
-    } else {
-      [-1.85, 1.85].forEach((xOff) => {
-        const solar = new THREE.Mesh(
-          new THREE.CylinderGeometry(0.95, 0.95, 0.04, 10),
-          darkSolarCellMat
-        );
-        solar.position.set(xOff, 1.22, 0);
-        const strut = new THREE.Mesh(
-          new THREE.CylinderGeometry(0.03, 0.03, 0.85, 8),
-          silverAluminumMat
-        );
-        strut.rotation.z = Math.PI / 2;
-        strut.position.set(xOff * 0.62, 1.22, 0);
-        craftGroup.add(solar, strut);
-      });
-      const mast = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.03, 0.03, 0.9, 8),
-        silverAluminumMat
-      );
-      mast.position.set(-0.35, 1.8, -0.3);
-      craftGroup.add(mast);
-
-      if (id === 'insight-lander') {
-        const seis = new THREE.Group();
-        const dome = new THREE.Mesh(
-          new THREE.SphereGeometry(0.36, 18, 12, 0, Math.PI * 2, 0, Math.PI * 0.5),
-          copperMat
-        );
-        const skirt = new THREE.Mesh(
-          new THREE.CylinderGeometry(0.38, 0.42, 0.14, 18),
-          whiteThermalMat
-        );
-        skirt.position.y = 0.07;
-        dome.position.y = 0.14;
-        seis.add(skirt, dome);
-        registerCompanion(
-          'seis',
-          'SEIS Marsquake Seismometer Dome',
-          2.9,
-          2.2,
-          2.4,
-          'InSight’s super-sensitive ear placed right onto the Martian dirt! Hidden under this copper wind shield, it felt over 1,300 marsquakes and even heard meteorite impacts shaking the planet.',
-          'Proved Mars is still trembling inside today!',
-          seis
-        );
-      }
     }
   }
 
@@ -1070,14 +450,392 @@ function buildProceduralSpacecraft(
       child.receiveShadow = true;
     }
   });
-  companionGroup.traverse((child) => {
-    if ((child as THREE.Mesh).isMesh) {
-      child.castShadow = true;
-      child.receiveShadow = true;
-    }
-  });
 
-  return { craftGroup, companionGroup, companionItems, targetScale, craftRadius };
+  return { craftGroup, targetScale, craftRadius };
+}
+
+// ---------------------------------------------------------------------------
+// 3. COMPANION GROUND SITE ITEMS REGISTRY
+// ---------------------------------------------------------------------------
+function buildMissionSiteItems(
+  artifact: Artifact,
+  scene: THREE.Scene,
+  sampleH: (x: number, z: number) => number,
+  _isMars: boolean
+): SiteItemDef[] {
+  const items: SiteItemDef[] = [];
+
+  const mat = (color: number, metalness = 0, roughness = 0.7) =>
+    new THREE.MeshStandardMaterial({ color, metalness, roughness });
+
+  const gold = mat(0xc9a24b, 0.9, 0.35);
+  const white = mat(0xe9e9e6, 0.05, 0.78);
+  const grey = mat(0x8d9096, 0.6, 0.5);
+  const darkMetal = mat(0x2d3036, 0.8, 0.4);
+
+  const box = (w: number, h: number, d: number, m: THREE.Material) => {
+    const obj = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m);
+    obj.castShadow = true;
+    obj.receiveShadow = true;
+    return obj;
+  };
+
+  const cyl = (r: number, h: number, m: THREE.Material, s = 12) => {
+    const obj = new THREE.Mesh(new THREE.CylinderGeometry(r, r, h, s), m);
+    obj.castShadow = true;
+    obj.receiveShadow = true;
+    return obj;
+  };
+
+  const addItem = (
+    id: string,
+    name: string,
+    x: number,
+    z: number,
+    radius: number,
+    text: string,
+    why: string,
+    status: string,
+    builder: (grp: THREE.Group) => THREE.Mesh | null
+  ) => {
+    const group = new THREE.Group();
+    const primaryMesh = builder(group);
+    const groundY = sampleH(x, z);
+    group.position.set(x, groundY, z);
+    scene.add(group);
+
+    items.push({
+      id,
+      name,
+      group,
+      radius,
+      center: new THREE.Vector3(x, groundY + 0.6, z),
+      text,
+      why,
+      status,
+      seen: false,
+      mesh: primaryMesh,
+    });
+  };
+
+  const id = artifact.id;
+
+  // Apollo 11
+  if (id === 'apollo-11-eagle-easep') {
+    addItem(
+      'flag',
+      'United States flag',
+      -8.5,
+      -5.0,
+      2.5,
+      'The American flag planted by Neil Armstrong and Buzz Aldrin. Supported by a horizontal telescoping rod along the top because there is no wind in the airless lunar vacuum.',
+      "Why it's cool: Eagle's exhaust gases during liftoff blew the flag over. After 50+ years of unfiltered solar UV radiation, its colors have likely bleached to chalk white.",
+      'Knocked over in regolith, likely bleached pure white by intense solar UV.',
+      (grp) => {
+        const flagCanvas = document.createElement('canvas');
+        flagCanvas.width = 260;
+        flagCanvas.height = 170;
+        const ctx = flagCanvas.getContext('2d');
+        if (ctx) {
+          for (let i = 0; i < 13; i++) {
+            ctx.fillStyle = i % 2 ? '#f2f2f2' : '#b22234';
+            ctx.fillRect(0, i * 13, 260, 13);
+          }
+          ctx.fillStyle = '#3c3b6e';
+          ctx.fillRect(0, 0, 104, 91);
+          ctx.fillStyle = '#ffffff';
+          for (let i = 0; i < 9; i++) {
+            for (let j = 0; j < 6; j++) {
+              ctx.fillRect(8 + j * 16, 6 + i * 9, 3, 3);
+            }
+          }
+        }
+        const flagTex = new THREE.CanvasTexture(flagCanvas);
+        const flagMesh = new THREE.Mesh(
+          new THREE.PlaneGeometry(1.5, 0.95),
+          new THREE.MeshStandardMaterial({ map: flagTex, side: THREE.DoubleSide, roughness: 0.95 })
+        );
+        flagMesh.rotation.x = -Math.PI / 2 + 0.12;
+        flagMesh.position.set(0.9, 0.1, 0);
+        flagMesh.castShadow = true;
+        const pole = cyl(0.015, 2.1, grey, 6);
+        pole.rotation.z = Math.PI / 2;
+        pole.position.set(0.3, 0.08, -0.5);
+        grp.add(flagMesh, pole);
+        return flagMesh;
+      }
+    );
+
+    addItem(
+      'psep',
+      'Passive Seismic Experiment Package (PSEP)',
+      16.0,
+      -4.0,
+      2.5,
+      'The first seismometer deployed on the Moon, listening for moonquakes, tidal vibrations, and meteorite strikes. Powered by solar cells and kept warm with isotope heaters.',
+      "Why it's cool: operated for 21 days before succumbing to the freezing -170°C lunar night, proving the Moon is seismically active.",
+      'Quiet since August 1969; resting undisturbed on Mare Tranquillitatis.',
+      (grp) => {
+        const b = box(0.7, 0.35, 0.7, gold);
+        b.position.y = 0.3;
+        const d = cyl(0.3, 0.03, grey);
+        d.position.y = 0.5;
+        d.rotation.x = 0.15;
+        grp.add(b, d);
+        return b;
+      }
+    );
+
+    addItem(
+      'lrrr',
+      'Laser Ranging Retroreflector (LRRR)',
+      20.0,
+      2.0,
+      2.5,
+      'An unpowered panel array of 100 quartz corner-cube prisms. Observatories on Earth fire lasers at this mirror and measure the return travel time down to picoseconds.',
+      "Why it's cool: Still active today! Has proven that the Moon is slowly spiraling away from Earth at 3.8 centimeters per year—about the speed fingernails grow.",
+      'Still fully operational after 55+ years; routinely targeted by Earth lasers.',
+      (grp) => {
+        const p = box(0.6, 0.6, 0.06, grey);
+        p.position.y = 0.55;
+        p.rotation.x = -0.5;
+        const l = cyl(0.02, 0.5, grey, 6);
+        l.position.y = 0.25;
+        grp.add(p, l);
+        return p;
+      }
+    );
+
+    addItem(
+      'plss',
+      'Portable Life Support System (PLSS) backpacks',
+      9.0,
+      12.0,
+      2.5,
+      'The bulky backpack units that supplied oxygen, water cooling, and radio communication during Neil and Buzz’s historic 2.5-hour moonwalk.',
+      "Why it's cool: jettisoned out of the cabin hatch before liftoff along with heavy boots and cameras to save precious weight for 21.55 kg of lunar samples.",
+      'Lying where they landed on the regolith beside Eagle’s front ladder.',
+      (grp) => {
+        let first: THREE.Mesh | null = null;
+        [0, 1].forEach((i) => {
+          const b = box(0.55, 0.75, 0.25, white);
+          b.position.set(i * 0.9, 0.14, i * 0.3);
+          b.rotation.set(1.3, i * 1.1, 0.3);
+          grp.add(b);
+          if (!first) first = b;
+        });
+        return first;
+      }
+    );
+  }
+
+  // Apollo 12
+  else if (id === 'apollo-12-intrepid-alsep') {
+    addItem(
+      'surveyor_visit',
+      'Surveyor 3 scout visit marker',
+      -16.0,
+      -14.0,
+      3.0,
+      'The robotic Surveyor 3 lander, which had sat silent in Oceanus Procellarum for 2.5 years before Apollo 12 astronauts Pete Conrad and Alan Bean walked right up to it.',
+      "Why it's cool: the astronauts unbolted its camera and soil scoop to bring back to Earth, testing how materials and microbial spores hold up in space.",
+      'Stationary monument on crater slope; camera retrieved and on display at the Smithsonian.',
+      (grp) => {
+        const body = cyl(0.5, 0.6, white, 6);
+        body.position.y = 0.4;
+        const mast = cyl(0.03, 1.2, grey, 6);
+        mast.position.y = 1.0;
+        grp.add(body, mast);
+        return body;
+      }
+    );
+
+    addItem(
+      'alsep12',
+      'Apollo 12 ALSEP Central Station & SNAP-27 RTG',
+      18.0,
+      5.0,
+      2.5,
+      'A full Apollo Lunar Surface Experiments Package powered by a 73-watt Plutonium-238 radioisotope thermoelectric generator.',
+      "Why it's cool: transmitted continuous seismic, magnetic, and solar wind science back to Earth for nearly eight years until shutdown in September 1977.",
+      'Nuclear fuel decay complete; science station resting silent on the plain.',
+      (grp) => {
+        const cs = box(0.8, 0.4, 0.8, white);
+        cs.position.y = 0.3;
+        const rtg = cyl(0.18, 0.45, darkMetal, 8);
+        rtg.position.set(1.2, 0.25, 0);
+        grp.add(cs, rtg);
+        return cs;
+      }
+    );
+  }
+
+  // Apollo 15
+  else if (id === 'apollo-15-falcon-lrv-alsep') {
+    addItem(
+      'lrv',
+      'Lunar Roving Vehicle (LRV-1 "Moon Buggy")',
+      14.0,
+      8.0,
+      3.5,
+      'The first wheeled vehicle driven on the Moon. Powered by two 36-volt batteries, it covered 27.9 km across Hadley-Apennine at speeds up to 13 km/h.',
+      "Why it's cool: parked 100 meters away so its ground-controlled color TV camera could film Falcon’s liftoff into lunar orbit.",
+      'Parked permanently at Hadley-Apennine, ready to roll if batteries were fresh.',
+      (grp) => {
+        const body = box(1.8, 0.25, 0.9, white);
+        body.position.y = 0.45;
+        const dish = cyl(0.3, 0.05, grey, 12);
+        dish.position.set(0.6, 0.9, 0);
+        dish.rotation.x = 0.3;
+        grp.add(body, dish);
+        return body;
+      }
+    );
+
+    addItem(
+      'fallen_astronaut',
+      'Fallen Astronaut memorial figurine & plaque',
+      -8.0,
+      -12.0,
+      2.0,
+      'A small 3.3-inch (8.5 cm) aluminum sculpture created by Belgian artist Paul Van Hoeydonck beside a plaque listing 14 deceased astronauts and cosmonauts.',
+      "Why it's cool: the only official piece of memorial art on the lunar surface, placed quietly by Commander David Scott without fanfare.",
+      'Resting face-down in the lunar dust at the foot of Mt. Hadley.',
+      (grp) => {
+        const fig = box(0.12, 0.04, 0.28, grey);
+        fig.position.y = 0.02;
+        const plq = box(0.24, 0.02, 0.16, darkMetal);
+        plq.position.set(0.25, 0.01, 0);
+        grp.add(fig, plq);
+        return fig;
+      }
+    );
+  }
+
+  // Surveyor 3
+  else if (id === 'surveyor-3') {
+    addItem(
+      'bounce1',
+      'First landing bounce crater',
+      -12.0,
+      8.0,
+      3.0,
+      'A shallow circular imprint in the lunar dust where Surveyor 3’s footpads struck the Moon before bouncing 10 meters into the sky.',
+      "Why it's cool: radar confusion caused vernier engines to keep firing, producing three distinct sets of footpad imprints on the Moon.",
+      'Imprint preserved in vacuum.',
+      (grp) => {
+        const r = cyl(0.8, 0.08, mat(0x5a5852, 0, 1), 16);
+        r.position.y = 0.02;
+        grp.add(r);
+        return r;
+      }
+    );
+  }
+
+  // Viking 1 Lander
+  else if (id === 'viking-1-lander') {
+    addItem(
+      'trench_v1',
+      'Robotic arm duricrust trench #1',
+      2.8,
+      -1.5,
+      2.0,
+      'A deep trench dug through crusty Martian soil (duricrust) to deliver samples into the GCMS and biology test ovens.',
+      "Why it's cool: proved Martian soil is saturated with oxidizing compounds that mimic microbial gas exchange.",
+      'Trench edges softened by decades of gentle Martian dust deposition.',
+      (grp) => {
+        const t = box(1.1, 0.08, 0.35, mat(0x5a2816, 0, 1));
+        t.position.y = 0.02;
+        grp.add(t);
+        return t;
+      }
+    );
+  }
+
+  // Mars Pathfinder & Sojourner
+  else if (id === 'mars-pathfinder-sojourner') {
+    addItem(
+      'yogi',
+      'Rock "Yogi" & APXS contact site',
+      7.2,
+      -4.5,
+      2.5,
+      'A distinctive weathered boulder resembling a bear’s head analyzed by Sojourner’s Alpha Proton X-Ray Spectrometer.',
+      "Why it's cool: rounded pebbles around Yogi confirmed that catastrophic ancient floods once tore through Ares Vallis.",
+      'Permanent geological landmark of Ares Vallis.',
+      (grp) => {
+        const y = new THREE.Mesh(new THREE.DodecahedronGeometry(0.75, 1), mat(0x7c381c, 0, 1));
+        y.position.y = 0.45;
+        grp.add(y);
+        return y;
+      }
+    );
+  }
+
+  // Spirit & Opportunity
+  else if (id === 'spirit-and-opportunity') {
+    addItem(
+      'blueberries',
+      'Hematite "Blueberries" mineral field',
+      4.2,
+      -3.5,
+      2.5,
+      'Tiny millimeter-sized gray spherules rich in the iron oxide mineral hematite covering the soil of Meridiani Planum.',
+      "Why it's cool: formed as concretions precipitating out of ancient acidic groundwater pools, proving Mars was once wet.",
+      'Billions of spherules carpet the surrounding plains.',
+      (grp) => {
+        const b = box(1.2, 0.06, 1.2, mat(0x444855, 0.7, 0.4));
+        b.position.y = 0.02;
+        grp.add(b);
+        return b;
+      }
+    );
+  }
+
+  // InSight Lander
+  else if (id === 'insight-lander') {
+    addItem(
+      'seis_deployed',
+      'Deployed SEIS seismometer dome',
+      3.2,
+      2.4,
+      2.5,
+      'The ultra-sensitive French SEIS seismometer placed directly onto the Martian ground beneath its protective gold Wind and Thermal Shield.',
+      "Why it's cool: detected over 1,300 marsquakes and meteorite strikes, measuring the thickness of the Martian crust and core.",
+      'Resting peacefully on Elysium Planitia; silent since late 2022.',
+      (grp) => {
+        const d = new THREE.Mesh(
+          new THREE.SphereGeometry(0.38, 16, 12, 0, Math.PI * 2, 0, Math.PI * 0.5),
+          gold
+        );
+        d.position.y = 0.15;
+        grp.add(d);
+        return d;
+      }
+    );
+  }
+
+  // Ingenuity Mars Helicopter
+  else if (id === 'ingenuity-mars-helicopter') {
+    addItem(
+      'airfield_alpha',
+      'Airfield Alpha historic first flight marker',
+      -6.0,
+      4.0,
+      2.5,
+      'A 10-meter circle on the dusty floor of Jezero Crater where Ingenuity made the first powered, controlled flight on another planet on April 19, 2021.',
+      "Why it's cool: proved aerodynamic rotorcraft flight is possible in Mars’ ultra-thin atmosphere (<1% Earth air density).",
+      'Named Wright Brothers Field by the International Civil Aviation Organization (ICAO).',
+      (grp) => {
+        const m = cyl(0.6, 0.04, mat(0x9a5832, 0, 1), 16);
+        m.position.y = 0.02;
+        grp.add(m);
+        return m;
+      }
+    );
+  }
+
+  return items;
 }
 
 function formatOffsetCoords(
@@ -1091,37 +849,50 @@ function formatOffsetCoords(
   const lat = baseLat - (zMeters * 180) / (Math.PI * radiusM);
   const cosLat = Math.max(0.2, Math.cos((baseLat * Math.PI) / 180));
   const lon = baseLon + (xMeters * 180) / (Math.PI * radiusM * cosLat);
-  const latStr = `${Math.abs(lat).toFixed(5)}°${lat >= 0 ? 'N' : 'S'}`;
-  const lonStr = `${Math.abs(lon).toFixed(5)}°${lon >= 0 ? 'E' : 'W'}`;
-  return `${latStr}  ${lonStr}`;
+  const latStr = `${Math.abs(lat).toFixed(5)}° ${lat >= 0 ? 'N' : 'S'}`;
+  const lonStr = `${Math.abs(lon).toFixed(5)}° ${lon >= 0 ? 'E' : 'W'}`;
+  return `${latStr}, ${lonStr}`;
 }
 
+// ---------------------------------------------------------------------------
+// 4. MAIN SURFACE EXPLORER GAME COMPONENT
+// ---------------------------------------------------------------------------
 export const SurfaceExplorerGame: React.FC<SurfaceExplorerGameProps> = ({
   artifact,
   onClose,
 }) => {
   const mountRef = useRef<HTMLDivElement>(null);
   const isMars = artifact.body === 'mars';
-  const inspectionConfig = getSpacecraftInspectionConfig(artifact.id);
-  const totalPartsCount = Object.keys(inspectionConfig.parts).length;
 
+  // Spacecraft Inspection Configuration from user's surface-inspection-data.ts
+  const inspectionConfig = getSpacecraftInspectionConfig(artifact.id);
+
+  // Game UI States
+  const [isEntered, setIsEntered] = useState(false);
   const [isPointerLocked, setIsPointerLocked] = useState(false);
   const [isFlashlightOn, setIsFlashlightOn] = useState(false);
-  const [activePrompt, setActivePrompt] = useState<{ id: string; name: string } | null>(null);
-  const [inspectedPanel, setInspectedPanel] = useState<InspectedPanelData | null>(null);
-  const [posLine, setPosLine] = useState<string>(
-    formatOffsetCoords(artifact.coordinates.lat, artifact.coordinates.lon, 14, 22, isMars)
+  const [hoveredTarget, setHoveredTarget] = useState<InspectableTarget | null>(null);
+  const [inspectModalTarget, setInspectModalTarget] = useState<InspectableTarget | null>(null);
+  const [distanceMeters, setDistanceMeters] = useState<number>(22);
+  const [hudCoords, setHudCoords] = useState<string>(
+    formatOffsetCoords(artifact.coordinates.lat, artifact.coordinates.lon, 14, 20, isMars)
   );
-  const [nearestLine, setNearestLine] = useState<string>('');
-  const [partsSeenCount, setPartsSeenCount] = useState<number>(0);
+  const [nearestInfo, setNearestInfo] = useState<string>('Scanning surface...');
+  const [itemsLoggedCount, setItemsLoggedCount] = useState<number>(0);
+  const [totalItemsCount, setTotalItemsCount] = useState<number>(0);
+  const [partsInspectedCount, setPartsInspectedCount] = useState<number>(0);
+  const [totalPartsCount, setTotalPartsCount] = useState<number>(
+    Object.keys(inspectionConfig.parts).length
+  );
+  const [modelSourceLabel, setModelSourceLabel] = useState<'CAD' | 'NASA GLB'>('CAD');
 
-  const flashlightOnRef = useRef(false);
-  const inspectedPanelRef = useRef<InspectedPanelData | null>(null);
-  inspectedPanelRef.current = inspectedPanel;
-
-  const seenPartsRef = useRef<Set<string>>(new Set());
-  const seenItemsRef = useRef<Set<string>>(new Set());
-  const activeTargetRef = useRef<ActiveTarget | null>(null);
+  // Mutable refs for high-frequency game loop
+  const isEnteredRef = useRef(isEntered);
+  isEnteredRef.current = isEntered;
+  const flashlightOnRef = useRef(isFlashlightOn);
+  flashlightOnRef.current = isFlashlightOn;
+  const inspectModalRef = useRef(inspectModalTarget);
+  inspectModalRef.current = inspectModalTarget;
 
   const handleExit = useCallback(() => {
     playTelemetryBeep(420);
@@ -1131,23 +902,44 @@ export const SurfaceExplorerGame: React.FC<SurfaceExplorerGameProps> = ({
     onClose();
   }, [onClose]);
 
+  const toggleFlashlight = useCallback(() => {
+    setIsFlashlightOn((prev) => {
+      const next = !prev;
+      playTelemetryBeep(next ? 880 : 380);
+      return next;
+    });
+  }, []);
+
+  const openInspection = useCallback((target: InspectableTarget) => {
+    playSuccessChime();
+    if (target.partRef) {
+      target.partRef.seen = true;
+    }
+    if (target.itemRef) {
+      target.itemRef.seen = true;
+    }
+    setInspectModalTarget(target);
+  }, []);
+
+  const closeInspection = useCallback(() => {
+    playTelemetryBeep(480);
+    setInspectModalTarget(null);
+    const canvas = mountRef.current?.querySelector('canvas');
+    try {
+      canvas?.requestPointerLock?.();
+    } catch {
+      // Ignored if user hasn't engaged pointer lock gesture
+    }
+  }, []);
+
   useEffect(() => {
     const container = mountRef.current;
     if (!container) return;
 
-    seenPartsRef.current = new Set();
-    seenItemsRef.current = new Set();
-    flashlightOnRef.current = false;
-    activeTargetRef.current = null;
-    setIsFlashlightOn(false);
-    setActivePrompt(null);
-    setInspectedPanel(null);
-    setPartsSeenCount(0);
-
     let isDisposed = false;
     let rafId = 0;
 
-    // 1. RENDERER
+    // 1. RENDERER & PERFORMANCE DETECTOR
     const renderer = new THREE.WebGLRenderer({
       antialias: true,
       powerPreference: 'high-performance',
@@ -1173,7 +965,7 @@ export const SurfaceExplorerGame: React.FC<SurfaceExplorerGameProps> = ({
     container.innerHTML = '';
     container.appendChild(renderer.domElement);
 
-    // 2. SCENE & SPACE REFLECTION ENVIRONMENT
+    // 2. SCENE & ENVIRONMENT
     const scene = new THREE.Scene();
     if (isMars) {
       scene.background = new THREE.Color(0xc27d56);
@@ -1190,7 +982,7 @@ export const SurfaceExplorerGame: React.FC<SurfaceExplorerGameProps> = ({
     scene.environment = envRT.texture;
     scene.environmentIntensity = isMars ? 0.42 : 0.28;
 
-    // 3. CAMERA + FLASHLIGHT RIG ('G' KEY)
+    // 3. CAMERA & FLASHLIGHT RIG (KEY G)
     const camera = new THREE.PerspectiveCamera(
       70,
       (container.clientWidth || window.innerWidth) /
@@ -1199,14 +991,15 @@ export const SurfaceExplorerGame: React.FC<SurfaceExplorerGameProps> = ({
       4000
     );
     camera.rotation.order = 'YXZ';
-    scene.add(camera);
 
-    const flashlight = new THREE.SpotLight(0xfff0d8, 0, 80, 0.42, 0.5, 1);
+    const flashlight = new THREE.SpotLight(0xfff0d8, 0, 85, 0.42, 0.5, 1);
     flashlight.position.set(0.18, -0.14, 0);
     flashlight.target.position.set(0, 0, -8);
-    camera.add(flashlight, flashlight.target);
+    camera.add(flashlight);
+    camera.add(flashlight.target);
+    scene.add(camera);
 
-    // 4. LIGHTING
+    // 4. NATURAL SUN & SKY LIGHTING RIG
     const sunLight = new THREE.DirectionalLight(
       isMars ? 0xffe4cc : 0xfff4e6,
       isMars ? 3.2 : 3.6
@@ -1238,7 +1031,7 @@ export const SurfaceExplorerGame: React.FC<SurfaceExplorerGameProps> = ({
       scene.add(earthLight);
     }
 
-    // 5. SKY ELEMENTS
+    // 5. SKY DISC ELEMENTS
     const skyGeometries: THREE.BufferGeometry[] = [];
     const skyMaterials: THREE.Material[] = [];
     const skyTextures: THREE.Texture[] = [];
@@ -1246,7 +1039,7 @@ export const SurfaceExplorerGame: React.FC<SurfaceExplorerGameProps> = ({
     if (!isMars) {
       const starCount = 2500;
       const starPos: number[] = [];
-      const randStar = createSeededRandom('lunar-stars-v2');
+      const randStar = createSeededRandom('lunar-stars-v4');
       for (let i = 0; i < starCount; i++) {
         const v = new THREE.Vector3(
           randStar() - 0.5,
@@ -1331,7 +1124,7 @@ export const SurfaceExplorerGame: React.FC<SurfaceExplorerGameProps> = ({
       skyTextures.push(marsSunDisc.texture);
     }
 
-    // 6. TERRAIN
+    // 6. 1200x1200m TERRAIN
     const craters = buildCraters(artifact.id);
     const sampleH = createHeightSampler(craters, isMars);
     const maxAnisotropy = renderer.capabilities.getMaxAnisotropy();
@@ -1372,7 +1165,7 @@ export const SurfaceExplorerGame: React.FC<SurfaceExplorerGameProps> = ({
     rockInstances.castShadow = !isSoftwareGl;
     rockInstances.receiveShadow = true;
 
-    const randRock = createSeededRandom(artifact.id + '-rocks-v2');
+    const randRock = createSeededRandom(artifact.id + '-rocks-v4');
     const rockMatrix = new THREE.Matrix4();
     const rockQuat = new THREE.Quaternion();
     const rockEuler = new THREE.Euler();
@@ -1396,85 +1189,65 @@ export const SurfaceExplorerGame: React.FC<SurfaceExplorerGameProps> = ({
     rockInstances.computeBoundingSphere();
     scene.add(rockInstances);
 
-    // 8. SPACECRAFT, COMPANION ITEMS & RAYCAST REGISTRY
+    // 8. HERO SPACECRAFT & PREP MESH STATS FOR CLASSIFIER
     const siteAnchor = new THREE.Group();
     const centerGroundY = sampleH(0, 0);
     siteAnchor.position.set(0, centerGroundY, 0);
     scene.add(siteAnchor);
 
-    const { craftGroup, companionGroup, companionItems, targetScale, craftRadius } =
-      buildProceduralSpacecraft(artifact, sampleH, centerGroundY);
+    const { craftGroup, targetScale, craftRadius } = buildProceduralSpacecraft(artifact);
     siteAnchor.add(craftGroup);
-    siteAnchor.add(companionGroup);
 
     let craftMeshes: THREE.Mesh[] = [];
-    let craftBounds: CraftBounds | null = null;
-    let craftSphere: THREE.Sphere | null = null;
-    let highlightedMesh: THREE.Mesh | null = null;
-
-    const setHighlightedMesh = (mesh: THREE.Mesh | null) => {
-      if (highlightedMesh === mesh) return;
-      if (highlightedMesh && highlightedMesh.userData.origMat) {
-        highlightedMesh.material = highlightedMesh.userData.origMat;
-      }
-      highlightedMesh = mesh;
-      if (mesh) {
-        if (!mesh.userData.hlMat) {
-          mesh.userData.origMat = mesh.material;
-          const cloneMat = (mat: THREE.Material) => {
-            const c = mat.clone();
-            if ('emissive' in c && (c as THREE.MeshStandardMaterial).emissive) {
-              (c as THREE.MeshStandardMaterial).emissive.setHex(0xd4aa4f);
-              (c as THREE.MeshStandardMaterial).emissiveIntensity = 0.22;
-            }
-            return c;
-          };
-          mesh.userData.hlMat = Array.isArray(mesh.material)
-            ? mesh.material.map(cloneMat)
-            : cloneMat(mesh.material);
-        }
-        mesh.material = mesh.userData.hlMat;
-      }
+    let craftBounds: CraftBounds = {
+      minY: 0,
+      H: 1,
+      cx: 0,
+      cz: 0,
+      W: 1,
+      R: 1,
     };
+    let craftSphere: THREE.Sphere | null = null;
 
-    const prepareCraftForRaycast = (root: THREE.Object3D) => {
-      setHighlightedMesh(null);
+    function updateCraftBoundingData(root: THREE.Object3D) {
       root.updateMatrixWorld(true);
-      const box = new THREE.Box3().setFromObject(root);
-      const size = box.getSize(new THREE.Vector3());
-      const center = box.getCenter(new THREE.Vector3());
+      const b = new THREE.Box3().setFromObject(root);
+      const sz = b.getSize(new THREE.Vector3());
+      const cn = b.getCenter(new THREE.Vector3());
+
       craftBounds = {
-        minY: box.min.y,
-        H: size.y || 1,
-        cx: center.x,
-        cz: center.z,
-        W: Math.max(size.x, size.z) || 1,
-        R: Math.max(size.x, size.z) / 2 || 1,
+        minY: b.min.y,
+        H: sz.y || 1,
+        cx: cn.x,
+        cz: cn.z,
+        W: Math.max(sz.x, sz.z) || 1,
+        R: Math.max(sz.x, sz.z) / 2 || 1,
       };
-      craftSphere = new THREE.Sphere(center, size.length() / 2 + 0.5);
-      const collected: THREE.Mesh[] = [];
-      const subBox = new THREE.Box3();
-      const subSize = new THREE.Vector3();
-      root.traverse((obj) => {
-        if ((obj as THREE.Mesh).isMesh) {
-          const m = obj as THREE.Mesh;
-          subBox.setFromObject(m);
-          subBox.getSize(subSize);
-          const stats: MeshPartStats = {
-            sx: subSize.x,
-            sy: subSize.y,
-            sz: subSize.z,
-            gold: isGoldMaterial(m.material),
+      craftSphere = new THREE.Sphere(cn, sz.length() / 2 + 0.5);
+
+      craftMeshes = [];
+      root.traverse((o) => {
+        if ((o as THREE.Mesh).isMesh) {
+          const mesh = o as THREE.Mesh;
+          const meshBox = new THREE.Box3().setFromObject(mesh);
+          const s = meshBox.getSize(new THREE.Vector3());
+          const matItem = Array.isArray(mesh.material) ? mesh.material[0] : mesh.material;
+          const col = (matItem as THREE.MeshStandardMaterial)?.color;
+          const isGold = !!col && col.r > 0.55 && col.g > 0.35 && col.b < 0.2;
+          mesh.userData.st = {
+            sx: s.x,
+            sy: s.y,
+            sz: s.z,
+            gold: isGold,
           };
-          m.userData.partStats = stats;
-          collected.push(m);
+          craftMeshes.push(mesh);
         }
       });
-      craftMeshes = collected;
-    };
+    }
 
-    prepareCraftForRaycast(craftGroup);
+    updateCraftBoundingData(craftGroup);
 
+    // Load official NASA GLB if available
     let gltfRoot: THREE.Object3D | null = null;
     const glbAbortController = new AbortController();
     const modelAsset = getSpacecraftModelAsset(artifact.id);
@@ -1528,12 +1301,12 @@ export const SurfaceExplorerGame: React.FC<SurfaceExplorerGameProps> = ({
             }
           });
 
-          setHighlightedMesh(null);
           siteAnchor.remove(craftGroup);
           disposeObject3D(craftGroup);
           siteAnchor.add(loaded);
           gltfRoot = loaded;
-          prepareCraftForRaycast(loaded);
+          updateCraftBoundingData(loaded);
+          setModelSourceLabel('NASA GLB');
           dracoLoader.dispose();
         })
         .catch(() => {
@@ -1541,7 +1314,39 @@ export const SurfaceExplorerGame: React.FC<SurfaceExplorerGameProps> = ({
         });
     }
 
-    // 9. FOOTPRINTS TRAIL
+    // 9. COMPANION GROUND SITE ITEMS REGISTRATION
+    const siteItems = buildMissionSiteItems(artifact, scene, sampleH, isMars);
+    setTotalItemsCount(siteItems.length);
+
+    // 10. MESH HIGHLIGHTING (setHL)
+    let highlightedMesh: THREE.Mesh | null = null;
+    function setHL(m: THREE.Mesh | null) {
+      if (highlightedMesh === m) return;
+      if (highlightedMesh && highlightedMesh.userData?.origMat) {
+        highlightedMesh.material = highlightedMesh.userData.origMat;
+      }
+      highlightedMesh = m;
+      if (m) {
+        if (!m.userData) m.userData = {};
+        if (!m.userData.origMat) {
+          m.userData.origMat = m.material;
+        }
+        if (!m.userData.highlightMat) {
+          const srcMat = Array.isArray(m.userData.origMat)
+            ? m.userData.origMat[0]
+            : m.userData.origMat;
+          const c = srcMat.clone();
+          if ('emissive' in c) {
+            c.emissive.setHex(isMars ? 0xd97706 : 0xd4aa4f);
+            c.emissiveIntensity = 0.35;
+          }
+          m.userData.highlightMat = c;
+        }
+        m.material = m.userData.highlightMat;
+      }
+    }
+
+    // 11. FOOTPRINTS SYSTEM
     const maxPrints = 400;
     const printGeo = new THREE.CircleGeometry(0.13, 10);
     printGeo.rotateX(-Math.PI / 2);
@@ -1567,7 +1372,7 @@ export const SurfaceExplorerGame: React.FC<SurfaceExplorerGameProps> = ({
     const startZ = artifact.category === 'apollo_crewed' ? 22 : 16;
     const lastPrintPos = new THREE.Vector3(startX, sampleH(startX, startZ), startZ);
 
-    // 10. PLAYER STATE, RAYCASTER & INPUTS (DIRECT ENTRY - NO CLICK-TO-START OVERLAY)
+    // 12. PLAYER STATE & INPUTS
     const EYE_HEIGHT = 1.7;
     const WORLD_LIMIT = 580;
 
@@ -1579,95 +1384,29 @@ export const SurfaceExplorerGame: React.FC<SurfaceExplorerGameProps> = ({
       pitch: -0.05,
     };
 
-    const raycaster = new THREE.Raycaster();
-    raycaster.far = 8;
-    const centerNDC = new THREE.Vector2(0, 0);
-    const _lookDir = new THREE.Vector3();
-    const _toItem = new THREE.Vector3();
-    const _eyePos = new THREE.Vector3();
-
-    const probeSpacecraftComponent = (): {
-      mesh: THREE.Mesh;
-      partId: string;
-    } | null => {
-      if (!craftMeshes.length || !craftSphere || !craftBounds) return null;
-      raycaster.setFromCamera(centerNDC, camera);
-      if (!raycaster.ray.intersectsSphere(craftSphere)) return null;
-      const hits = raycaster.intersectObjects(craftMeshes, false);
-      if (!hits.length) return null;
-      const hitMesh = hits[0].object as THREE.Mesh;
-      const stats = hitMesh.userData.partStats as MeshPartStats | undefined;
-      if (!stats) return null;
-      const partId = inspectionConfig.classify(stats, hits[0].point, craftBounds);
-      return { mesh: hitMesh, partId };
-    };
-
-    const probeCompanionItem = (): CompanionSurfaceItem | null => {
-      if (!companionItems.length) return null;
-      _lookDir.set(0, 0, -1).applyEuler(camera.rotation);
-      _eyePos.set(player.pos.x, player.pos.y + EYE_HEIGHT, player.pos.z);
-      let best: CompanionSurfaceItem | null = null;
-      let bestScore = 0;
-      for (let i = 0; i < companionItems.length; i++) {
-        const item = companionItems[i];
-        _toItem.subVectors(item.center, _eyePos);
-        const dist = _toItem.length();
-        if (dist > item.radius + 3.5 || dist < 0.001) continue;
-        const score = _toItem.divideScalar(dist).dot(_lookDir);
-        if (score > 0.93 && score > bestScore) {
-          bestScore = score;
-          best = item;
-        }
-      }
-      return best;
-    };
-
-    const toggleInspection = () => {
-      if (inspectedPanelRef.current) {
-        playTelemetryBeep(440);
-        setInspectedPanel(null);
-        return;
-      }
-      const target = activeTargetRef.current;
-      if (!target) return;
-
-      playSuccessChime();
-      setHighlightedMesh(null);
-
-      if (target.kind === 'part') {
-        if (!seenPartsRef.current.has(target.id)) {
-          seenPartsRef.current.add(target.id);
-          setPartsSeenCount(seenPartsRef.current.size);
-        }
-      } else {
-        seenItemsRef.current.add(target.id);
-      }
-
-      setInspectedPanel({
-        nssdcLabel: target.nssdcLabel,
-        name: target.name,
-        text: target.text,
-        highlightNote: target.highlightNote,
-      });
-    };
-
     const keys: Record<string, boolean> = {};
     let isDraggingLook = false;
     let lastDragX = 0;
     let lastDragY = 0;
 
+    const raycaster = new THREE.Raycaster();
+    raycaster.far = 12;
+    const screenCenter = new THREE.Vector2(0, 0);
+    const activeTargetRef = { current: null as InspectableTarget | null };
+
     const onKeyDown = (e: KeyboardEvent) => {
       keys[e.code] = true;
-      if (e.repeat) return;
-
-      if (e.code === 'KeyE') {
-        toggleInspection();
-      } else if (e.code === 'KeyG') {
-        const next = !flashlightOnRef.current;
-        flashlightOnRef.current = next;
-        setIsFlashlightOn(next);
-        playTelemetryBeep(next ? 680 : 390);
-      } else if (e.code === 'Space' && player.onGround) {
+      if (e.code === 'KeyG' && isEnteredRef.current) {
+        toggleFlashlight();
+      }
+      if (e.code === 'KeyE' && isEnteredRef.current) {
+        if (inspectModalRef.current) {
+          closeInspection();
+        } else if (activeTargetRef.current) {
+          openInspection(activeTargetRef.current);
+        }
+      }
+      if (e.code === 'Space' && isEnteredRef.current && player.onGround) {
         e.preventDefault();
         player.vel.y = isMars ? 3.8 : 3.4;
         player.onGround = false;
@@ -1679,6 +1418,7 @@ export const SurfaceExplorerGame: React.FC<SurfaceExplorerGameProps> = ({
     };
 
     const onMouseMove = (e: MouseEvent) => {
+      if (!isEnteredRef.current) return;
       if (document.pointerLockElement === renderer.domElement) {
         player.yaw -= e.movementX * 0.0022;
         player.pitch = THREE.MathUtils.clamp(
@@ -1697,6 +1437,7 @@ export const SurfaceExplorerGame: React.FC<SurfaceExplorerGameProps> = ({
     };
 
     const onMouseDown = (e: MouseEvent) => {
+      if (!isEnteredRef.current) return;
       if (e.target === renderer.domElement) {
         isDraggingLook = true;
         lastDragX = e.clientX;
@@ -1722,7 +1463,7 @@ export const SurfaceExplorerGame: React.FC<SurfaceExplorerGameProps> = ({
     window.addEventListener('mouseup', onMouseUp);
     document.addEventListener('pointerlockchange', onPointerLockChange);
 
-    // 11. RESIZE OBSERVER
+    // 13. RESIZE OBSERVER
     const handleResize = () => {
       if (isDisposed || !container) return;
       const w = container.clientWidth || window.innerWidth;
@@ -1735,11 +1476,9 @@ export const SurfaceExplorerGame: React.FC<SurfaceExplorerGameProps> = ({
     resizeObserver.observe(container);
     window.addEventListener('resize', handleResize);
 
-    // Pre-allocated math objects for render loop
     const printDummy = new THREE.Object3D();
-    let probeTimer = 0;
     let lastHudUpdate = 0;
-    let lastPromptId = '';
+    let probeTimer = 0;
     let prevTime = performance.now();
 
     const afterDraw = (fn: FrameRequestCallback) => {
@@ -1776,179 +1515,201 @@ export const SurfaceExplorerGame: React.FC<SurfaceExplorerGameProps> = ({
       const dt = Math.min(0.05, Math.max(0.001, (now - prevTime) / 1000));
       prevTime = now;
 
-      // Player movement
-      const fw =
-        (keys['KeyW'] || keys['ArrowUp'] ? 1 : 0) -
-        (keys['KeyS'] || keys['ArrowDown'] ? 1 : 0);
-      const st =
-        (keys['KeyD'] || keys['ArrowRight'] ? 1 : 0) -
-        (keys['KeyA'] || keys['ArrowLeft'] ? 1 : 0);
-      const sp = keys['ShiftLeft'] || keys['ShiftRight'] ? 6.5 : 3.2;
+      if (isEnteredRef.current) {
+        // Player movement
+        const fw =
+          (keys['KeyW'] || keys['ArrowUp'] ? 1 : 0) -
+          (keys['KeyS'] || keys['ArrowDown'] ? 1 : 0);
+        const st =
+          (keys['KeyD'] || keys['ArrowRight'] ? 1 : 0) -
+          (keys['KeyA'] || keys['ArrowLeft'] ? 1 : 0);
+        const sp = keys['ShiftLeft'] || keys['ShiftRight'] ? 6.5 : 3.2;
 
-      const wx = -Math.sin(player.yaw) * fw + Math.cos(player.yaw) * st;
-      const wz = -Math.cos(player.yaw) * fw - Math.sin(player.yaw) * st;
-      const n = Math.hypot(wx, wz) || 1;
-      const k = player.onGround ? Math.min(1, dt * 7) : dt * 0.25;
+        const wx = -Math.sin(player.yaw) * fw + Math.cos(player.yaw) * st;
+        const wz = -Math.cos(player.yaw) * fw - Math.sin(player.yaw) * st;
+        const n = Math.hypot(wx, wz) || 1;
+        const k = player.onGround ? Math.min(1, dt * 7) : dt * 0.25;
 
-      player.vel.x += ((wx / n) * sp * (fw || st ? 1 : 0) - player.vel.x) * k;
-      player.vel.z += ((wz / n) * sp * (fw || st ? 1 : 0) - player.vel.z) * k;
+        player.vel.x += ((wx / n) * sp * (fw || st ? 1 : 0) - player.vel.x) * k;
+        player.vel.z += ((wz / n) * sp * (fw || st ? 1 : 0) - player.vel.z) * k;
 
-      const gravity = isMars ? 3.72 : 1.62;
-      player.vel.y -= gravity * dt;
-      player.pos.addScaledVector(player.vel, dt);
+        const gravity = isMars ? 3.72 : 1.62;
+        player.vel.y -= gravity * dt;
+        player.pos.addScaledVector(player.vel, dt);
 
-      // Spacecraft collision pushout
-      const craftDist = Math.hypot(player.pos.x, player.pos.z);
-      if (craftDist < craftRadius && craftDist > 0.001 && player.pos.y < centerGroundY + 5) {
-        player.pos.x *= craftRadius / craftDist;
-        player.pos.z *= craftRadius / craftDist;
+        // Spacecraft collision pushout
+        const craftDist = Math.hypot(player.pos.x, player.pos.z);
+        if (craftDist < craftRadius && craftDist > 0.001 && player.pos.y < centerGroundY + 5) {
+          player.pos.x *= craftRadius / craftDist;
+          player.pos.z *= craftRadius / craftDist;
+        }
+
+        // Ground clamping
+        const groundY = sampleH(player.pos.x, player.pos.z);
+        if (player.pos.y <= groundY) {
+          player.pos.y = groundY;
+          player.vel.y = 0;
+          player.onGround = true;
+        } else if (player.pos.y > groundY + 0.05) {
+          player.onGround = false;
+        }
+
+        // Boot footprints
+        if (player.onGround && Math.hypot(player.pos.x - lastPrintPos.x, player.pos.z - lastPrintPos.z) > 0.85) {
+          lastPrintPos.copy(player.pos);
+          printStepSide *= -1;
+          const fx = player.pos.x + Math.cos(player.yaw) * printStepSide * 0.18;
+          const fz = player.pos.z - Math.sin(player.yaw) * printStepSide * 0.18;
+          printDummy.position.set(fx, sampleH(fx, fz) + 0.03, fz);
+          printDummy.rotation.set(0, player.yaw, 0);
+          printDummy.scale.set(1, 1, 2.1);
+          printDummy.updateMatrix();
+          footprintMesh.setMatrixAt(printCursor, printDummy.matrix);
+          footprintMesh.instanceMatrix.needsUpdate = true;
+          printCursor = (printCursor + 1) % maxPrints;
+        }
+
+        // Perimeter bounds
+        player.pos.x = Math.max(-WORLD_LIMIT, Math.min(WORLD_LIMIT, player.pos.x));
+        player.pos.z = Math.max(-WORLD_LIMIT, Math.min(WORLD_LIMIT, player.pos.z));
+
+        // Smooth flashlight intensity interpolation
+        flashlight.intensity +=
+          ((flashlightOnRef.current ? 3.5 : 0) - flashlight.intensity) * Math.min(1, dt * 9);
+
+        // POINT-AND-INSPECT RAYCASTING
+        if ((probeTimer += dt) > 0.04) {
+          probeTimer = 0;
+          camera.updateMatrixWorld();
+          raycaster.setFromCamera(screenCenter, camera);
+
+          let detectedTarget: InspectableTarget | null = null;
+
+          // 1. Raycast spacecraft components if within 22 meters
+          const distToCraft = Math.hypot(player.pos.x - craftBounds.cx, player.pos.z - craftBounds.cz);
+          if (
+            distToCraft < 22 &&
+            craftSphere &&
+            raycaster.ray.intersectsSphere(craftSphere) &&
+            craftMeshes.length > 0
+          ) {
+            const hits = raycaster.intersectObjects(craftMeshes, false);
+            if (hits.length > 0) {
+              const h = hits[0];
+              const st: MeshPartStats = (h.object.userData?.st as MeshPartStats) || {
+                sx: 1,
+                sy: 1,
+                sz: 1,
+                gold: false,
+              };
+              const partId =
+                h.object.userData?.partId ||
+                inspectionConfig.classify(st, h.point, craftBounds);
+              const part = inspectionConfig.parts[partId];
+              if (part) {
+                detectedTarget = {
+                  type: 'craft_part',
+                  id: partId,
+                  name: part.name,
+                  text: part.text,
+                  why: part.why,
+                  status: part.status,
+                  mesh: h.object as THREE.Mesh,
+                  partRef: part,
+                };
+              }
+            }
+          }
+
+          // 2. Check companion ground items if spacecraft not hit
+          if (!detectedTarget) {
+            const camFwd = new THREE.Vector3(0, 0, -1).applyEuler(camera.rotation);
+            let bestScore = 0;
+            for (const item of siteItems) {
+              const dVec = item.center.clone().sub(player.pos);
+              const dist = dVec.length();
+              if (dist > item.radius + 4.0) continue;
+              const dot = dVec.normalize().dot(camFwd);
+              if (dot > 0.92 && dot > bestScore) {
+                bestScore = dot;
+                detectedTarget = {
+                  type: 'site_item',
+                  id: item.id,
+                  name: item.name,
+                  text: item.text,
+                  why: item.why,
+                  status: item.status,
+                  mesh: item.mesh || null,
+                  itemRef: item,
+                };
+              }
+            }
+          }
+
+          activeTargetRef.current = detectedTarget;
+          setHoveredTarget(detectedTarget);
+          setHL(detectedTarget && !inspectModalRef.current ? detectedTarget.mesh || null : null);
+        }
+
+        // TELEMETRY HUD UPDATES (~8 Hz)
+        if (now - lastHudUpdate > 120) {
+          lastHudUpdate = now;
+          const distFromCraft = Math.hypot(player.pos.x, player.pos.z);
+          setDistanceMeters(Math.max(0, Math.round(distFromCraft - craftRadius * 0.6)));
+          setHudCoords(
+            formatOffsetCoords(
+              artifact.coordinates.lat,
+              artifact.coordinates.lon,
+              player.pos.x,
+              player.pos.z,
+              isMars
+            )
+          );
+
+          // Find nearest unread companion item
+          let nearestDist = 1e9;
+          let nearestBearing = 0;
+          let hasUnread = false;
+
+          for (const item of siteItems) {
+            if (!item.seen) {
+              const dx = item.center.x - player.pos.x;
+              const dz = item.center.z - player.pos.z;
+              const d = Math.hypot(dx, dz);
+              if (d < nearestDist) {
+                nearestDist = d;
+                nearestBearing = (Math.atan2(dx, -dz) * (180 / Math.PI) + 360) % 360;
+                hasUnread = true;
+              }
+            }
+          }
+
+          const seenItems = siteItems.filter((i) => i.seen).length;
+          setItemsLoggedCount(seenItems);
+
+          const seenParts = Object.values(inspectionConfig.parts).filter((p) => p.seen).length;
+          setPartsInspectedCount(seenParts);
+
+          if (hasUnread) {
+            setNearestInfo(
+              `Nearest unread: ${Math.round(nearestDist)} m, bearing ${Math.round(nearestBearing)}°`
+            );
+          } else {
+            const allPartsSeen = Object.values(inspectionConfig.parts).every((p) => p.seen);
+            setNearestInfo(
+              allPartsSeen
+                ? 'Every object logged.'
+                : `Debris logged. Aim crosshair at ${inspectionConfig.craftShortName}’s parts and press [E].`
+            );
+          }
+        }
       }
 
-      // Ground clamping
-      const groundY = sampleH(player.pos.x, player.pos.z);
-      if (player.pos.y <= groundY) {
-        player.pos.y = groundY;
-        player.vel.y = 0;
-        player.onGround = true;
-      } else if (player.pos.y > groundY + 0.05) {
-        player.onGround = false;
-      }
-
-      // Leave boot footprints along regolith every 0.85m
-      if (
-        player.onGround &&
-        Math.hypot(player.pos.x - lastPrintPos.x, player.pos.z - lastPrintPos.z) > 0.85
-      ) {
-        lastPrintPos.copy(player.pos);
-        printStepSide *= -1;
-        const fx = player.pos.x + Math.cos(player.yaw) * printStepSide * 0.18;
-        const fz = player.pos.z - Math.sin(player.yaw) * printStepSide * 0.18;
-        printDummy.position.set(fx, sampleH(fx, fz) + 0.03, fz);
-        printDummy.rotation.set(0, player.yaw, 0);
-        printDummy.scale.set(1, 1, 2.1);
-        printDummy.updateMatrix();
-        footprintMesh.setMatrixAt(printCursor, printDummy.matrix);
-        footprintMesh.instanceMatrix.needsUpdate = true;
-        printCursor = (printCursor + 1) % maxPrints;
-      }
-
-      // World perimeter clamp
-      player.pos.x = Math.max(-WORLD_LIMIT, Math.min(WORLD_LIMIT, player.pos.x));
-      player.pos.z = Math.max(-WORLD_LIMIT, Math.min(WORLD_LIMIT, player.pos.z));
-
-      // First-person camera pose
+      // Camera pose
       camera.position.set(player.pos.x, player.pos.y + EYE_HEIGHT, player.pos.z);
       camera.rotation.set(player.pitch, player.yaw, 0);
 
-      // Smooth flashlight intensity transition
-      const targetFlashIntensity = flashlightOnRef.current ? 3.5 : 0;
-      flashlight.intensity +=
-        (targetFlashIntensity - flashlight.intensity) * Math.min(1, dt * 9);
-
-      // Throttled 20Hz crosshair raycasting on spacecraft sub-meshes & companion items
-      probeTimer += dt;
-      if (probeTimer > 0.05) {
-        probeTimer = 0;
-        camera.updateMatrixWorld();
-
-        const cx = craftBounds ? craftBounds.cx : 0;
-        const cz = craftBounds ? craftBounds.cz : 0;
-        const hit =
-          Math.hypot(player.pos.x - cx, player.pos.z - cz) < 20
-            ? probeSpacecraftComponent()
-            : null;
-
-        let nextTarget: ActiveTarget | null = null;
-
-        if (hit && inspectionConfig.parts[hit.partId]) {
-          const part = inspectionConfig.parts[hit.partId];
-          setHighlightedMesh(inspectedPanelRef.current ? null : hit.mesh);
-          nextTarget = {
-            kind: 'part',
-            id: part.id,
-            name: part.name,
-            nssdcLabel: inspectionConfig.nssdcLabel,
-            text: part.text,
-            highlightNote: part.why,
-          };
-        } else {
-          setHighlightedMesh(null);
-          const item = probeCompanionItem();
-          if (item) {
-            nextTarget = {
-              kind: 'item',
-              id: item.id,
-              name: item.name,
-              nssdcLabel: null,
-              text: item.text,
-              highlightNote: item.status,
-            };
-          }
-        }
-
-        activeTargetRef.current = nextTarget;
-        const nextPromptId = nextTarget ? `${nextTarget.kind}:${nextTarget.id}` : '';
-        if (nextPromptId !== lastPromptId) {
-          lastPromptId = nextPromptId;
-          setActivePrompt(
-            nextTarget ? { id: nextTarget.id, name: nextTarget.name } : null
-          );
-        }
-      }
-
-      // HUD telemetry update (coordinates, nearest unread item bearing)
-      if (now - lastHudUpdate > 140) {
-        lastHudUpdate = now;
-        const coordText = formatOffsetCoords(
-          artifact.coordinates.lat,
-          artifact.coordinates.lon,
-          player.pos.x,
-          player.pos.z,
-          isMars
-        );
-        if (companionItems.length > 0) {
-          const seenCount = seenItemsRef.current.size;
-          setPosLine(`${coordText} · ${seenCount}/${companionItems.length} logged`);
-
-          let nearest: CompanionSurfaceItem | null = null;
-          let nearestDist = 1e9;
-          for (let i = 0; i < companionItems.length; i++) {
-            const it = companionItems[i];
-            if (seenItemsRef.current.has(it.id)) continue;
-            const d = Math.hypot(it.center.x - player.pos.x, it.center.z - player.pos.z);
-            if (d < nearestDist) {
-              nearestDist = d;
-              nearest = it;
-            }
-          }
-          if (nearest) {
-            const bearing =
-              ((Math.atan2(nearest.center.x - player.pos.x, -(nearest.center.z - player.pos.z)) *
-                180) /
-                Math.PI +
-                360) %
-              360;
-            setNearestLine(`Nearest unread: ${nearestDist | 0} m, bearing ${bearing | 0}°`);
-          } else {
-            const allPartsSeen = seenPartsRef.current.size >= totalPartsCount;
-            setNearestLine(
-              allPartsSeen
-                ? 'Every object logged.'
-                : `Surface items logged. Look closely at ${inspectionConfig.craftShortName}’s parts and press E.`
-            );
-          }
-        } else {
-          setPosLine(coordText);
-          const allPartsSeen = seenPartsRef.current.size >= totalPartsCount;
-          setNearestLine(
-            allPartsSeen
-              ? `All ${inspectionConfig.craftShortName} parts inspected.`
-              : `Walk up to ${inspectionConfig.craftShortName} (${Math.max(0, Math.round(craftDist - craftRadius * 0.6))} m) and aim at its parts.`
-          );
-        }
-      }
-
-      // Keep shadow frustum centered around player
+      // Low-angle sun shadow frustum tracking
       sunLight.position.copy(player.pos).addScaledVector(sunDir, 150);
       sunLight.target.position.copy(player.pos);
       sunLight.target.updateMatrixWorld();
@@ -1975,13 +1736,9 @@ export const SurfaceExplorerGame: React.FC<SurfaceExplorerGameProps> = ({
         document.exitPointerLock?.();
       }
 
-      setHighlightedMesh(null);
-      camera.remove(flashlight, flashlight.target);
-      flashlight.dispose();
-
       disposeObject3D(craftGroup);
-      disposeObject3D(companionGroup);
       if (gltfRoot) disposeObject3D(gltfRoot);
+      siteItems.forEach((it) => disposeObject3D(it.group));
       terrainGeo.dispose();
       terrainMat.dispose();
       regolithTex.dispose();
@@ -1996,169 +1753,381 @@ export const SurfaceExplorerGame: React.FC<SurfaceExplorerGameProps> = ({
       scene.clear();
       renderer.dispose();
     };
-  }, [artifact, isMars]);
+  }, [artifact, isMars, inspectionConfig, toggleFlashlight, openInspection, closeInspection]);
 
-  const siteTitle =
-    artifact.id === 'apollo-11-eagle-easep' ? 'Tranquility Base' : artifact.moniker;
+  const handleEnterSurface = useCallback(() => {
+    playTelemetryBeep(640);
+    setIsEntered(true);
+    const canvas = mountRef.current?.querySelector('canvas');
+    canvas?.requestPointerLock?.();
+  }, []);
+
+  // Planet theme tokens
+  const panelBgClass = isMars
+    ? 'bg-[rgba(28,20,15,0.93)] border border-[#57534E] text-[#F5E6D3] shadow-[0_12px_32px_rgba(0,0,0,0.55)]'
+    : 'bg-[rgba(28,29,33,0.94)] border-2 border-[#BAE6FD] text-[#F4F4F5] shadow-none';
+  const headerBarClass = isMars
+    ? 'bg-[#291D16] border-b border-[#44403C]'
+    : 'bg-[#27282D] border-b border-[#3F3F46]';
+  const dividerClass = isMars ? 'border-[#44403C]' : 'border-[#3F3F46]';
+  const accentTextClass = isMars ? 'text-[#D97706]' : 'text-[#BAE6FD]';
+  const mutedTextClass = isMars ? 'text-[#A8A29E]' : 'text-[#A1A1AA]';
+  const badgeClass = isMars
+    ? 'bg-[#F5E6D3] text-[#1C140F] border-[#F5E6D3]'
+    : 'bg-[#BAE6FD] text-[#1C1D21] border-[#BAE6FD]';
+  const buttonActionClass = isMars
+    ? 'bg-[#F5E6D3] hover:bg-[#D97706] text-[#1C140F] shadow-[0_4px_14px_rgba(0,0,0,0.35)]'
+    : 'bg-[#BAE6FD] hover:bg-[#E0F2FE] text-[#1C1D21] shadow-none';
 
   return (
-    <div
-      className="fixed inset-0 z-50 w-screen h-screen overflow-hidden bg-black select-none"
-      style={
-        {
-          '--gold': '#d4aa4f',
-          '--ink': '#08080a',
-          '--dust': '#e8e3d6',
-          color: 'var(--dust)',
-          fontFamily: "'Newsreader', Georgia, serif",
-        } as React.CSSProperties
-      }
-    >
-      {/* Dedicated Three.js Canvas Mount (no backdrop-blur over WebGL) */}
+    <div className="fixed inset-0 z-50 w-screen h-screen overflow-hidden bg-black select-none">
+      {/* 3D WebGL Canvas Viewport */}
       <div
         ref={mountRef}
         className="w-full h-full cursor-crosshair"
         aria-label={`3D surface exploration of ${artifact.name}`}
       />
 
-      {/* Minimalist HUD Layer */}
-      <div className="fixed inset-0 pointer-events-none">
-        {/* Center Crosshair Reticle (#ret) */}
-        <div
-          id="ret"
-          className="absolute left-1/2 top-1/2 w-[6px] h-[6px] -m-[3px] rounded-full transition-colors"
-          style={{
-            border: activePrompt
-              ? '1px solid var(--gold)'
-              : '1px solid rgba(255,255,255,0.7)',
-          }}
-        />
-
-        {/* Top-Left Telemetry Readout (#tl) */}
-        <div
-          id="tl"
-          className="absolute left-[18px] top-[16px] text-[15px] leading-[1.5]"
-          style={{ textShadow: '0 1px 3px #000' }}
+      {/* Top-Left: Exit Surface / Return to Orbit */}
+      <div className="absolute top-3 left-2 sm:top-4 sm:left-4 z-30 pointer-events-auto flex items-center gap-2">
+        <button
+          onClick={handleExit}
+          className={`min-h-[40px] px-3.5 py-2 rounded-xl text-xs font-mono font-black flex items-center gap-2 active:translate-y-0.5 transition-all ${
+            isMars
+              ? 'bg-[rgba(28,20,15,0.90)] hover:bg-[#291D16] border border-[#57534E] hover:border-[#D97706] text-[#F5E6D3] shadow-[0_6px_20px_rgba(0,0,0,0.45)]'
+              : 'bg-[rgba(28,29,33,0.94)] hover:bg-[#2A2C32] border-2 border-[#BAE6FD] text-[#F4F4F5] shadow-none'
+          }`}
         >
-          <b
-            className="font-semibold text-[17px]"
-            style={{ color: 'var(--gold)' }}
-          >
-            {siteTitle}
-          </b>
-          <br />
-          <span id="pos">{posLine}</span>
-          <br />
-          <span id="near">{nearestLine}</span>
-          <br />
-          <span id="comp" className="text-[14px]" style={{ color: '#a9a392' }}>
-            {inspectionConfig.craftShortName} components inspected: {partsSeenCount}/
-            {totalPartsCount}
-          </span>
-          <br />
-          <span
-            id="fl"
-            className={`text-[14px] ${isFlashlightOn ? 'on' : ''}`}
-            style={{ color: isFlashlightOn ? 'var(--gold)' : '#a9a392' }}
-          >
-            Flashlight {isFlashlightOn ? 'on' : 'off'} · G
-          </span>
-          {!isPointerLocked && (
-            <>
-              <br />
-              <span
-                id="hint"
-                className="text-[13px] italic"
-                style={{ color: '#a9a392' }}
-              >
-                Click to look around · WASD move · Shift run · Space jump · E inspect · G
-                flashlight
-              </span>
-            </>
-          )}
-        </div>
+          <ArrowLeft className={`w-4 h-4 ${accentTextClass}`} />
+          <span>Exit Surface / Return to Orbit</span>
+        </button>
 
-        {/* Top-Right Exit Surface Button */}
-        <div className="absolute top-[16px] right-[18px] pointer-events-auto">
+        {/* Top Flashlight Toggle Shortcut Button */}
+        {isEntered && (
           <button
-            onClick={handleExit}
-            className="px-3.5 py-1.5 text-[14px] flex items-center gap-1.5 transition-colors cursor-pointer"
-            style={{
-              background: 'rgba(8, 8, 10, 0.78)',
-              border: '1px solid rgba(212, 170, 79, 0.55)',
-              color: 'var(--dust)',
-              fontFamily: "'Newsreader', Georgia, serif",
-            }}
+            onClick={toggleFlashlight}
+            className={`min-h-[40px] px-3 py-2 rounded-xl text-xs font-mono font-bold flex items-center gap-2 active:translate-y-0.5 transition-all ${
+              isFlashlightOn
+                ? isMars
+                  ? 'bg-[#D97706] text-[#1C140F] border border-[#F5E6D3]'
+                  : 'bg-[#BAE6FD] text-[#1C1D21] border border-[#BAE6FD]'
+                : isMars
+                ? 'bg-[rgba(28,20,15,0.90)] hover:bg-[#291D16] border border-[#57534E] text-[#F5E6D3]'
+                : 'bg-[rgba(28,29,33,0.94)] hover:bg-[#2A2C32] border-2 border-[#BAE6FD] text-[#F4F4F5]'
+            }`}
+            title="Toggle Flashlight (G)"
           >
-            <ArrowLeft className="w-3.5 h-3.5" style={{ color: 'var(--gold)' }} />
-            <span>Exit Surface</span>
-          </button>
-        </div>
-
-        {/* Crosshair Component Inspection Prompt (#prompt) */}
-        {activePrompt && !inspectedPanel && (
-          <div
-            id="prompt"
-            className="absolute left-1/2 top-[58%] -translate-x-1/2 px-[14px] py-[6px] text-[18px]"
-            style={{
-              background: 'rgba(8, 8, 10, 0.72)',
-              borderLeft: '3px solid var(--gold)',
-              color: 'var(--dust)',
-            }}
-          >
-            Press E to inspect {activePrompt.name}
-          </div>
-        )}
-
-        {/* Component Inspection Panel (#panel) */}
-        {inspectedPanel && (
-          <div
-            id="panel"
-            className="pointer-events-auto absolute right-[24px] bottom-[24px] w-[min(440px,calc(100%-48px))] max-h-[70%] overflow-auto px-[22px] py-[18px] text-[17px] leading-[1.5]"
-            style={{
-              background: 'rgba(8, 8, 10, 0.9)',
-              borderTop: '4px solid var(--gold)',
-              color: 'var(--dust)',
-            }}
-          >
-            <button
-              onClick={() => {
-                playTelemetryBeep(440);
-                setInspectedPanel(null);
-              }}
-              aria-label="Close inspection panel"
-              className="float-right ml-3 p-1 transition-opacity opacity-75 hover:opacity-100 cursor-pointer"
-              style={{ color: '#a9a392' }}
-            >
-              <X className="w-4 h-4" />
-            </button>
-            {inspectedPanel.nssdcLabel && (
-              <p
-                className="k m-0 mb-1 text-[12.5px] uppercase tracking-[0.14em]"
-                style={{ color: '#a9a392' }}
-              >
-                {inspectedPanel.nssdcLabel}
-              </p>
+            {isFlashlightOn ? (
+              <Flashlight className="w-4 h-4" />
+            ) : (
+              <FlashlightOff className={`w-4 h-4 ${mutedTextClass}`} />
             )}
-            <h2
-              className="m-0 mb-2 text-[24px] font-semibold leading-snug"
-              style={{
-                color: 'var(--gold)',
-                fontFamily: "'Newsreader', Georgia, serif",
-              }}
-            >
-              {inspectedPanel.name}
-            </h2>
-            <p className="m-0 mb-[10px] max-w-[62ch]">{inspectedPanel.text}</p>
-            <p className="m-0 mb-[10px] max-w-[62ch]">
-              <em style={{ color: '#a9a392' }}>{inspectedPanel.highlightNote}</em>
-            </p>
-            <p className="m-0 max-w-[62ch]">
-              <em style={{ color: '#a9a392' }}>Press E to close.</em>
-            </p>
-          </div>
+            <span>Flashlight {isFlashlightOn ? 'ON' : 'OFF'} [G]</span>
+          </button>
         )}
       </div>
+
+      {/* Top-Right: Comprehensive Telemetry HUD */}
+      {isEntered && (
+        <div
+          className={`absolute top-3 right-3 sm:top-4 sm:right-4 z-20 pointer-events-none rounded-xl px-3.5 py-2.5 max-w-[290px] ${panelBgClass}`}
+        >
+          <div className="flex items-center justify-between gap-3 text-[10px] font-mono uppercase tracking-widest mb-1">
+            <span className={`font-bold flex items-center gap-1.5 ${accentTextClass}`}>
+              <Compass className="w-3.5 h-3.5" />
+              {isMars ? 'Mars Surface' : 'Lunar Surface'}
+            </span>
+            <span className={mutedTextClass}>{modelSourceLabel}</span>
+          </div>
+
+          <div className="text-xs sm:text-sm font-bold truncate text-[#FFFFFF]">
+            {artifact.moniker} ({artifact.year})
+          </div>
+
+          <div className={`text-[11px] font-mono tabular-nums mt-0.5 ${mutedTextClass}`}>
+            {hudCoords}
+          </div>
+
+          {/* Site Log Progress */}
+          <div className="mt-1.5 pt-1.5 border-t border-dashed border-white/10 text-[11px] font-mono flex items-center justify-between">
+            <span className={mutedTextClass}>Site Debris Logged:</span>
+            <span className={`font-bold tabular-nums ${accentTextClass}`}>
+              {itemsLoggedCount}/{totalItemsCount}
+            </span>
+          </div>
+
+          {/* Spacecraft Components Inspected */}
+          <div className="mt-1 text-[11px] font-mono flex items-center justify-between">
+            <span className={mutedTextClass}>Components Inspected:</span>
+            <span className={`font-bold tabular-nums ${accentTextClass}`}>
+              {partsInspectedCount}/{totalPartsCount}
+            </span>
+          </div>
+
+          {/* Nearest Unread Compass Bearing */}
+          <div className={`mt-1 text-[10.5px] font-mono truncate ${accentTextClass}`}>
+            {nearestInfo}
+          </div>
+
+          {/* Distance to Center Pad */}
+          <div
+            className={`mt-1.5 pt-1.5 border-t ${dividerClass} flex items-center justify-between text-[11px] font-mono`}
+          >
+            <span className={mutedTextClass}>
+              Flashlight: <strong className={isFlashlightOn ? accentTextClass : ''}>{isFlashlightOn ? 'ON' : 'OFF'}</strong>
+            </span>
+            <span className={`font-bold tabular-nums ${accentTextClass}`}>
+              {distanceMeters === 0 ? 'AT SITE' : `${distanceMeters}m away`}
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* Center Reticle & Dynamic Point-to-Inspect Prompt */}
+      {isEntered && !inspectModalTarget && (
+        <div className="absolute inset-0 pointer-events-none flex items-center justify-center z-10">
+          <div className="relative flex flex-col items-center">
+            {/* Crosshair dot with dynamic targeting highlight */}
+            <div
+              className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
+                hoveredTarget
+                  ? isMars
+                    ? 'border-[#D97706] scale-125 shadow-[0_0_12px_rgba(217,119,6,0.8)]'
+                    : 'border-[#BAE6FD] scale-125 shadow-[0_0_12px_rgba(186,230,253,0.8)]'
+                  : 'border-white/50'
+              }`}
+            >
+              <div
+                className={`w-1.5 h-1.5 rounded-full transition-colors ${
+                  hoveredTarget
+                    ? isMars
+                      ? 'bg-[#D97706]'
+                      : 'bg-[#BAE6FD]'
+                    : 'bg-white/80'
+                }`}
+              />
+            </div>
+
+            {/* Point-to-Inspect Notification: Clickable or press E */}
+            {hoveredTarget && (
+              <button
+                onClick={() => openInspection(hoveredTarget)}
+                className={`mt-4 px-3.5 py-1.5 rounded-xl font-['Newsreader',Georgia,serif] text-base sm:text-lg font-semibold tracking-wide pointer-events-auto flex items-center gap-2 cursor-pointer transition-all active:scale-95 ${
+                  isMars
+                    ? 'bg-[rgba(28,20,15,0.92)] border border-[#57534E] text-[#F5E6D3] shadow-[0_8px_24px_rgba(0,0,0,0.6)]'
+                    : 'bg-[rgba(28,29,33,0.92)] border-2 border-[#BAE6FD] text-[#F4F4F5] shadow-none'
+                }`}
+              >
+                <Eye className={`w-4 h-4 ${accentTextClass}`} />
+                <span>
+                  Press <strong className={accentTextClass}>[E]</strong> to inspect {hoveredTarget.name}
+                </span>
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Point-and-Inspect Educational Modal / Plaque (Styled with Newsreader font) */}
+      {isEntered && inspectModalTarget && (
+        <div className="absolute inset-x-4 bottom-20 sm:bottom-24 z-30 flex justify-center pointer-events-none">
+          <div
+            className={`pointer-events-auto w-full max-w-xl rounded-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 font-['Newsreader',Georgia,serif] ${panelBgClass}`}
+          >
+            <div
+              className={`px-4 sm:px-5 py-3 flex items-start justify-between gap-3 ${headerBarClass}`}
+            >
+              <div className="min-w-0">
+                <div
+                  className={`flex items-center gap-1.5 text-xs uppercase tracking-widest ${accentTextClass}`}
+                >
+                  <Info className="w-3.5 h-3.5 shrink-0" />
+                  <span>
+                    {inspectionConfig.nssdcLabel}
+                  </span>
+                </div>
+                <h2 className="text-xl sm:text-2xl font-semibold tracking-tight mt-1 leading-snug text-[#FFFFFF]">
+                  {inspectModalTarget.name}
+                </h2>
+              </div>
+              <button
+                onClick={closeInspection}
+                className={`p-1.5 rounded-lg border transition-colors shrink-0 ${
+                  isMars
+                    ? 'bg-[#1C140F] border-[#44403C] hover:border-[#D97706] text-[#A8A29E] hover:text-[#F5E6D3]'
+                    : 'bg-[#1C1D21] border-[#52525B] hover:border-[#BAE6FD] text-[#A1A1AA] hover:text-[#F4F4F5]'
+                }`}
+                aria-label="Close component inspection"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-4 sm:p-5">
+              <p className="text-base sm:text-[17px] leading-relaxed max-h-48 overflow-y-auto pr-1">
+                {inspectModalTarget.text}
+              </p>
+
+              {inspectModalTarget.why && (
+                <div
+                  className={`mt-3 p-3.5 rounded-xl border text-sm sm:text-base leading-relaxed ${
+                    isMars
+                      ? 'bg-[#1C140F] border-[#44403C] text-[#F5E6D3]'
+                      : 'bg-[#27282D] border-[#3F3F46] text-[#E4E4E7]'
+                  }`}
+                >
+                  <strong className={accentTextClass}>Why it’s cool: </strong>
+                  <span>{inspectModalTarget.why.replace(/^Why it[’']s cool:\s*/i, '')}</span>
+                </div>
+              )}
+
+              {inspectModalTarget.status && (
+                <div className={`mt-2 text-sm italic ${mutedTextClass}`}>
+                  Status: {inspectModalTarget.status}
+                </div>
+              )}
+
+              <div
+                className={`mt-4 pt-3 border-t ${dividerClass} flex items-center justify-between gap-2 text-xs font-mono`}
+              >
+                <span className={mutedTextClass}>
+                  Press <strong className={accentTextClass}>[E]</strong> or click button to close
+                </span>
+                <button
+                  onClick={closeInspection}
+                  className={`px-3.5 py-1.5 rounded-lg font-bold font-sans transition-all ${buttonActionClass}`}
+                >
+                  Continue Exploring
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bottom Controls Hint Bar */}
+      {isEntered && (
+        <div className="absolute bottom-4 inset-x-4 z-20 flex justify-center pointer-events-none">
+          <div
+            className={`px-4 py-2 rounded-xl text-[11px] sm:text-xs font-mono flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 ${panelBgClass}`}
+          >
+            <span>
+              <strong className={accentTextClass}>WASD / Arrows</strong> Move
+            </span>
+            <span>
+              <strong className={accentTextClass}>
+                {isPointerLocked ? 'Mouse' : 'Click/Drag'}
+              </strong>{' '}
+              Look
+            </span>
+            <span>
+              <strong className={accentTextClass}>Shift</strong> Run
+            </span>
+            <span>
+              <strong className={accentTextClass}>Space</strong> Jump
+            </span>
+            <span>
+              <strong className={accentTextClass}>E</strong> Inspect Targeted Object
+            </span>
+            <button
+              onClick={toggleFlashlight}
+              className={`pointer-events-auto px-2 py-0.5 rounded border transition-colors ${
+                isFlashlightOn
+                  ? isMars
+                    ? 'bg-[#D97706] text-[#1C140F] border-[#F5E6D3]'
+                    : 'bg-[#BAE6FD] text-[#1C1D21] border-[#BAE6FD]'
+                  : isMars
+                  ? 'border-[#57534E] text-[#F5E6D3]'
+                  : 'border-[#BAE6FD] text-[#F4F4F5]'
+              }`}
+            >
+              <strong className={accentTextClass}>G</strong> Flashlight ({isFlashlightOn ? 'ON' : 'OFF'})
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Initial Landing Briefing Overlay */}
+      {!isEntered && (
+        <div
+          className={`absolute inset-0 z-20 flex items-center justify-center p-4 ${
+            isMars ? 'bg-[#1C140F]/65' : 'bg-[#090A0D]/65'
+          }`}
+        >
+          <div
+            className={`w-full max-w-md rounded-3xl overflow-hidden ${
+              isMars
+                ? 'bg-[#291D16] border border-[#57534E] text-[#F5E6D3] shadow-[0_16px_48px_rgba(0,0,0,0.65)]'
+                : 'bg-[#1C1D21] border-2 border-[#BAE6FD] text-[#F4F4F5] shadow-none'
+            }`}
+          >
+            <div
+              className={`px-6 py-4 flex items-center justify-between gap-2 ${
+                isMars
+                  ? 'bg-[#1C140F] border-b border-[#44403C]'
+                  : 'bg-[#27282D] border-b border-[#3F3F46]'
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <span
+                  className={`px-2 py-0.5 rounded-full border text-[10px] font-mono font-bold uppercase tracking-wider ${badgeClass}`}
+                >
+                  {isMars ? 'MARS EVA' : 'LUNAR EVA'}
+                </span>
+                <span className={`text-xs font-mono ${mutedTextClass}`}>
+                  {artifact.year} • {artifact.agency}
+                </span>
+              </div>
+              <Footprints className={`w-4 h-4 ${accentTextClass}`} />
+            </div>
+
+            <div className="p-6">
+              <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-[#FFFFFF]">
+                {artifact.name}
+              </h2>
+              <p className={`text-xs font-mono mt-1 ${mutedTextClass}`}>
+                {artifact.locationName}
+              </p>
+              <p className={`text-xs font-mono mt-0.5 ${accentTextClass}`}>
+                {artifact.coordinates.display}
+              </p>
+
+              <p className="text-sm mt-4 leading-relaxed">
+                Step onto the {isMars ? 'Martian regolith' : 'lunar regolith'} to walk the historic site. Aim your crosshair at spacecraft parts and companion equipment to point and inspect what each object is!
+              </p>
+
+              <div
+                className={`mt-4 p-3.5 rounded-2xl border text-xs font-mono space-y-1.5 ${
+                  isMars
+                    ? 'bg-[#1C140F] border-[#44403C]'
+                    : 'bg-[#27282D] border-[#3F3F46]'
+                }`}
+              >
+                <div>
+                  <strong className={accentTextClass}>Aim Crosshair:</strong> Points to parts and reveals their identity
+                </div>
+                <div>
+                  <strong className={accentTextClass}>Press [E]:</strong> Inspect highlighted object in detail
+                </div>
+                <div>
+                  <strong className={accentTextClass}>Press [G]:</strong> Toggle night/shadow Flashlight
+                </div>
+                <div>
+                  <strong className={accentTextClass}>WASD / Space / Shift:</strong> Walk, Jump, Run
+                </div>
+              </div>
+
+              <button
+                onClick={handleEnterSurface}
+                className={`mt-5 w-full py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all ${buttonActionClass}`}
+              >
+                <MousePointerClick className="w-4 h-4" />
+                <span>Walk the Site</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

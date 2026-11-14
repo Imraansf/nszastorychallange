@@ -5,6 +5,8 @@ export interface SurfaceInspectionPart {
   name: string;
   text: string;
   why: string;
+  status?: string;
+  seen?: boolean;
 }
 
 export interface MeshPartStats {
