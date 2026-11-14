@@ -1,0 +1,8 @@
+{
+  "name": "Remix nzsaspace2026 haashir++",
+  "description": "Imported from GitHub: Imraansf/nzsaspace2026",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
