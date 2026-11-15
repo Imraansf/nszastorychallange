@@ -1,3 +1,8 @@
+/**
+ * @file url-security.ts
+ * @si-attribution Security validation helpers structured using Super Intelligence (Google AI Studio / Gemini).
+ */
+
 const ALLOWED_EXTERNAL_HOST_SUFFIXES = [
   'nasa.gov',
   'github.com',

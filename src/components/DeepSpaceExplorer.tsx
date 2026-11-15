@@ -1,3 +1,8 @@
+/**
+ * @file DeepSpaceExplorer.tsx
+ * @si-attribution Application code and architecture built and structured using Super Intelligence (Google AI Studio / Gemini).
+ */
+
 import React, { useEffect, useRef, useState, useMemo } from 'react';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
@@ -301,6 +306,8 @@ export const DeepSpaceExplorer: React.FC<DeepSpaceExplorerProps> = React.memo(({
   // Active Dynamic Orbit & Trajectory Tracking
   const selectedPlanetRef = useRef<SolarPlanetData | null>(null);
   const selectedArtifactRef = useRef<Artifact | null>(null);
+  const prevSelectedArtifactRef = useRef<Artifact | null>(selectedArtifact);
+  const skipNextDeselectResetRef = useRef(false);
   const telemetryArtifactRef = useRef<Artifact | null>(selectedArtifact);
   const hoveredArtifactIdRef = useRef<string | null>(null);
   const currentLookAtRef = useRef(new THREE.Vector3(0, 0, 0));
@@ -1217,12 +1224,27 @@ export const DeepSpaceExplorer: React.FC<DeepSpaceExplorerProps> = React.memo(({
 
   // Sync tracking refs when selectedArtifact changes — zoom into ALL spacecraft including Pioneer 10 & 11 so 3D .glb renders cleanly
   useEffect(() => {
+    const prevArtifact = prevSelectedArtifactRef.current;
+    prevSelectedArtifactRef.current = selectedArtifact;
     selectedArtifactRef.current = selectedArtifact;
+
     if (selectedArtifact) {
+      skipNextDeselectResetRef.current = false;
       setSelectedPlanet(null);
       selectedPlanetRef.current = null;
       targetZoomDistanceRef.current = 3.2;
       targetRotationRef.current.x = 0.35;
+    } else if (prevArtifact) {
+      if (skipNextDeselectResetRef.current) {
+        skipNextDeselectResetRef.current = false;
+      } else if (!selectedPlanetRef.current) {
+        // Closing the artifact target popup returns to the Full System overview
+        setActiveFilter('all');
+        targetLookAtRef.current.set(0, 0, 0);
+        targetRotationRef.current.x = 0.6;
+        targetRotationRef.current.y = -0.2;
+        targetZoomDistanceRef.current = 105;
+      }
     }
   }, [selectedArtifact]);
 
@@ -1231,6 +1253,9 @@ export const DeepSpaceExplorer: React.FC<DeepSpaceExplorerProps> = React.memo(({
     preset: 'solar_system' | 'inner' | 'gas_giants' | 'interstellar' | 'sun'
   ) => {
     playWhooshSound('out');
+    if (selectedArtifactRef.current) {
+      skipNextDeselectResetRef.current = true;
+    }
     setSelectedPlanet(null);
     selectedPlanetRef.current = null;
     onSelectArtifact(null);
@@ -1275,6 +1300,9 @@ export const DeepSpaceExplorer: React.FC<DeepSpaceExplorerProps> = React.memo(({
 
   const handleFocusPlanet = (planet: SolarPlanetData) => {
     playPlanetWhoosh();
+    if (selectedArtifactRef.current) {
+      skipNextDeselectResetRef.current = true;
+    }
     setSelectedPlanet(planet);
     selectedPlanetRef.current = planet;
     onSelectArtifact(null);
@@ -1827,6 +1855,9 @@ export const DeepSpaceExplorer: React.FC<DeepSpaceExplorerProps> = React.memo(({
               } else if (filterId === 'all') {
                 handleFlyToPreset('solar_system');
               } else {
+                if (selectedArtifactRef.current) {
+                  skipNextDeselectResetRef.current = true;
+                }
                 setSelectedPlanet(null);
                 selectedPlanetRef.current = null;
                 onSelectArtifact(null);

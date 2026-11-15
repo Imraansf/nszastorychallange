@@ -1,3 +1,10 @@
+/**
+ * @file StoryDrawer.tsx
+ * @si-attribution Application code and architecture built and structured using Super Intelligence (Google AI Studio / Gemini).
+ * Voice narration uses Google Gemini Text-to-Speech (TTS) with Web Speech fallback.
+ * All archival photography and storytelling copy are human-created/curated.
+ */
+
 import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Artifact } from '../types/space';
@@ -535,45 +542,55 @@ export const StoryDrawer: React.FC<StoryDrawerProps> = ({
               </div>
 
               <div className="flex items-center gap-3">
-                <button
-                  onClick={() => {
-                    if (nasaVoice.isSpeaking || nasaVoice.isLoading) {
-                      nasaVoice.stop();
-                    } else {
-                      nasaVoice.speakMissionLog(
-                        narrationText,
-                        nasaVoice.filterEnabled,
-                        assignedVoice
-                      );
-                    }
-                  }}
-                  className={`min-h-[40px] px-4 py-2 rounded-xl border-2 active:translate-y-0.5 active:shadow-none text-xs font-black flex items-center gap-2 transition-all ${
-                    isMars
-                      ? nasaVoice.isSpeaking || nasaVoice.isLoading
-                        ? 'bg-[#1C140F] text-[#F5E6D3] border-[#1C140F] shadow-[0_3px_0_#291D16]'
-                        : 'bg-[#F5E6D3] hover:bg-[#E7E5E4] text-[#1C140F] border-[#1C140F] shadow-[0_3px_0_#1C140F]'
-                      : nasaVoice.isSpeaking || nasaVoice.isLoading
-                      ? 'bg-[#7C3AED] text-[#F8FAFC] border-[#06090F] shadow-[0_3px_0_#06090F]'
-                      : 'bg-[#F8FAFC] hover:bg-[#E0F2FE] text-[#06090F] border-[#06090F] shadow-[0_3px_0_#06090F]'
-                  }`}
-                >
-                  {nasaVoice.isLoading ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>Loading Voice...</span>
-                    </>
-                  ) : nasaVoice.isSpeaking ? (
-                    <>
-                      <VolumeX className="w-4 h-4" />
-                      <span>Stop My Story</span>
-                    </>
-                  ) : (
-                    <>
-                      <Volume2 className={`w-4 h-4 ${isMars ? 'text-[#92400E]' : 'text-[#7C3AED]'}`} />
-                      <span>Listen to My Story</span>
-                    </>
-                  )}
-                </button>
+                <div className="flex flex-col items-end gap-1">
+                  <button
+                    onClick={() => {
+                      if (nasaVoice.isSpeaking || nasaVoice.isLoading) {
+                        nasaVoice.stop();
+                      } else {
+                        nasaVoice.speakMissionLog(
+                          narrationText,
+                          nasaVoice.filterEnabled,
+                          assignedVoice
+                        );
+                      }
+                    }}
+                    title="Narration generated with Gemini AI voice"
+                    className={`min-h-[40px] px-4 py-2 rounded-xl border-2 active:translate-y-0.5 active:shadow-none text-xs font-black flex items-center gap-2 transition-all ${
+                      isMars
+                        ? nasaVoice.isSpeaking || nasaVoice.isLoading
+                          ? 'bg-[#1C140F] text-[#F5E6D3] border-[#1C140F] shadow-[0_3px_0_#291D16]'
+                          : 'bg-[#F5E6D3] hover:bg-[#E7E5E4] text-[#1C140F] border-[#1C140F] shadow-[0_3px_0_#1C140F]'
+                        : nasaVoice.isSpeaking || nasaVoice.isLoading
+                        ? 'bg-[#7C3AED] text-[#F8FAFC] border-[#06090F] shadow-[0_3px_0_#06090F]'
+                        : 'bg-[#F8FAFC] hover:bg-[#E0F2FE] text-[#06090F] border-[#06090F] shadow-[0_3px_0_#06090F]'
+                    }`}
+                  >
+                    {nasaVoice.isLoading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Loading Voice...</span>
+                      </>
+                    ) : nasaVoice.isSpeaking ? (
+                      <>
+                        <VolumeX className="w-4 h-4" />
+                        <span>Stop My Story</span>
+                      </>
+                    ) : (
+                      <>
+                        <Volume2 className={`w-4 h-4 ${isMars ? 'text-[#92400E]' : 'text-[#7C3AED]'}`} />
+                        <span>Listen to My Story</span>
+                      </>
+                    )}
+                  </button>
+                  <span
+                    className={`text-[10px] font-mono font-bold ${
+                      isMars ? 'text-[#1C140F]/85' : 'text-[#06090F]/80'
+                    }`}
+                  >
+                    Narration generated with Gemini AI voice
+                  </span>
+                </div>
 
                 {/* Decorative Postage Stamp */}
                 <div
@@ -587,7 +604,7 @@ export const StoryDrawer: React.FC<StoryDrawerProps> = ({
                       isMars ? 'text-[#1C140F]' : 'text-[#06090F]'
                     }`}
                   >
-                    NASA
+                    ARCHIVE
                   </span>
                 </div>
               </div>

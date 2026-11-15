@@ -1,3 +1,10 @@
+/**
+ * @file SurfaceStoryPostcard.tsx
+ * @si-attribution Application code and architecture built and structured using Super Intelligence (Google AI Studio / Gemini).
+ * Story narration pairs with the project's Gemini TTS voice experience and local Web Speech playback.
+ * All storytelling text is human-created/curated.
+ */
+
 import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import {
   ChevronDown,
@@ -187,9 +194,19 @@ export const SurfaceStoryPostcard: React.FC<SurfaceStoryPostcardProps> = ({
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
   const [isCompactCollapsed, setIsCompactCollapsed] = useState(false);
-  const [preferredVoice, setPreferredVoice] = useState<SpeechSynthesisVoice | null>(null);
+  const [voicesReady, setVoicesReady] = useState(() => {
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return true;
+    return window.speechSynthesis.getVoices().length > 0;
+  });
 
+  const preferredVoiceRef = useRef<SpeechSynthesisVoice | null>(
+    typeof window !== 'undefined' && 'speechSynthesis' in window
+      ? pickNaturalEnglishVoice(window.speechSynthesis.getVoices())
+      : null
+  );
   const activeSessionRef = useRef(0);
+  const currentUtteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+  const isUnmountedRef = useRef(false);
   const isMutedRef = useRef(isMuted);
   isMutedRef.current = isMuted;
   const isOpenRef = useRef(isOpen);
@@ -197,6 +214,12 @@ export const SurfaceStoryPostcard: React.FC<SurfaceStoryPostcardProps> = ({
 
   const cancelSpeech = useCallback(() => {
     activeSessionRef.current += 1;
+    if (currentUtteranceRef.current) {
+      currentUtteranceRef.current.onstart = null;
+      currentUtteranceRef.current.onend = null;
+      currentUtteranceRef.current.onerror = null;
+      currentUtteranceRef.current = null;
+    }
     setIsSpeaking(false);
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
       try {
@@ -207,22 +230,40 @@ export const SurfaceStoryPostcard: React.FC<SurfaceStoryPostcardProps> = ({
     }
   }, []);
 
-  // Resolve clear natural English Web Speech voice
+  // Resolve clear natural English Web Speech voice before starting narration
   useEffect(() => {
-    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
+      setVoicesReady(true);
+      return;
+    }
     const synth = window.speechSynthesis;
 
     const refreshVoices = () => {
       const loaded = synth.getVoices();
       if (loaded.length > 0) {
-        setPreferredVoice(pickNaturalEnglishVoice(loaded));
+        preferredVoiceRef.current = pickNaturalEnglishVoice(loaded);
+        setVoicesReady(true);
+        return true;
       }
+      return false;
     };
 
-    refreshVoices();
+    const alreadyLoaded = refreshVoices();
     synth.addEventListener?.('voiceschanged', refreshVoices);
+
+    // Fallback guard in case a browser provides 0 voices or never fires voiceschanged
+    const fallbackTimer = alreadyLoaded
+      ? null
+      : window.setTimeout(() => {
+          refreshVoices();
+          setVoicesReady(true);
+        }, 450);
+
     return () => {
       synth.removeEventListener?.('voiceschanged', refreshVoices);
+      if (fallbackTimer !== null) {
+        window.clearTimeout(fallbackTimer);
+      }
     };
   }, []);
 
@@ -239,15 +280,26 @@ export const SurfaceStoryPostcard: React.FC<SurfaceStoryPostcardProps> = ({
 
   // Cleanup Web Speech API immediately on unmount
   useEffect(() => {
+    isUnmountedRef.current = false;
     return () => {
+      isUnmountedRef.current = true;
       cancelSpeech();
     };
   }, [cancelSpeech]);
 
-  // Speak current segment automatically whenever segmentIndex, isOpen, or isMuted changes
+  // Speak current segment automatically once voices are ready and card is active
   useEffect(() => {
-    if (!isOpen || isCompleted || isMuted || isObscuredByInspectModal) {
-      cancelSpeech();
+    if (
+      isUnmountedRef.current ||
+      !voicesReady ||
+      !isOpen ||
+      isCompleted ||
+      isMuted ||
+      isObscuredByInspectModal
+    ) {
+      if (!isOpen || isMuted || isCompleted || isObscuredByInspectModal) {
+        cancelSpeech();
+      }
       return;
     }
 
@@ -261,24 +313,44 @@ export const SurfaceStoryPostcard: React.FC<SurfaceStoryPostcardProps> = ({
     const synth = window.speechSynthesis;
     const sessionId = activeSessionRef.current + 1;
     activeSessionRef.current = sessionId;
+    let localUtterance: SpeechSynthesisUtterance | null = null;
 
     try {
+      if (currentUtteranceRef.current) {
+        currentUtteranceRef.current.onstart = null;
+        currentUtteranceRef.current.onend = null;
+        currentUtteranceRef.current.onerror = null;
+        currentUtteranceRef.current = null;
+      }
       synth.cancel();
+
+      if (isUnmountedRef.current || !isOpenRef.current || isMutedRef.current) {
+        return;
+      }
+
+      const loadedNow = synth.getVoices();
+      if (!preferredVoiceRef.current && loadedNow.length > 0) {
+        preferredVoiceRef.current = pickNaturalEnglishVoice(loadedNow);
+      }
+
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = 'en-US';
       utterance.rate = 0.98;
       utterance.pitch = 1.0;
-      if (preferredVoice) {
-        utterance.voice = preferredVoice;
+      if (preferredVoiceRef.current) {
+        utterance.voice = preferredVoiceRef.current;
       }
 
       utterance.onstart = () => {
-        if (activeSessionRef.current !== sessionId) return;
+        if (isUnmountedRef.current || activeSessionRef.current !== sessionId) return;
         setIsSpeaking(true);
       };
 
       utterance.onend = () => {
-        if (activeSessionRef.current !== sessionId) return;
+        if (currentUtteranceRef.current === utterance) {
+          currentUtteranceRef.current = null;
+        }
+        if (isUnmountedRef.current || activeSessionRef.current !== sessionId) return;
         setIsSpeaking(false);
         if (!isOpenRef.current || isMutedRef.current) return;
 
@@ -290,10 +362,18 @@ export const SurfaceStoryPostcard: React.FC<SurfaceStoryPostcardProps> = ({
       };
 
       utterance.onerror = () => {
-        if (activeSessionRef.current !== sessionId) return;
+        if (currentUtteranceRef.current === utterance) {
+          currentUtteranceRef.current = null;
+        }
+        if (isUnmountedRef.current || activeSessionRef.current !== sessionId) return;
         setIsSpeaking(false);
       };
 
+      localUtterance = utterance;
+      currentUtteranceRef.current = utterance;
+      if (synth.paused) {
+        synth.resume();
+      }
       synth.speak(utterance);
     } catch {
       setIsSpeaking(false);
@@ -303,6 +383,14 @@ export const SurfaceStoryPostcard: React.FC<SurfaceStoryPostcardProps> = ({
       if (activeSessionRef.current === sessionId) {
         activeSessionRef.current += 1;
       }
+      if (localUtterance) {
+        localUtterance.onstart = null;
+        localUtterance.onend = null;
+        localUtterance.onerror = null;
+        if (currentUtteranceRef.current === localUtterance) {
+          currentUtteranceRef.current = null;
+        }
+      }
       try {
         synth.cancel();
       } catch {
@@ -311,13 +399,13 @@ export const SurfaceStoryPostcard: React.FC<SurfaceStoryPostcardProps> = ({
     };
   }, [
     artifact.id,
+    voicesReady,
     isOpen,
     isMuted,
     isCompleted,
     isObscuredByInspectModal,
     segmentIndex,
     segments,
-    preferredVoice,
     cancelSpeech,
   ]);
 
@@ -650,6 +738,13 @@ export const SurfaceStoryPostcard: React.FC<SurfaceStoryPostcardProps> = ({
               </button>
             </div>
           </div>
+
+          <p
+            className={`text-[10px] font-mono leading-tight ${theme.mutedTextClass}`}
+            title="Narration generated with Gemini AI voice and browser speech synthesis"
+          >
+            Narration generated with Gemini AI voice / Web Speech
+          </p>
         </div>
       )}
     </aside>

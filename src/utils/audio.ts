@@ -1,3 +1,8 @@
+/**
+ * @file audio.ts
+ * @si-attribution Procedural Web Audio sound-effect helpers structured using Super Intelligence (Google AI Studio / Gemini).
+ */
+
 // Web Audio API helper for sophisticated, atmospheric cinematic whooshes & surface audio
 let audioCtx: AudioContext | null = null;
 let isMuted = false;

@@ -1,3 +1,9 @@
+/**
+ * @file space-data.ts
+ * @si-attribution Data module structure assisted by Super Intelligence (Google AI Studio / Gemini).
+ * All historical mission telemetry, archival image references, and narrative storytelling copy are 100% human-created/curated.
+ */
+
 import { Artifact, PlanetaryLandmark, CelestialBody } from '../types/space';
 
 /**

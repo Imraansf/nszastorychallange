@@ -1,3 +1,10 @@
+/**
+ * @file App.tsx
+ * @si-attribution Application code and architecture built and structured using Super Intelligence (Google AI Studio / Gemini).
+ * Voice narration is synthesized via Gemini TTS (/api/tts) with browser Web Speech fallback.
+ * All archival photography, planetary imagery, and mission storytelling are 100% human-created/curated.
+ */
+
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Artifact, CelestialBody, PlanetaryLandmark } from './types/space';
 import {
@@ -34,6 +41,11 @@ import {
 } from './utils/audio';
 
 const DESKTOP_MEDIA_QUERY = '(min-width: 1025px) and (pointer: fine)';
+const SURFACE_GAME_EXCLUDED_ARTIFACT_IDS = new Set([
+  'surveyor-3',
+  'mars-pathfinder-sojourner',
+  'phoenix-mars-lander',
+]);
 
 export default function App() {
   const [showLanding, setShowLanding] = useState(true);
@@ -561,7 +573,8 @@ export default function App() {
             <ChevronRight className="w-3.5 h-3.5" />
           </button>
 
-          {(selectedArtifact.body === 'moon' || selectedArtifact.body === 'mars') && (
+          {(selectedArtifact.body === 'moon' || selectedArtifact.body === 'mars') &&
+            !SURFACE_GAME_EXCLUDED_ARTIFACT_IDS.has(selectedArtifact.id) && (
             <button
               onClick={() => {
                 playWhooshSound('in');

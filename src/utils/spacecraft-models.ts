@@ -1,3 +1,9 @@
+/**
+ * @file spacecraft-models.ts
+ * @si-attribution Module code and loader logic structured using Super Intelligence (Google AI Studio / Gemini).
+ * All 3D hardware models originate from human-created/curated public space agency archives.
+ */
+
 import * as THREE from 'three';
 import { GLTF, GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { isAllowedModelUrl } from './url-security';
@@ -95,36 +101,36 @@ export const SPACECRAFT_MODEL_REGISTRY: Record<string, SpacecraftModelAsset> = {
   // Deep Space Artifacts
   dawn: {
     artifactId: 'dawn',
-    modelPath: '/model/dawn.glb',
-    assetLabel: 'Dawn Spacecraft (.glb)',
+    modelPath: null,
+    assetLabel: 'Telemetry Hologram & Archival Preview',
     fallbackReason:
       'Dawn Spacecraft orbital beacon & NASA archival imagery active.',
   },
   'near-shoemaker': {
     artifactId: 'near-shoemaker',
-    modelPath: '/model/NEAR%20shoemaker.glb',
-    assetLabel: 'NEAR Shoemaker (.glb)',
+    modelPath: null,
+    assetLabel: 'Telemetry Hologram & Archival Preview',
     fallbackReason:
       'NEAR Shoemaker orbital beacon & NASA archival imagery active.',
   },
   'pioneer-10': {
     artifactId: 'pioneer-10',
-    modelPath: '/model/pioneer%2010.glb',
-    assetLabel: 'Pioneer 10 (.glb)',
+    modelPath: null,
+    assetLabel: 'Telemetry Hologram & Archival Preview',
     fallbackReason:
       'Pioneer 10 deep-space beacon & NASA archival imagery active.',
   },
   'pioneer-11': {
     artifactId: 'pioneer-11',
-    modelPath: '/model/pioneer%2010.glb',
-    assetLabel: 'Pioneer 11 (.glb)',
+    modelPath: null,
+    assetLabel: 'Telemetry Hologram & Archival Preview',
     fallbackReason:
       'Pioneer 11 deep-space beacon & NASA archival imagery active.',
   },
   kepler: {
     artifactId: 'kepler',
-    modelPath: '/model/Kepler(A).glb',
-    assetLabel: 'Kepler Space Telescope (.glb)',
+    modelPath: null,
+    assetLabel: 'Telemetry Hologram & Archival Preview',
     fallbackReason:
       'Kepler / K2 orbital beacon & NASA archival imagery active.',
   },

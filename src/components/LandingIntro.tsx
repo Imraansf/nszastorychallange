@@ -1,6 +1,14 @@
+/**
+ * @file LandingIntro.tsx
+ * @si-attribution Application code and architecture built and structured using Super Intelligence (Google AI Studio / Gemini).
+ * All storytelling and visuals are human-created/curated without AI-generated images or videos.
+ */
+
 import React, { useEffect, useRef, useState } from 'react';
+import { Info } from 'lucide-react';
 import { CelestialBody } from '../types/space';
-import { playPlanetWhoosh } from '../utils/audio';
+import { playPlanetWhoosh, playWhooshSound } from '../utils/audio';
+import { SiDisclosureModal } from './SiDisclosureModal';
 
 interface LandingIntroProps {
   onSelectZone: (zone: CelestialBody) => void;
@@ -22,6 +30,7 @@ export const LandingIntro: React.FC<LandingIntroProps> = ({
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isExiting, setIsExiting] = useState(false);
+  const [isDisclosureOpen, setIsDisclosureOpen] = useState(false);
   const [isArriving, setIsArriving] = useState(() => {
     if (!playArrival) return false;
     const reduced =
@@ -729,7 +738,34 @@ export const LandingIntro: React.FC<LandingIntroProps> = ({
             <span className="block skew-x-6">Deepspace</span>
           </button>
         </div>
+
+        {/* Lobby Footer & SI / AI Disclosure Trigger */}
+        <footer
+          className={`mt-5 flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 px-2 text-center transition-all duration-300 ease-in ${
+            isExiting
+              ? 'opacity-0 translate-y-4 pointer-events-none'
+              : 'opacity-100 translate-y-0'
+          }`}
+        >
+          <button
+            type="button"
+            onClick={() => {
+              playWhooshSound('ui');
+              setIsDisclosureOpen(true);
+            }}
+            className="min-h-[36px] px-3 py-1.5 rounded-lg bg-[#0D131F]/90 hover:bg-[#182235] border border-[#BAE6FD]/60 hover:border-[#BAE6FD] text-[#BAE6FD] text-[11px] font-mono font-bold inline-flex items-center gap-1.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#BAE6FD]"
+          >
+            <Info className="w-3.5 h-3.5 shrink-0" />
+            <span>SI / AI Disclosure</span>
+          </button>
+        </footer>
       </div>
+
+      <SiDisclosureModal
+        isOpen={isDisclosureOpen}
+        onClose={() => setIsDisclosureOpen(false)}
+        themeBody="landing"
+      />
     </div>
   );
 };

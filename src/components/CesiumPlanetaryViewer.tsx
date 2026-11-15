@@ -1,3 +1,8 @@
+/**
+ * @file CesiumPlanetaryViewer.tsx
+ * @si-attribution Application code and architecture built and structured using Super Intelligence (Google AI Studio / Gemini).
+ */
+
 import React, { useEffect, useRef, useState } from 'react';
 import { Artifact, CelestialBody, PlanetaryLandmark } from '../types/space';
 import { playArtifactRememberingWhoosh, playWhooshSound } from '../utils/audio';
@@ -834,7 +839,7 @@ export const CesiumPlanetaryViewer: React.FC<CesiumPlanetaryViewerProps> = ({
               <a
                 href="https://cesium.com/ion/"
                 target="_blank"
-                rel="noreferrer"
+                rel="noopener noreferrer"
                 className="text-[#38BDF8] underline"
               >
                 Cesium ion token

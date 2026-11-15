@@ -1,3 +1,8 @@
+/**
+ * @file space.ts
+ * @si-attribution Type definitions structured using Super Intelligence (Google AI Studio / Gemini).
+ */
+
 export type CelestialBody = 'moon' | 'mars' | 'deep_space';
 
 export type ArtifactCategory =

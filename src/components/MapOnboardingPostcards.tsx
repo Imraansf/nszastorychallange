@@ -1,3 +1,8 @@
+/**
+ * @file MapOnboardingPostcards.tsx
+ * @si-attribution Application code and architecture built and structured using Super Intelligence (Google AI Studio / Gemini).
+ */
+
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, Globe, Rocket, ArrowRight, Sparkles, Compass } from 'lucide-react';

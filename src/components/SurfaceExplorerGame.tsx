@@ -1,3 +1,9 @@
+/**
+ * @file SurfaceExplorerGame.tsx
+ * @si-attribution Application code and architecture built and structured using Super Intelligence (Google AI Studio / Gemini).
+ * All historical mission facts, telemetry values, and storytelling remain human-created/curated.
+ */
+
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
@@ -1099,46 +1105,31 @@ function buildMissionSiteItems(
   // Apollo 11
   if (id === 'apollo-11-eagle-easep') {
     addItem(
-      'flag',
-      'United States flag',
+      'memorial_marker',
+      'Apollo 11 Surface Marker & Telescoping Rod',
       -8.5,
       -5.0,
       2.5,
-      'Neil Armstrong and Buzz Aldrin planted this flag right beside me, using a horizontal telescoping rod across the top because there is no breeze in the airless lunar vacuum.',
-      "When my upper stage blasted back to orbit, the rocket exhaust blew the flag right over—and after 50+ years of unfiltered solar UV, its stripes have likely faded to chalk white.",
-      'Resting in the regolith beside me, likely bleached white by unfiltered sunlight.',
+      'Neil Armstrong and Buzz Aldrin set up this ceremonial surface marker right beside me, using a horizontal telescoping rod across the top because there is no breeze in the airless lunar vacuum.',
+      'When my upper stage blasted back to orbit, the rocket exhaust knocked the assembly down—and after 50+ years of unfiltered solar UV, the fabric has likely bleached to chalk white.',
+      'Resting in the regolith beside me, bleached chalk white by unfiltered sunlight.',
       (grp) => {
-        const flagCanvas = document.createElement('canvas');
-        flagCanvas.width = 260;
-        flagCanvas.height = 170;
-        const ctx = flagCanvas.getContext('2d');
-        if (ctx) {
-          for (let i = 0; i < 13; i++) {
-            ctx.fillStyle = i % 2 ? '#f2f2f2' : '#b22234';
-            ctx.fillRect(0, i * 13, 260, 13);
-          }
-          ctx.fillStyle = '#3c3b6e';
-          ctx.fillRect(0, 0, 104, 91);
-          ctx.fillStyle = '#ffffff';
-          for (let i = 0; i < 9; i++) {
-            for (let j = 0; j < 6; j++) {
-              ctx.fillRect(8 + j * 16, 6 + i * 9, 3, 3);
-            }
-          }
-        }
-        const flagTex = new THREE.CanvasTexture(flagCanvas);
-        const flagMesh = new THREE.Mesh(
+        const markerMesh = new THREE.Mesh(
           new THREE.PlaneGeometry(1.5, 0.95),
-          new THREE.MeshStandardMaterial({ map: flagTex, side: THREE.DoubleSide, roughness: 0.95 })
+          new THREE.MeshStandardMaterial({
+            color: 0xe5e7eb,
+            side: THREE.DoubleSide,
+            roughness: 0.95,
+          })
         );
-        flagMesh.rotation.x = -Math.PI / 2 + 0.12;
-        flagMesh.position.set(0.9, 0.1, 0);
-        flagMesh.castShadow = true;
+        markerMesh.rotation.x = -Math.PI / 2 + 0.12;
+        markerMesh.position.set(0.9, 0.1, 0);
+        markerMesh.castShadow = true;
         const pole = cyl(0.015, 2.1, grey, 6);
         pole.rotation.z = Math.PI / 2;
         pole.position.set(0.3, 0.08, -0.5);
-        grp.add(flagMesh, pole);
-        return flagMesh;
+        grp.add(markerMesh, pole);
+        return markerMesh;
       }
     );
 
@@ -1638,10 +1629,30 @@ export const SurfaceExplorerGame: React.FC<SurfaceExplorerGameProps> = ({
     setIsStoryPostcardOpen(true);
   }, [artifact.id]);
 
+  useEffect(() => {
+    return () => {
+      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        try {
+          window.speechSynthesis.cancel();
+        } catch {
+          // Ignore cancellation failures
+        }
+      }
+    };
+  }, []);
+
   const handleExit = useCallback(() => {
+    setIsStoryPostcardOpen(false);
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
       try {
         window.speechSynthesis.cancel();
+        window.setTimeout(() => {
+          try {
+            window.speechSynthesis.cancel();
+          } catch {
+            // Ignore delayed cancellation failures
+          }
+        }, 40);
       } catch {
         // Ignore cancellation failures
       }

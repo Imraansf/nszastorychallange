@@ -1,3 +1,8 @@
+/**
+ * @file TelemetryHUD.tsx
+ * @si-attribution Application code and architecture built and structured using Super Intelligence (Google AI Studio / Gemini).
+ */
+
 import React, { useState } from 'react';
 import {
   Compass,
@@ -73,7 +78,7 @@ export const TelemetryHUD: React.FC<TelemetryHUDProps> = ({
               ? 'hover:bg-[#D97706]/20 text-[#F5E6D3]'
               : 'hover:bg-[#34363C] text-[#F4F4F5]'
           }`}
-          title={`Expand NASA ${normalizedBody} Telemetry HUD`}
+          title={`Expand ${normalizedBody} Orbital Telemetry HUD`}
         >
           <span
             className={`w-2 h-2 rounded-full shrink-0 ${
@@ -81,7 +86,7 @@ export const TelemetryHUD: React.FC<TelemetryHUDProps> = ({
             }`}
           />
           <span className="font-black tracking-wider uppercase">
-            NASA {normalizedBody}
+            ORBIT · {normalizedBody}
           </span>
           <ChevronDown
             className={`w-3.5 h-3.5 shrink-0 ${
@@ -120,13 +125,13 @@ export const TelemetryHUD: React.FC<TelemetryHUDProps> = ({
                 isMars ? 'text-[#F5E6D3]' : 'text-[#F4F4F5]'
               }`}
             >
-              NASA {normalizedBody}
+              ORBIT · {normalizedBody}
             </span>
           </div>
           <button
             type="button"
             onClick={() => setIsMinimized(true)}
-            aria-label={`Minimize NASA ${normalizedBody} Telemetry HUD`}
+            aria-label={`Minimize ${normalizedBody} Orbital Telemetry HUD`}
             className={`p-1 rounded-lg transition-colors ${
               isMars
                 ? 'hover:bg-[#D97706]/20 text-[#A8A29E] hover:text-[#F5E6D3]'

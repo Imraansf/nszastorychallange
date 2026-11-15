@@ -1,5 +1,6 @@
 {
   "name": "react-example",
+  "description": "Abandoned But Not Forgotten — Interactive 3D space hardware storytelling web app for NASA Space Apps Challenge. Application code and architecture built with Google AI Studio (Gemini); voice narration via Gemini TTS; all imagery and storytelling human-created.",
   "private": true,
   "version": "0.0.0",
   "type": "module",

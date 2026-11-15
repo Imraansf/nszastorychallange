@@ -1,3 +1,9 @@
+/**
+ * @file Artifact3DViewport.tsx
+ * @si-attribution Application code and architecture built and structured using Super Intelligence (Google AI Studio / Gemini).
+ * 3D spacecraft models and archival photography are human-curated from public space agency archives.
+ */
+
 import React, { Component, ErrorInfo, ReactNode, Suspense, useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
@@ -77,6 +83,7 @@ class ViewportErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryS
               <img
                 src={artifact.imageUrl}
                 alt={artifact.imageCaption || artifact.name}
+                referrerPolicy="no-referrer"
                 className="w-full h-48 object-cover"
               />
             </div>
@@ -117,7 +124,7 @@ const TelemetryLoadingIndicator: React.FC<{
       >
         <div className="flex items-center justify-between text-[10px] font-mono uppercase tracking-widest mb-3">
           <span className={isMars ? 'text-[#D97706]' : 'text-[#BAE6FD]'}>
-            NASA HORIZON 3D PIPELINE
+            HORIZON 3D MODEL VIEWER
           </span>
           <Radio
             className={`w-3.5 h-3.5 ${isMars ? 'text-[#D97706]' : 'text-[#BAE6FD]'}`}
@@ -709,12 +716,12 @@ const SpacecraftCanvas3D: React.FC<{
             ) : (
               <Eye className="w-3.5 h-3.5" />
             )}
-            <span>{showPhotoOverlay ? 'Hide Archival Photo' : 'NASA Photo'}</span>
+            <span>{showPhotoOverlay ? 'Hide Archival Photo' : 'Archival Photo'}</span>
           </button>
         )}
       </div>
 
-      {/* High-Contrast NASA Horizon Telemetry Hologram & Archival Photo Card */}
+      {/* High-Contrast Horizon Telemetry Hologram & Archival Photo Card */}
       {viewportStatus === 'hologram_fallback' && showPhotoOverlay && artifact.imageUrl && (
         <div
           className={`absolute top-14 right-4 z-10 w-64 sm:w-72 rounded-2xl overflow-hidden border shadow-[0_14px_36px_rgba(0,0,0,0.65)] ${
@@ -732,7 +739,7 @@ const SpacecraftCanvas3D: React.FC<{
           >
             <span className="flex items-center gap-1.5">
               <Camera className="w-3 h-3" />
-              NASA Archival Telemetry
+              Archival Reference Frame
             </span>
             <span>{artifact.year}</span>
           </div>
@@ -740,6 +747,7 @@ const SpacecraftCanvas3D: React.FC<{
             <img
               src={artifact.imageUrl}
               alt={artifact.imageCaption || artifact.name}
+              referrerPolicy="no-referrer"
               className="w-full h-full object-cover"
             />
           </div>
@@ -770,6 +778,7 @@ const SpacecraftCanvas3D: React.FC<{
           <img
             src={artifact.imageUrl}
             alt={artifact.imageCaption || artifact.name}
+            referrerPolicy="no-referrer"
             className="w-full h-32 object-cover"
           />
           <div className="p-2.5 text-[11px] leading-snug">

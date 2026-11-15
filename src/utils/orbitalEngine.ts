@@ -1,6 +1,7 @@
 /**
  * ORBITAL ENGINE - Physics Engine & Astrodynamics Trajectory Propagation Module
  * Built for NASA Space Apps Challenge ("Abandoned But Not Forgotten")
+ * @si-attribution Code and architecture built and structured using Super Intelligence (Google AI Studio / Gemini).
  *
  * Implements:
  * 1. Kepler's 3rd Law (T² = a³) & Keplerian conic orbits with eccentric anomaly iteration

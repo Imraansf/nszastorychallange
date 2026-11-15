@@ -1,3 +1,8 @@
+/**
+ * @file CelestialGlobe.tsx
+ * @si-attribution Application code and architecture built and structured using Super Intelligence (Google AI Studio / Gemini).
+ */
+
 import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { Artifact, CelestialBody, LunarLandmark } from '../types/space';

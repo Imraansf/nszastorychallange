@@ -1,3 +1,9 @@
+/**
+ * @file useNASAVoice.ts
+ * @si-attribution Application code and architecture built and structured using Super Intelligence (Google AI Studio / Gemini).
+ * Voice narration connects to /api/tts (Google Gemini TTS) with graceful browser Web Speech fallback.
+ */
+
 import { useState, useEffect, useRef, useCallback } from 'react';
 import type { ArtifactVoiceName } from '../utils/space-data';
 
@@ -81,6 +87,8 @@ export function useNASAVoice(options: UseNASAVoiceOptions = {}): UseNASAVoiceRet
   const audioUrlCacheRef = useRef<Map<string, string>>(new Map());
   const isSpeakingRef = useRef<boolean>(false);
   isSpeakingRef.current = isSpeaking;
+  const isMutedRef = useRef<boolean>(false);
+  isMutedRef.current = isMuted;
 
   const ensureAudioContext = useCallback(() => {
     if (typeof window === 'undefined') return null;
@@ -196,8 +204,15 @@ export function useNASAVoice(options: UseNASAVoiceOptions = {}): UseNASAVoiceRet
   const toggleMute = useCallback(() => {
     setIsMuted((prev) => {
       const next = !prev;
+      isMutedRef.current = next;
       if (next) {
+        if (abortControllerRef.current) {
+          abortControllerRef.current.abort();
+          abortControllerRef.current = null;
+        }
         if (audioElRef.current) {
+          audioElRef.current.onended = null;
+          audioElRef.current.onerror = null;
           audioElRef.current.pause();
           audioElRef.current.currentTime = 0;
           audioElRef.current = null;
@@ -210,8 +225,10 @@ export function useNASAVoice(options: UseNASAVoiceOptions = {}): UseNASAVoiceRet
             window.speechSynthesis.cancel();
           }
         }
+        setIsLoading(false);
         setIsSpeaking(false);
         setIsPaused(false);
+        setCurrentText(null);
       }
       return next;
     });
@@ -232,6 +249,7 @@ export function useNASAVoice(options: UseNASAVoiceOptions = {}): UseNASAVoiceRet
       synth.cancel();
 
       const utterance = new SpeechSynthesisUtterance(cleanedText);
+      utterance.lang = 'en-US';
       const availableVoices = synth.getVoices().filter((v) => v.lang.startsWith('en'));
       if (availableVoices.length > 0) {
         const prefersBrightVoice = effectiveVoice === 'Riko';
@@ -337,9 +355,15 @@ export function useNASAVoice(options: UseNASAVoiceOptions = {}): UseNASAVoiceRet
               : '';
 
           if (!response.ok) {
-            // Only fall back to browser speech when the /api/tts route itself is absent
-            // (404 from a static-only host with no Express backend error JSON).
-            if (response.status === 404 && !serverError) {
+            if (controller.signal.aborted || isMutedRef.current) {
+              setIsLoading(false);
+              return;
+            }
+            const shouldFallbackToBrowserSpeech =
+              payload?.fallbackRecommended === true ||
+              [403, 404, 429, 502, 503, 504].includes(response.status);
+
+            if (shouldFallbackToBrowserSpeech) {
               abortControllerRef.current = null;
               if (
                 speakWithBrowserFallback(
@@ -351,9 +375,6 @@ export function useNASAVoice(options: UseNASAVoiceOptions = {}): UseNASAVoiceRet
               ) {
                 return;
               }
-              throw new Error(
-                'Voice synthesis endpoint (/api/tts) returned 404. Ensure the Node server (npm start) is running.'
-              );
             }
             throw new Error(serverError || `Voice synthesis failed (${response.status})`);
           }
@@ -370,7 +391,10 @@ export function useNASAVoice(options: UseNASAVoiceOptions = {}): UseNASAVoiceRet
           audioUrlCacheRef.current.set(cacheKey, blobUrl);
         }
 
-        if (controller.signal.aborted) return;
+        if (controller.signal.aborted || isMutedRef.current) {
+          setIsLoading(false);
+          return;
+        }
         abortControllerRef.current = null;
         setIsLoading(false);
 
@@ -409,7 +433,15 @@ export function useNASAVoice(options: UseNASAVoiceOptions = {}): UseNASAVoiceRet
 
         await audio.play();
       } catch (err: unknown) {
-        if (err instanceof DOMException && err.name === 'AbortError') {
+        if ((err instanceof DOMException && err.name === 'AbortError') || isMutedRef.current) {
+          setIsLoading(false);
+          return;
+        }
+        // Network/fetch failure fallback when offline or backend unreachable
+        if (
+          err instanceof TypeError &&
+          speakWithBrowserFallback(text, cleanedText, effectiveFilter, effectiveVoice)
+        ) {
           return;
         }
         setIsLoading(false);

@@ -1,3 +1,8 @@
+/**
+ * @file ModelInspectorModal.tsx
+ * @si-attribution Application code and architecture built and structured using Super Intelligence (Google AI Studio / Gemini).
+ */
+
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { Artifact } from '../types/space';
 import {

@@ -1,3 +1,9 @@
+/**
+ * @file surface-inspection-data.ts
+ * @si-attribution Module structure assisted by Super Intelligence (Google AI Studio / Gemini).
+ * All spacecraft part descriptions and historical notes are human-created/curated.
+ */
+
 import * as THREE from 'three';
 
 export interface SurfaceInspectionPart {

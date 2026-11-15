@@ -1,3 +1,9 @@
+/**
+ * @file CesiumGlobeViewer.tsx
+ * @si-attribution Application code and architecture built and structured using Super Intelligence (Google AI Studio / Gemini).
+ * Planetary imagery streams directly from human-curated NASA Solar System Trek mosaics.
+ */
+
 import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { PlanetaryLandmark } from '../types/space';
 import { Globe } from 'lucide-react';
@@ -607,12 +613,17 @@ export const CesiumGlobeViewer: React.FC<CesiumGlobeViewerProps> = React.memo(({
       entity.relicData = relic;
       entitiesMapRef.current.set(relic.id, entity);
 
-      // Pill Label above pin
-      let yOffset = -18;
-      if (relic.id === 'surveyor-3') {
-        yOffset = 20; // slightly below its dot on Moon
+      // Pill Label above pin (Surveyor 3 anchored below its blue beacon to avoid overlap with Apollo 12 and the beacon dot)
+      const isSurveyor3 = relic.id === 'surveyor-3';
+      const pillVerticalOrigin = isSurveyor3
+        ? Cesium.VerticalOrigin.TOP
+        : Cesium.VerticalOrigin.BOTTOM;
+
+      let yOffset = -22;
+      if (isSurveyor3) {
+        yOffset = 26; // top edge starts 26px below the beacon center
       } else if (relic.id === 'apollo-12-intrepid-alsep') {
-        yOffset = -44; // slightly above its dot on Moon
+        yOffset = -26; // cleanly above the adjacent Apollo 12 / Surveyor 3 cluster
       } else if (isMars && relic.id === 'viking-1-lander') {
         yOffset = -44; // staggered above adjacent Pathfinder in Chryse Planitia / Ares Vallis
       }
@@ -627,7 +638,7 @@ export const CesiumGlobeViewer: React.FC<CesiumGlobeViewerProps> = React.memo(({
         billboard: {
           image: getPillLabelIcon(labelText, isSelected, isMars),
           scale: 0.48,
-          verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+          verticalOrigin: pillVerticalOrigin,
           pixelOffset: new Cesium.Cartesian2(0, yOffset),
           distanceDisplayCondition: new Cesium.DistanceDisplayCondition(0, maxLabelDist),
           disableDepthTestDistance: Number.POSITIVE_INFINITY,

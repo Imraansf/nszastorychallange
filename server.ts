@@ -1,3 +1,10 @@
+/**
+ * @file server.ts
+ * @si-attribution Application code and architecture built and structured using Super Intelligence (Google AI Studio / Gemini).
+ * Audio narration (/api/tts) is dynamically synthesized using Google Gemini Text-to-Speech (TTS) models.
+ * All archival photography and mission storytelling remain human-authored/curated.
+ */
+
 import express from 'express';
 import type { NextFunction, Request, Response } from 'express';
 import crypto from 'crypto';
@@ -30,10 +37,14 @@ const PORT =
   (envPort && envPort !== nginxPort ? envPort : defaultAppPort);
 
 // Baseline HTTP security headers (iframe embedding stays permitted for AI Studio hosting)
-app.use((_req: Request, res: Response, next: NextFunction) => {
+app.use((req: Request, res: Response, next: NextFunction) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
   res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  res.setHeader('X-Permitted-Cross-Domain-Policies', 'none');
+  if (req.secure || req.get('x-forwarded-proto') === 'https') {
+    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  }
   next();
 });
 
@@ -47,6 +58,8 @@ const configuredOrigins = new Set(
     .map((origin) => origin.trim())
     .filter(Boolean)
 );
+
+const SAFE_HOST_HEADER_REGEX = /^[a-z0-9.-]+(?::\d{1,5})?$/i;
 
 function isOriginAllowed(origin: string, req: Request): boolean {
   if (configuredOrigins.has(origin)) {
@@ -64,13 +77,20 @@ function isOriginAllowed(origin: string, req: Request): boolean {
     return false;
   }
 
-  const forwardedHostHeader = req.get('x-forwarded-host');
-  const hostHeader = (forwardedHostHeader || req.get('host') || '')
-    .split(',')[0]
-    .trim()
-    .toLowerCase();
+  const isHttpsRequest =
+    req.secure || req.get('x-forwarded-proto')?.split(',')[0].trim().toLowerCase() === 'https';
+  if (process.env.NODE_ENV === 'production' && isHttpsRequest && parsedOrigin.protocol !== 'https:') {
+    return false;
+  }
 
-  if (hostHeader && parsedOrigin.host.toLowerCase() === hostHeader) {
+  // Only accept x-forwarded-host when behind a TLS/proxy header; validate host syntax strictly
+  const rawHost =
+    (req.get('x-forwarded-proto') ? req.get('x-forwarded-host') : undefined) ||
+    req.get('host') ||
+    '';
+  const hostHeader = rawHost.split(',')[0].trim().toLowerCase();
+
+  if (hostHeader && SAFE_HOST_HEADER_REGEX.test(hostHeader) && parsedOrigin.host.toLowerCase() === hostHeader) {
     return true;
   }
 
@@ -99,10 +119,13 @@ app.use('/api', (req: Request, res: Response, next: NextFunction) => {
     res.setHeader('Access-Control-Allow-Origin', origin);
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    res.setHeader('Access-Control-Expose-Headers', 'X-SI-Generated, X-SI-Model');
   } else if (secFetchSite === 'cross-site') {
     res.status(403).json({ error: 'Cross-site API access denied.' });
     return;
   }
+
+  res.setHeader('Access-Control-Expose-Headers', 'X-SI-Generated, X-SI-Model');
 
   if (req.method === 'OPTIONS') {
     res.status(204).end();
@@ -213,7 +236,8 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
 }
 
 function getGeminiClient(): GoogleGenAI | null {
-  const apiKey = process.env.GEMINI_API_KEY;
+  // Strictly read GEMINI_API_KEY (supports both AQ. and AIza key formats; never falls back to GOOGLE_API_KEY)
+  const apiKey = typeof process.env.GEMINI_API_KEY === 'string' ? process.env.GEMINI_API_KEY.trim() : '';
   if (!apiKey) return null;
   return new GoogleGenAI({
     apiKey,
@@ -269,11 +293,12 @@ async function generateTtsWithRetry(
         typeof err === 'object' && err !== null && 'status' in err
           ? Number((err as { status?: unknown }).status)
           : 0;
-      const isRetryable = status === 429 || status === 503 || status >= 500;
+      const isRetryable =
+        (status === 429 && attempt < 2) || status === 503 || status >= 500;
       if (!isRetryable || attempt === maxAttempts) {
         throw err;
       }
-      await new Promise((resolve) => setTimeout(resolve, 400 * Math.pow(2, attempt - 1)));
+      await new Promise((resolve) => setTimeout(resolve, 350 * Math.pow(2, attempt - 1)));
     }
   }
 
@@ -359,6 +384,8 @@ app.post('/api/tts', async (req: Request, res: Response) => {
 
     const cached = ttsCache.get(cacheKey);
     if (cached) {
+      res.setHeader('X-SI-Generated', 'true');
+      res.setHeader('X-SI-Model', 'Gemini-TTS');
       res.json({ ...cached, voiceName: requestedVoice, cached: true });
       return;
     }
@@ -368,6 +395,8 @@ app.post('/api/tts', async (req: Request, res: Response) => {
       console.error('Server TTS unavailable: GEMINI_API_KEY is not configured.');
       res.status(503).json({
         error: 'Voice narration service is currently unavailable.',
+        code: 'KEY_NOT_CONFIGURED',
+        fallbackRecommended: true,
       });
       return;
     }
@@ -376,6 +405,8 @@ app.post('/api/tts', async (req: Request, res: Response) => {
       res.setHeader('Retry-After', '60');
       res.status(429).json({
         error: 'Voice narration service is busy. Please try again shortly.',
+        code: 'RATE_LIMITED',
+        fallbackRecommended: true,
       });
       return;
     }
@@ -387,7 +418,11 @@ app.post('/api/tts', async (req: Request, res: Response) => {
     const mimeType = audioPart?.inlineData?.mimeType || 'audio/wav';
 
     if (!audioBase64) {
-      res.status(502).json({ error: 'Unable to generate voice audio right now.' });
+      res.status(502).json({
+        error: 'Unable to generate voice audio right now.',
+        code: 'EMPTY_AUDIO',
+        fallbackRecommended: true,
+      });
       return;
     }
 
@@ -397,6 +432,8 @@ app.post('/api/tts', async (req: Request, res: Response) => {
     }
     ttsCache.set(cacheKey, { audioBase64, mimeType });
 
+    res.setHeader('X-SI-Generated', 'true');
+    res.setHeader('X-SI-Model', 'Gemini-TTS');
     res.json({ audioBase64, mimeType, voiceName: requestedVoice });
   } catch (err: unknown) {
     const upstreamStatus =
@@ -408,13 +445,44 @@ app.post('/api/tts', async (req: Request, res: Response) => {
     if (upstreamStatus === 429) {
       res.setHeader('Retry-After', '30');
       res.status(429).json({
-        error: 'Voice synthesis quota reached. Please try again shortly.',
+        error: 'Voice synthesis quota reached. Using browser voice narration.',
+        code: 'RATE_LIMITED',
+        fallbackRecommended: true,
+      });
+      return;
+    }
+
+    if (upstreamStatus === 403) {
+      res.status(403).json({
+        error: 'Voice synthesis unavailable for current API tier. Using browser voice narration.',
+        code: 'TIER_RESTRICTED',
+        fallbackRecommended: true,
+      });
+      return;
+    }
+
+    if (upstreamStatus === 404) {
+      res.status(404).json({
+        error: 'Requested voice model unavailable on current tier. Using browser voice narration.',
+        code: 'MODEL_UNAVAILABLE',
+        fallbackRecommended: true,
+      });
+      return;
+    }
+
+    if (upstreamStatus === 400 || upstreamStatus === 401) {
+      res.status(503).json({
+        error: 'Voice synthesis authentication failed. Using browser voice narration.',
+        code: 'AUTH_OR_CONFIG_ERROR',
+        fallbackRecommended: true,
       });
       return;
     }
 
     res.status(502).json({
       error: 'Unable to generate voice narration right now.',
+      code: 'UPSTREAM_ERROR',
+      fallbackRecommended: true,
     });
   }
 });
@@ -442,9 +510,24 @@ app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
 // Serve frontend in production or through Vite in development
 async function startServer() {
   if (process.env.NODE_ENV === 'production') {
-    app.use(express.static(path.resolve(__dirname, 'dist')));
-    app.get('*', (_req: Request, res: Response) => {
-      res.sendFile(path.resolve(__dirname, 'dist', 'index.html'));
+    const distDir = path.resolve(__dirname, 'dist');
+    app.use(
+      express.static(distDir, {
+        dotfiles: 'ignore',
+        maxAge: '1h',
+      })
+    );
+    app.get('*', (req: Request, res: Response) => {
+      if (
+        req.path.startsWith('/assets/') ||
+        req.path.startsWith('/model/') ||
+        req.path.startsWith('/models/') ||
+        /\.(?:glb|gltf|wasm|js|css|map|png|jpe?g|webp|svg|ico|json)$/i.test(req.path)
+      ) {
+        res.status(404).send('Not found');
+        return;
+      }
+      res.sendFile(path.join(distDir, 'index.html'));
     });
   } else {
     const { createServer: createViteServer } = await import('vite');
