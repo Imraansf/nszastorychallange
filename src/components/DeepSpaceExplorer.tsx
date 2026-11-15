@@ -270,20 +270,14 @@ export const DeepSpaceExplorer: React.FC<DeepSpaceExplorerProps> = React.memo(({
       ? !window.matchMedia('(min-width: 1025px) and (pointer: fine)').matches
       : false
   );
-  const [isDockVisible, setIsDockVisible] = useState<boolean>(() =>
-    typeof window !== 'undefined'
-      ? window.matchMedia('(min-width: 1025px) and (pointer: fine)').matches
-      : true
-  );
+  const [isDockVisible, setIsDockVisible] = useState<boolean>(true);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const desktopMql = window.matchMedia('(min-width: 1025px) and (pointer: fine)');
     const handleMediaChange = (e: MediaQueryListEvent) => {
-      setIsDockVisible(e.matches);
       setIsTimelineCollapsed(!e.matches);
     };
-    setIsDockVisible(desktopMql.matches);
     setIsTimelineCollapsed(!desktopMql.matches);
     desktopMql.addEventListener('change', handleMediaChange);
     return () => desktopMql.removeEventListener('change', handleMediaChange);

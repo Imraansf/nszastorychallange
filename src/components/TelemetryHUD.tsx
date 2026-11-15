@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Compass,
   RotateCcw,
@@ -10,8 +10,6 @@ import {
   ChevronUp,
 } from 'lucide-react';
 import { Relic } from './CesiumGlobeViewer';
-
-const DESKTOP_MEDIA_QUERY = '(min-width: 1025px) and (pointer: fine)';
 
 interface TelemetryHUDProps {
   selectedBody: 'MOON' | 'MARS' | 'moon' | 'mars';
@@ -35,22 +33,9 @@ export const TelemetryHUD: React.FC<TelemetryHUDProps> = ({
   onZoom,
   className = '',
 }) => {
-  const [isMinimized, setIsMinimized] = useState<boolean>(() =>
-    typeof window !== 'undefined' ? !window.matchMedia(DESKTOP_MEDIA_QUERY).matches : false
-  );
+  const [isMinimized, setIsMinimized] = useState<boolean>(false);
   const normalizedBody = selectedBody.toUpperCase();
   const isMars = normalizedBody === 'MARS';
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const desktopMql = window.matchMedia(DESKTOP_MEDIA_QUERY);
-    const handleMediaChange = (e: MediaQueryListEvent) => {
-      setIsMinimized(!e.matches);
-    };
-    setIsMinimized(!desktopMql.matches);
-    desktopMql.addEventListener('change', handleMediaChange);
-    return () => desktopMql.removeEventListener('change', handleMediaChange);
-  }, []);
 
   const coordsString = crosshairCoords
     ? `${crosshairCoords.lat >= 0 ? `${crosshairCoords.lat.toFixed(1)}°N` : `${Math.abs(crosshairCoords.lat).toFixed(1)}°S`}, ${crosshairCoords.lon >= 0 ? `${crosshairCoords.lon.toFixed(1)}°E` : `${Math.abs(crosshairCoords.lon).toFixed(1)}°W`}`

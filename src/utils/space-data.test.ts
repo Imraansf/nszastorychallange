@@ -7,6 +7,7 @@ import {
   getArtifacts,
   getAllArtifacts,
   getArtifactById,
+  getArtifactVoiceName,
 } from './space-data';
 
 test('Exactly 15 artifacts across Moon (4), Mars (6), and Deep Space (5)', () => {
@@ -49,4 +50,14 @@ test('All 15 artifacts have complete dossiers and monologues', () => {
     assert.ok(a.instruments.length >= 1);
     assert.ok(a.timeline.summary.length > 10);
   }
+});
+
+test('Voice assignment uses Sami for Falcon and even 7/7 Riko/Sami split for the other 14 artifacts', () => {
+  assert.equal(getArtifactVoiceName('apollo-15-falcon-lrv-alsep'), 'Sami');
+  const others = getAllArtifacts().filter((a) => a.id !== 'apollo-15-falcon-lrv-alsep');
+  assert.equal(others.length, 14);
+  const rikoCount = others.filter((a) => getArtifactVoiceName(a.id) === 'Riko').length;
+  const samiCount = others.filter((a) => getArtifactVoiceName(a.id) === 'Sami').length;
+  assert.equal(rikoCount, 7);
+  assert.equal(samiCount, 7);
 });

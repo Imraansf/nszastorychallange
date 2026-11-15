@@ -23,8 +23,10 @@ import {
   Award,
   Star,
   Stamp,
+  Loader2,
 } from 'lucide-react';
 import { useNASAVoice } from '../hooks/useNASAVoice';
+import { getArtifactVoiceName } from '../utils/space-data';
 
 interface StoryDrawerProps {
   artifact: Artifact | null;
@@ -104,10 +106,13 @@ export const StoryDrawer: React.FC<StoryDrawerProps> = ({
   const [galleryErrors, setGalleryErrors] = useState<Record<string, boolean>>({});
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  const assignedVoice = artifact ? getArtifactVoiceName(artifact.id) : 'Sami';
+
   const nasaVoice = useNASAVoice({
-    defaultPitch: artifact?.id === 'spirit-and-opportunity' ? 1.02 : 0.95,
-    defaultRate: 0.95,
+    defaultPitch: 1.0,
+    defaultRate: 1.0,
     defaultFilterEnabled: true,
+    defaultVoiceName: assignedVoice,
   });
 
   const stopVoiceRef = useRef(nasaVoice.stop);
@@ -539,26 +544,32 @@ export const StoryDrawer: React.FC<StoryDrawerProps> = ({
               <div className="flex items-center gap-3">
                 <button
                   onClick={() => {
-                    if (nasaVoice.isSpeaking) {
+                    if (nasaVoice.isSpeaking || nasaVoice.isLoading) {
                       nasaVoice.stop();
                     } else {
                       nasaVoice.speakMissionLog(
                         narrationText,
-                        nasaVoice.filterEnabled
+                        nasaVoice.filterEnabled,
+                        assignedVoice
                       );
                     }
                   }}
                   className={`min-h-[40px] px-4 py-2 rounded-xl border-2 active:translate-y-0.5 active:shadow-none text-xs font-black flex items-center gap-2 transition-all ${
                     isMars
-                      ? nasaVoice.isSpeaking
+                      ? nasaVoice.isSpeaking || nasaVoice.isLoading
                         ? 'bg-[#1C140F] text-[#F5E6D3] border-[#1C140F] shadow-[0_3px_0_#291D16]'
                         : 'bg-[#F5E6D3] hover:bg-[#E7E5E4] text-[#1C140F] border-[#1C140F] shadow-[0_3px_0_#1C140F]'
-                      : nasaVoice.isSpeaking
+                      : nasaVoice.isSpeaking || nasaVoice.isLoading
                       ? 'bg-[#7C3AED] text-[#F8FAFC] border-[#06090F] shadow-[0_3px_0_#06090F]'
                       : 'bg-[#F8FAFC] hover:bg-[#E0F2FE] text-[#06090F] border-[#06090F] shadow-[0_3px_0_#06090F]'
                   }`}
                 >
-                  {nasaVoice.isSpeaking ? (
+                  {nasaVoice.isLoading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Loading Voice...</span>
+                    </>
+                  ) : nasaVoice.isSpeaking ? (
                     <>
                       <VolumeX className="w-4 h-4" />
                       <span>Stop My Story</span>
@@ -590,6 +601,18 @@ export const StoryDrawer: React.FC<StoryDrawerProps> = ({
             </div>
 
             <div className={`p-6 sm:p-8 space-y-5 ${isMars ? 'bg-[#F5E6D3]' : 'bg-[#E0F2FE]/35'}`}>
+              {nasaVoice.voiceError && (
+                <p
+                  role="alert"
+                  className={`text-xs font-bold px-3 py-2 rounded-xl border-2 ${
+                    isMars
+                      ? 'bg-[#1C140F] text-[#F5E6D3] border-[#44403C]'
+                      : 'bg-[#FEF2F2] text-[#991B1B] border-[#FCA5A5]'
+                  }`}
+                >
+                  {nasaVoice.voiceError}
+                </p>
+              )}
               <p
                 className={`text-sm font-black uppercase tracking-wide ${
                   isMars ? 'text-[#92400E]' : 'text-[#7C3AED]'

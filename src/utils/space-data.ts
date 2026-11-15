@@ -1583,3 +1583,37 @@ export function getPlanetaryLandmarks(body: CelestialBody): PlanetaryLandmark[] 
 export function getLunarLandmarks(): PlanetaryLandmark[] {
   return LUNAR_LANDMARKS;
 }
+
+export type ArtifactVoiceName = 'Sami' | 'Riko';
+
+/**
+ * Gemini TTS prebuilt voice assignments across all Moon, Mars, and Deep Space artifacts.
+ * - Apollo 15 'Falcon' uses 'Sami'.
+ * - The remaining 14 artifacts use an even 7/7 distribution of 'Riko' and 'Sami'.
+ */
+const ARTIFACT_VOICE_MAP: Record<string, ArtifactVoiceName> = {
+  // Moon (Falcon -> Sami; remaining 3 -> 2 Riko, 1 Sami)
+  'apollo-15-falcon-lrv-alsep': 'Sami',
+  'apollo-11-eagle-easep': 'Riko',
+  'apollo-12-intrepid-alsep': 'Sami',
+  'surveyor-3': 'Riko',
+
+  // Mars (6 -> 3 Sami, 3 Riko)
+  'viking-1-lander': 'Sami',
+  'mars-pathfinder-sojourner': 'Riko',
+  'spirit-and-opportunity': 'Sami',
+  'phoenix-mars-lander': 'Riko',
+  'insight-lander': 'Sami',
+  'ingenuity-mars-helicopter': 'Riko',
+
+  // Deep Space (5 -> 3 Sami, 2 Riko)
+  'pioneer-10': 'Sami',
+  'pioneer-11': 'Riko',
+  'near-shoemaker': 'Sami',
+  'dawn': 'Riko',
+  'kepler': 'Sami',
+};
+
+export function getArtifactVoiceName(artifactId: string): ArtifactVoiceName {
+  return ARTIFACT_VOICE_MAP[artifactId] ?? 'Sami';
+}

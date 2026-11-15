@@ -2779,7 +2779,7 @@ export const SurfaceExplorerGame: React.FC<SurfaceExplorerGameProps> = ({
           type="button"
           onPointerDown={(e) => e.stopPropagation()}
           onClick={() => setIsMobileHintVisible(false)}
-          className={`surface-touch-control px-3.5 py-1.5 rounded-full text-[11px] sm:text-xs font-sans font-medium flex items-center gap-2 text-center leading-snug ${panelBgClass}`}
+          className={`surface-touch-control px-3.5 py-1.5 rounded-2xl text-[11px] sm:text-xs font-sans font-medium flex items-center gap-2 text-left leading-snug ${panelBgClass}`}
         >
           <span>
             <strong className={accentTextClass}>WASD:</strong> move,{' '}
