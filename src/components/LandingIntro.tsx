@@ -441,10 +441,10 @@ export const LandingIntro: React.FC<LandingIntroProps> = ({
           {/* Top Lobby Title Banner */}
           <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-xl bg-[#0D131F] border-[3px] border-[#BAE6FD] shadow-[0_4px_0_#BAE6FD,0_0_24px_rgba(186,230,253,0.22)] -rotate-1 mb-3">
             <span className="bg-[#BAE6FD] text-[#06090F] text-xs font-black font-mono px-2 py-0.5 rounded-md border-2 border-[#06090F] tracking-wider uppercase">
-              SPACE RELICS
+              Nasa Space Apps
             </span>
             <span className="text-xs sm:text-sm font-extrabold tracking-wide uppercase text-[#F8FAFC]">
-              NASA Explorer Lobby
+              Challange 2026
             </span>
           </div>
 
@@ -455,7 +455,7 @@ export const LandingIntro: React.FC<LandingIntroProps> = ({
               WebkitTextStroke: '1px #06090F',
             }}
           >
-            Abandoned in Space, Not Forgotten!
+            The Quiet After
           </h1>
 
           {/* Mission Briefing Cards (Ice White Cards with Aurora Green Headers/Borders & Deep Space Black Text) */}
