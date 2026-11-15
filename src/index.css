@@ -206,3 +206,25 @@
   -webkit-touch-callout: none;
   -webkit-tap-highlight-color: transparent;
 }
+
+@keyframes postcard-eq-bar {
+  0%, 100% {
+    transform: scaleY(0.28);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+.animate-postcard-eq {
+  transform-origin: bottom center;
+  animation: postcard-eq-bar 0.85s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-postcard-eq {
+    animation: none;
+    transform: scaleY(0.65);
+  }
+}
+

@@ -26,6 +26,7 @@ import {
   getSpacecraftModelAsset,
   loadValidatedGltf,
 } from '../utils/spacecraft-models';
+import { SurfaceStoryPostcard } from './SurfaceStoryPostcard';
 
 export interface SurfaceExplorerGameProps {
   artifact: Artifact;
@@ -1561,6 +1562,7 @@ export const SurfaceExplorerGame: React.FC<SurfaceExplorerGameProps> = ({
   );
   const [isMobileHintVisible, setIsMobileHintVisible] = useState<boolean>(true);
   const [mobileHintResetCount, setMobileHintResetCount] = useState<number>(0);
+  const [isStoryPostcardOpen, setIsStoryPostcardOpen] = useState<boolean>(true);
 
   // Game UI States
   const [isPointerLocked, setIsPointerLocked] = useState(false);
@@ -1632,7 +1634,18 @@ export const SurfaceExplorerGame: React.FC<SurfaceExplorerGameProps> = ({
     return () => window.clearTimeout(timer);
   }, [artifact.id, isTouchOrCompact, mobileHintResetCount]);
 
+  useEffect(() => {
+    setIsStoryPostcardOpen(true);
+  }, [artifact.id]);
+
   const handleExit = useCallback(() => {
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      try {
+        window.speechSynthesis.cancel();
+      } catch {
+        // Ignore cancellation failures
+      }
+    }
     playWhooshSound('out');
     if (document.pointerLockElement) {
       document.exitPointerLock?.();
@@ -2792,6 +2805,17 @@ export const SurfaceExplorerGame: React.FC<SurfaceExplorerGameProps> = ({
           <X className={`w-3.5 h-3.5 shrink-0 ${mutedTextClass}`} />
         </button>
       </div>
+
+      {/* Right-Side Interactive Story Postcard & Web Speech Narration */}
+      <SurfaceStoryPostcard
+        artifact={artifact}
+        isOpen={isStoryPostcardOpen}
+        onClose={() => setIsStoryPostcardOpen(false)}
+        onReplay={() => setIsStoryPostcardOpen(true)}
+        isTouchOrCompact={isTouchOrCompact}
+        isMobileHintVisible={isMobileHintVisible}
+        isObscuredByInspectModal={Boolean(inspectModalTarget)}
+      />
 
       {/* Center Reticle & Dynamic Point-to-Inspect Prompt */}
       {!inspectModalTarget && (
