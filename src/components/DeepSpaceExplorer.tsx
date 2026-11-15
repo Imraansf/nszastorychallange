@@ -400,7 +400,7 @@ export const DeepSpaceExplorer: React.FC<DeepSpaceExplorerProps> = React.memo(({
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.15;
-    container.innerHTML = '';
+    container.replaceChildren();
     container.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
@@ -901,7 +901,7 @@ export const DeepSpaceExplorer: React.FC<DeepSpaceExplorerProps> = React.memo(({
       window.removeEventListener('resize', handleResize);
       envTarget.dispose();
       if (container && renderer.domElement) {
-        container.innerHTML = '';
+        container.replaceChildren();
       }
       renderer.dispose();
     };

@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Artifact, CelestialBody, PlanetaryLandmark } from '../types/space';
 import { playArtifactRememberingWhoosh, playWhooshSound } from '../utils/audio';
+import { sanitizeCesiumIonToken } from '../utils/url-security';
 import { Key, Check } from 'lucide-react';
 
 declare const Cesium: any;
@@ -36,7 +37,9 @@ export const CesiumPlanetaryViewer: React.FC<CesiumPlanetaryViewerProps> = ({
   const [hoveredArtifact, setHoveredArtifact] = useState<Artifact | null>(null);
   const [hoveredLandmark, setHoveredLandmark] = useState<PlanetaryLandmark | null>(null);
   const [isTokenModalOpen, setIsTokenModalOpen] = useState(false);
-  const [ionToken, setIonToken] = useState(() => localStorage.getItem('cesium_ion_token') || '');
+  const [ionToken, setIonToken] = useState(() =>
+    sanitizeCesiumIonToken(localStorage.getItem('cesium_ion_token'))
+  );
   const [streamStatus, setStreamStatus] = useState<'streaming_nasa' | 'streaming_tileset' | 'base_highres'>('streaming_nasa');
 
   // 1. Wait for Cesium library from CDN if not yet ready
@@ -73,15 +76,16 @@ export const CesiumPlanetaryViewer: React.FC<CesiumPlanetaryViewerProps> = ({
     setLoadError(null);
 
     // Clean container completely of any previous elements
-    containerRef.current.innerHTML = '';
+    containerRef.current.replaceChildren();
 
     try {
       if (typeof window !== 'undefined') {
         (window as any).CESIUM_BASE_URL = 'https://cesium.com/downloads/cesiumjs/releases/1.127/Build/Cesium/';
       }
 
-      if (ionToken.trim()) {
-        Cesium.Ion.defaultAccessToken = ionToken.trim();
+      const safeIonToken = sanitizeCesiumIonToken(ionToken);
+      if (safeIonToken) {
+        Cesium.Ion.defaultAccessToken = safeIonToken;
       } else if (typeof Cesium !== 'undefined' && Cesium.Ion) {
         Cesium.Ion.defaultAccessToken = '';
       }
@@ -518,7 +522,13 @@ export const CesiumPlanetaryViewer: React.FC<CesiumPlanetaryViewerProps> = ({
   }, [selectedLandmark, body]);
 
   const handleSaveToken = () => {
-    localStorage.setItem('cesium_ion_token', ionToken.trim());
+    const safeToken = sanitizeCesiumIonToken(ionToken);
+    if (safeToken) {
+      localStorage.setItem('cesium_ion_token', safeToken);
+    } else {
+      localStorage.removeItem('cesium_ion_token');
+    }
+    setIonToken(safeToken);
     setIsTokenModalOpen(false);
     playWhooshSound('ui');
   };

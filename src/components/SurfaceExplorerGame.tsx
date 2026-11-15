@@ -1784,7 +1784,7 @@ export const SurfaceExplorerGame: React.FC<SurfaceExplorerGameProps> = ({
         webkitTouchCallout?: string;
       }
     ).webkitTouchCallout = 'none';
-    container.innerHTML = '';
+    container.replaceChildren();
     container.appendChild(renderer.domElement);
 
     // 2. SCENE & ENVIRONMENT

@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import { useNASAVoice } from '../hooks/useNASAVoice';
 import { getArtifactVoiceName } from '../utils/space-data';
+import { extractSafeYouTubeId, sanitizeExternalUrl } from '../utils/url-security';
 
 interface StoryDrawerProps {
   artifact: Artifact | null;
@@ -34,19 +35,6 @@ interface StoryDrawerProps {
   onNextArtifact: () => void;
   onPrevArtifact: () => void;
   onInspectModel?: (artifact: Artifact) => void;
-}
-
-function extractYouTubeId(url: string): string | null {
-  try {
-    const cleaned = url.replace(/\s+/g, '');
-    const parsed = new URL(cleaned);
-    if (parsed.hostname.includes('youtu.be')) {
-      return parsed.pathname.slice(1) || null;
-    }
-    return parsed.searchParams.get('v');
-  } catch {
-    return null;
-  }
 }
 
 function getZoneMeta(body: Artifact['body']) {
@@ -144,10 +132,13 @@ export const StoryDrawer: React.FC<StoryDrawerProps> = ({
   if (!artifact) return null;
 
   const narrationText = `${artifact.name}. ${artifact.firstPersonMonologue}`;
-  const cleanYoutubeUrl = artifact.youtubeUrl
-    ? artifact.youtubeUrl.replace(/\s+/g, '')
-    : undefined;
-  const youtubeId = cleanYoutubeUrl ? extractYouTubeId(cleanYoutubeUrl) : null;
+  const cleanYoutubeUrl = sanitizeExternalUrl(artifact.youtubeUrl, [
+    'youtube.com',
+    'youtu.be',
+    'youtube-nocookie.com',
+  ]);
+  const youtubeId = extractSafeYouTubeId(cleanYoutubeUrl);
+  const safeOfficialSource = sanitizeExternalUrl(artifact.officialSource);
   const zoneMeta = getZoneMeta(artifact.body);
 
   const diaryPhotos = (artifact.galleryImages || []).filter(
@@ -458,6 +449,8 @@ export const StoryDrawer: React.FC<StoryDrawerProps> = ({
                   className="absolute inset-0 w-full h-full"
                   src={`https://www.youtube.com/embed/${youtubeId}?rel=0`}
                   title={`${artifact.name} Mission Video`}
+                  referrerPolicy="strict-origin-when-cross-origin"
+                  sandbox="allow-scripts allow-same-origin allow-presentation allow-popups"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                   allowFullScreen
                 />
@@ -1303,7 +1296,7 @@ export const StoryDrawer: React.FC<StoryDrawerProps> = ({
                   ) : null
                 )}
 
-                {artifact.officialSource && (
+                {safeOfficialSource && (
                   <div
                     className={`pt-3 border-t-2 flex items-center justify-between gap-3 text-xs ${
                       isMars ? 'border-[#44403C]/25' : 'border-[#06090F]/15'
@@ -1322,7 +1315,7 @@ export const StoryDrawer: React.FC<StoryDrawerProps> = ({
                       {artifact.catalogRef || 'NASA Archive'}
                     </span>
                     <a
-                      href={artifact.officialSource}
+                      href={safeOfficialSource}
                       target="_blank"
                       rel="noopener noreferrer"
                       className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-2 font-black shrink-0 transition-colors ${

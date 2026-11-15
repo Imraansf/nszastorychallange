@@ -385,7 +385,7 @@ const SpacecraftCanvas3D: React.FC<{
     renderer.shadowMap.enabled = !isSoftwareGl;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
-    container.innerHTML = '';
+    container.replaceChildren();
     container.appendChild(renderer.domElement);
 
     // 2. SCENE & STUDIO/ORBITAL ENVIRONMENT

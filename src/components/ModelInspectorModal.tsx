@@ -14,6 +14,7 @@ import {
 import { playWhooshSound } from '../utils/audio';
 import { Artifact3DViewport, ModelViewportStatus } from './Artifact3DViewport';
 import { getSpacecraftModelAsset } from '../utils/spacecraft-models';
+import { sanitizeExternalUrl } from '../utils/url-security';
 
 export interface ModelInspectorModalProps {
   artifact: Artifact | null;
@@ -357,7 +358,10 @@ export const ModelInspectorModal: React.FC<ModelInspectorModalProps> = ({
                 )}
 
                 <a
-                  href={artifact.nasa3dResourceUrl || 'https://github.com/nasa/NASA-3D-Resources'}
+                  href={
+                    sanitizeExternalUrl(artifact.nasa3dResourceUrl) ||
+                    'https://github.com/nasa/NASA-3D-Resources'
+                  }
                   target="_blank"
                   rel="noopener noreferrer"
                   className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[10px] font-medium transition-colors ${

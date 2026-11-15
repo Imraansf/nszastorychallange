@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { GLTF, GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { isAllowedModelUrl } from './url-security';
 
 export interface SpacecraftModelAsset {
   artifactId: string;
@@ -151,6 +152,9 @@ export async function loadValidatedGltf(
   loader: GLTFLoader,
   signal?: AbortSignal
 ): Promise<GLTF> {
+  if (!isAllowedModelUrl(url)) {
+    throw new Error('Blocked disallowed model asset path.');
+  }
   const response = await fetch(url, { signal });
   if (!response.ok) {
     throw new Error(`Model fetch returned HTTP ${response.status} for ${url}`);
