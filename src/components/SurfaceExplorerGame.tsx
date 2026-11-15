@@ -1043,7 +1043,7 @@ function buildMissionSiteItems(
   artifact: Artifact,
   scene: THREE.Scene,
   sampleH: (x: number, z: number) => number,
-  isMars: boolean
+  _isMars: boolean
 ): SiteItemDef[] {
   const items: SiteItemDef[] = [];
 

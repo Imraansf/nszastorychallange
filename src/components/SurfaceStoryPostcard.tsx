@@ -741,9 +741,9 @@ export const SurfaceStoryPostcard: React.FC<SurfaceStoryPostcardProps> = ({
 
           <p
             className={`text-[10px] font-mono leading-tight ${theme.mutedTextClass}`}
-            title="Narration generated with Gemini AI voice and browser speech synthesis"
+            title="Narration generated with Gemini AI voice"
           >
-            Narration generated with Gemini AI voice / Web Speech
+            Narration generated with Gemini AI voice
           </p>
         </div>
       )}

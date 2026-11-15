@@ -345,7 +345,6 @@ export const CesiumGlobeViewer: React.FC<CesiumGlobeViewerProps> = React.memo(({
 
   // 2. Initialize Cesium.Viewer with high-res planetary ellipsoid & NASA Trek imagery
   useEffect(() => {
-    console.log('CesiumGlobeViewer: Attempting initialization. isCesiumLoaded:', isCesiumLoaded, 'container:', containerRef.current);
     if (!isCesiumLoaded || !containerRef.current) return;
 
     try {
