@@ -44,7 +44,7 @@ export const LandingIntro: React.FC<LandingIntroProps> = ({
     let width = (canvas.width = window.innerWidth);
     let height = (canvas.height = window.innerHeight);
 
-    const starPalette = ['#F8FAFC', '#E0F2FE', '#38BDF8', '#A78BFA'];
+    const starPalette = ['#F8FAFC', '#E0F2FE', '#BAE6FD', '#A78BFA'];
 
     const createStars = (): TwinkleStar[] => {
       const count = Math.min(75, Math.floor((width * height) / 18000));
@@ -313,7 +313,7 @@ export const LandingIntro: React.FC<LandingIntroProps> = ({
           className="aurora-wave-primary absolute -top-24 -left-1/4 w-[150%] h-[62%]"
           style={{
             background:
-              'radial-gradient(ellipse 65% 42% at 35% 40%, rgba(56, 189, 248, 0.30) 0%, rgba(16, 185, 129, 0.14) 45%, transparent 75%), radial-gradient(ellipse 55% 38% at 72% 35%, rgba(124, 58, 237, 0.28) 0%, rgba(147, 51, 234, 0.12) 48%, transparent 76%)',
+              'radial-gradient(ellipse 65% 42% at 35% 40%, rgba(186, 230, 253, 0.30) 0%, rgba(16, 185, 129, 0.14) 45%, transparent 75%), radial-gradient(ellipse 55% 38% at 72% 35%, rgba(124, 58, 237, 0.28) 0%, rgba(147, 51, 234, 0.12) 48%, transparent 76%)',
             filter: 'blur(38px)',
           }}
         />
@@ -321,7 +321,7 @@ export const LandingIntro: React.FC<LandingIntroProps> = ({
           className="aurora-wave-secondary absolute top-[12%] -right-1/4 w-[150%] h-[58%]"
           style={{
             background:
-              'linear-gradient(115deg, transparent 15%, rgba(124, 58, 237, 0.22) 36%, rgba(56, 189, 248, 0.26) 56%, rgba(147, 51, 234, 0.16) 72%, transparent 88%)',
+              'linear-gradient(115deg, transparent 15%, rgba(124, 58, 237, 0.22) 36%, rgba(186, 230, 253, 0.26) 56%, rgba(147, 51, 234, 0.16) 72%, transparent 88%)',
             filter: 'blur(46px)',
           }}
         />
@@ -332,17 +332,17 @@ export const LandingIntro: React.FC<LandingIntroProps> = ({
         >
           <defs>
             <linearGradient id="auroraRibbonGradA" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#38BDF8" stopOpacity="0" />
-              <stop offset="28%" stopColor="#38BDF8" stopOpacity="0.45" />
+              <stop offset="0%" stopColor="#BAE6FD" stopOpacity="0" />
+              <stop offset="28%" stopColor="#BAE6FD" stopOpacity="0.45" />
               <stop offset="62%" stopColor="#7C3AED" stopOpacity="0.42" />
-              <stop offset="85%" stopColor="#38BDF8" stopOpacity="0.28" />
+              <stop offset="85%" stopColor="#BAE6FD" stopOpacity="0.28" />
               <stop offset="100%" stopColor="#7C3AED" stopOpacity="0" />
             </linearGradient>
             <linearGradient id="auroraRibbonGradB" x1="0%" y1="0%" x2="100%" y2="0%">
               <stop offset="0%" stopColor="#7C3AED" stopOpacity="0" />
               <stop offset="35%" stopColor="#9333EA" stopOpacity="0.38" />
-              <stop offset="70%" stopColor="#38BDF8" stopOpacity="0.40" />
-              <stop offset="100%" stopColor="#38BDF8" stopOpacity="0" />
+              <stop offset="70%" stopColor="#BAE6FD" stopOpacity="0.40" />
+              <stop offset="100%" stopColor="#BAE6FD" stopOpacity="0" />
             </linearGradient>
           </defs>
           <path
@@ -373,12 +373,12 @@ export const LandingIntro: React.FC<LandingIntroProps> = ({
         {/* Top-Left Cloud */}
         <svg
           viewBox="0 0 220 90"
-          className="cloud-slow absolute top-6 -left-8 sm:left-8 w-44 sm:w-60 opacity-85 drop-shadow-[0_8px_16px_rgba(56,189,248,0.12)]"
+          className="cloud-slow absolute top-6 -left-8 sm:left-8 w-44 sm:w-60 opacity-85 drop-shadow-[0_8px_16px_rgba(186,230,253,0.12)]"
         >
           <path
             d="M36 74 H182 C198 74 208 62 208 49 C208 37 198 26 184 26 C181 11 167 4 152 6 C141 -1 122 2 114 14 C101 8 83 13 77 27 C62 24 47 32 43 45 C30 46 22 56 24 65 C25 71 30 74 36 74 Z"
             fill="#0D131F"
-            stroke="#38BDF8"
+            stroke="#BAE6FD"
             strokeOpacity="0.45"
             strokeWidth="2.5"
           />
@@ -406,7 +406,7 @@ export const LandingIntro: React.FC<LandingIntroProps> = ({
           <path
             d="M18 92 H262 C272 92 276 80 270 70 C264 56 246 48 230 52 C222 28 194 18 170 28 C154 8 118 8 102 32 C80 26 56 38 50 56 C32 54 16 66 14 80 C13 87 15 92 18 92 Z"
             fill="#0D131F"
-            stroke="#38BDF8"
+            stroke="#BAE6FD"
             strokeOpacity="0.4"
             strokeWidth="2.5"
           />
@@ -439,8 +439,8 @@ export const LandingIntro: React.FC<LandingIntroProps> = ({
           }`}
         >
           {/* Top Lobby Title Banner */}
-          <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-xl bg-[#0D131F] border-[3px] border-[#38BDF8] shadow-[0_4px_0_#38BDF8,0_0_24px_rgba(56,189,248,0.22)] -rotate-1 mb-3">
-            <span className="bg-[#38BDF8] text-[#06090F] text-xs font-black font-mono px-2 py-0.5 rounded-md border-2 border-[#06090F] tracking-wider uppercase">
+          <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-xl bg-[#0D131F] border-[3px] border-[#BAE6FD] shadow-[0_4px_0_#BAE6FD,0_0_24px_rgba(186,230,253,0.22)] -rotate-1 mb-3">
+            <span className="bg-[#BAE6FD] text-[#06090F] text-xs font-black font-mono px-2 py-0.5 rounded-md border-2 border-[#06090F] tracking-wider uppercase">
               SPACE RELICS
             </span>
             <span className="text-xs sm:text-sm font-extrabold tracking-wide uppercase text-[#F8FAFC]">
@@ -451,7 +451,7 @@ export const LandingIntro: React.FC<LandingIntroProps> = ({
           <h1
             className="text-3xl sm:text-5xl font-black tracking-tight text-[#F8FAFC] max-w-2xl leading-[1.08] uppercase"
             style={{
-              textShadow: '0 4px 0 #06090F, 0 0 28px rgba(56, 189, 248, 0.35)',
+              textShadow: '0 4px 0 #06090F, 0 0 28px rgba(186, 230, 253, 0.35)',
               WebkitTextStroke: '1px #06090F',
             }}
           >
@@ -460,8 +460,8 @@ export const LandingIntro: React.FC<LandingIntroProps> = ({
 
           {/* Mission Briefing Cards (Ice White Cards with Aurora Green Headers/Borders & Deep Space Black Text) */}
           <div className="mt-4 sm:mt-5 w-full max-w-3xl grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div className="bg-[#F8FAFC] text-[#06090F] rounded-2xl overflow-hidden border-[3px] border-[#38BDF8] outline outline-2 outline-[#06090F] shadow-[0_6px_0_#38BDF8,0_12px_24px_rgba(56,189,248,0.18)] -rotate-1 text-left">
-              <div className="bg-[#38BDF8] px-3.5 py-1.5 border-b-2 border-[#06090F]">
+            <div className="bg-[#F8FAFC] text-[#06090F] rounded-2xl overflow-hidden border-[3px] border-[#BAE6FD] outline outline-2 outline-[#06090F] shadow-[0_6px_0_#BAE6FD,0_12px_24px_rgba(186,230,253,0.18)] -rotate-1 text-left">
+              <div className="bg-[#BAE6FD] px-3.5 py-1.5 border-b-2 border-[#06090F]">
                 <div className="text-[11px] font-black uppercase tracking-wider text-[#06090F] font-mono">
                   01 · Pick a Zone
                 </div>
@@ -471,8 +471,8 @@ export const LandingIntro: React.FC<LandingIntroProps> = ({
               </p>
             </div>
 
-            <div className="bg-[#F8FAFC] text-[#06090F] rounded-2xl overflow-hidden border-[3px] border-[#38BDF8] outline outline-2 outline-[#06090F] shadow-[0_6px_0_#38BDF8,0_12px_24px_rgba(56,189,248,0.18)] rotate-1 text-left">
-              <div className="bg-[#38BDF8] px-3.5 py-1.5 border-b-2 border-[#06090F]">
+            <div className="bg-[#F8FAFC] text-[#06090F] rounded-2xl overflow-hidden border-[3px] border-[#BAE6FD] outline outline-2 outline-[#06090F] shadow-[0_6px_0_#BAE6FD,0_12px_24px_rgba(186,230,253,0.18)] rotate-1 text-left">
+              <div className="bg-[#BAE6FD] px-3.5 py-1.5 border-b-2 border-[#06090F]">
                 <div className="text-[11px] font-black uppercase tracking-wider text-[#06090F] font-mono">
                   02 · Spot the Relics
                 </div>
@@ -482,8 +482,8 @@ export const LandingIntro: React.FC<LandingIntroProps> = ({
               </p>
             </div>
 
-            <div className="bg-[#F8FAFC] text-[#06090F] rounded-2xl overflow-hidden border-[3px] border-[#38BDF8] outline outline-2 outline-[#06090F] shadow-[0_6px_0_#38BDF8,0_12px_24px_rgba(56,189,248,0.18)] -rotate-1 text-left">
-              <div className="bg-[#38BDF8] px-3.5 py-1.5 border-b-2 border-[#06090F]">
+            <div className="bg-[#F8FAFC] text-[#06090F] rounded-2xl overflow-hidden border-[3px] border-[#BAE6FD] outline outline-2 outline-[#06090F] shadow-[0_6px_0_#BAE6FD,0_12px_24px_rgba(186,230,253,0.18)] -rotate-1 text-left">
+              <div className="bg-[#BAE6FD] px-3.5 py-1.5 border-b-2 border-[#06090F]">
                 <div className="text-[11px] font-black uppercase tracking-wider text-[#06090F] font-mono">
                   03 · Hear Their Story
                 </div>
@@ -521,7 +521,7 @@ export const LandingIntro: React.FC<LandingIntroProps> = ({
               y1="118"
               x2="470"
               y2="118"
-              stroke="#38BDF8"
+              stroke="#BAE6FD"
               strokeWidth="3.5"
               strokeLinecap="round"
               className="speed-line-2"
@@ -550,20 +550,20 @@ export const LandingIntro: React.FC<LandingIntroProps> = ({
             <div className="lobby-rocket-bob">
               <svg
                 viewBox="0 0 380 128"
-                className="w-72 sm:w-[400px] h-auto drop-shadow-[0_10px_20px_rgba(56,189,248,0.28)]"
+                className="w-72 sm:w-[400px] h-auto drop-shadow-[0_10px_20px_rgba(186,230,253,0.28)]"
                 fill="none"
                 xmlns="http://www.w3.org/2000/svg"
               >
                 <defs>
                   <linearGradient id="lobbyOuterFlame" x1="100%" y1="50%" x2="0%" y2="50%">
-                    <stop offset="0%" stopColor="#38BDF8" />
+                    <stop offset="0%" stopColor="#BAE6FD" />
                     <stop offset="55%" stopColor="#7C3AED" />
                     <stop offset="100%" stopColor="#9333EA" stopOpacity="0" />
                   </linearGradient>
                   <linearGradient id="lobbyInnerFlame" x1="100%" y1="50%" x2="0%" y2="50%">
                     <stop offset="0%" stopColor="#F8FAFC" />
                     <stop offset="45%" stopColor="#E0F2FE" />
-                    <stop offset="100%" stopColor="#38BDF8" stopOpacity="0" />
+                    <stop offset="100%" stopColor="#BAE6FD" stopOpacity="0" />
                   </linearGradient>
                   <linearGradient id="lobbyHull" x1="0%" y1="0%" x2="0%" y2="100%">
                     <stop offset="0%" stopColor="#F8FAFC" />
@@ -574,7 +574,7 @@ export const LandingIntro: React.FC<LandingIntroProps> = ({
 
                 {/* Smooth Floating Aurora Plasma Exhaust Puffs */}
                 <circle cx="102" cy="64" r="7" fill="#F8FAFC" className="exhaust-puff-1" />
-                <circle cx="96" cy="57" r="5.5" fill="#38BDF8" className="exhaust-puff-2" />
+                <circle cx="96" cy="57" r="5.5" fill="#BAE6FD" className="exhaust-puff-2" />
                 <circle cx="98" cy="71" r="6" fill="#7C3AED" className="exhaust-puff-3" />
 
                 {/* Smooth Animated Aurora Plasma Thruster Flame */}
@@ -603,14 +603,14 @@ export const LandingIntro: React.FC<LandingIntroProps> = ({
                 {/* Aurora Green & Cosmic Purple Top & Bottom Tail Fins */}
                 <path
                   d="M150 43 L128 16 L168 25 L182 43 Z"
-                  fill="#38BDF8"
+                  fill="#BAE6FD"
                   stroke="#06090F"
                   strokeWidth="3.5"
                   strokeLinejoin="round"
                 />
                 <path
                   d="M150 85 L128 112 L168 103 L182 85 Z"
-                  fill="#38BDF8"
+                  fill="#BAE6FD"
                   stroke="#06090F"
                   strokeWidth="3.5"
                   strokeLinejoin="round"
@@ -634,7 +634,7 @@ export const LandingIntro: React.FC<LandingIntroProps> = ({
                 {/* Aurora Green Nose Cone */}
                 <path
                   d="M286 44.5 C304 49, 322 55.5, 338 64 C322 72.5, 304 79, 286 83.5 Z"
-                  fill="#38BDF8"
+                  fill="#BAE6FD"
                   stroke="#06090F"
                   strokeWidth="3.5"
                   strokeLinejoin="round"
@@ -671,7 +671,7 @@ export const LandingIntro: React.FC<LandingIntroProps> = ({
                 />
 
                 {/* Cockpit Viewport (Aurora Green Rim + Cosmic Purple Glass) */}
-                <circle cx="248" cy="64" r="14" fill="#38BDF8" stroke="#06090F" strokeWidth="3.5" />
+                <circle cx="248" cy="64" r="14" fill="#BAE6FD" stroke="#06090F" strokeWidth="3.5" />
                 <circle cx="248" cy="64" r="9.5" fill="#7C3AED" stroke="#06090F" strokeWidth="2.5" />
                 <path
                   d="M243 59 A6.5 6.5 0 0 1 253 59"
@@ -710,21 +710,21 @@ export const LandingIntro: React.FC<LandingIntroProps> = ({
         >
           <button
             onClick={() => handleChooseZone('moon')}
-            className="group min-h-[54px] px-6 py-3 rounded-xl -skew-x-6 bg-[#06090F] hover:bg-[#38BDF8] text-[#F8FAFC] hover:text-[#06090F] font-black text-base tracking-wide uppercase border-[3px] border-[#38BDF8] ring-2 ring-[#F8FAFC]/80 shadow-[0_6px_0_#38BDF8,0_0_20px_rgba(56,189,248,0.2)] hover:shadow-[0_6px_0_#F8FAFC,0_0_28px_rgba(56,189,248,0.65)] hover:scale-105 hover:-translate-y-1 active:translate-y-1 active:shadow-[0_2px_0_#38BDF8] transition-all duration-150 focus-visible:outline-4 focus-visible:outline-[#38BDF8]"
+            className="group min-h-[54px] px-6 py-3 rounded-xl -skew-x-6 bg-[#06090F] hover:bg-[#BAE6FD] text-[#F8FAFC] hover:text-[#06090F] font-black text-base tracking-wide uppercase border-[3px] border-[#BAE6FD] ring-2 ring-[#F8FAFC]/80 shadow-[0_6px_0_#BAE6FD,0_0_20px_rgba(186,230,253,0.2)] hover:shadow-[0_6px_0_#F8FAFC,0_0_28px_rgba(186,230,253,0.65)] hover:scale-105 hover:-translate-y-1 active:translate-y-1 active:shadow-[0_2px_0_#BAE6FD] transition-all duration-150 focus-visible:outline-4 focus-visible:outline-[#BAE6FD]"
           >
             <span className="block skew-x-6">Moon</span>
           </button>
 
           <button
             onClick={() => handleChooseZone('mars')}
-            className="group min-h-[54px] px-6 py-3 rounded-xl -skew-x-6 bg-[#F8FAFC] hover:bg-[#38BDF8] text-[#06090F] font-black text-base tracking-wide uppercase border-[3px] border-[#38BDF8] ring-2 ring-[#06090F] shadow-[0_6px_0_#38BDF8,0_0_20px_rgba(56,189,248,0.25)] hover:shadow-[0_6px_0_#F8FAFC,0_0_28px_rgba(56,189,248,0.65)] hover:scale-105 hover:-translate-y-1 active:translate-y-1 active:shadow-[0_2px_0_#38BDF8] transition-all duration-150 focus-visible:outline-4 focus-visible:outline-[#38BDF8]"
+            className="group min-h-[54px] px-6 py-3 rounded-xl -skew-x-6 bg-[#F8FAFC] hover:bg-[#BAE6FD] text-[#06090F] font-black text-base tracking-wide uppercase border-[3px] border-[#BAE6FD] ring-2 ring-[#06090F] shadow-[0_6px_0_#BAE6FD,0_0_20px_rgba(186,230,253,0.25)] hover:shadow-[0_6px_0_#F8FAFC,0_0_28px_rgba(186,230,253,0.65)] hover:scale-105 hover:-translate-y-1 active:translate-y-1 active:shadow-[0_2px_0_#BAE6FD] transition-all duration-150 focus-visible:outline-4 focus-visible:outline-[#BAE6FD]"
           >
             <span className="block skew-x-6">Mars</span>
           </button>
 
           <button
             onClick={() => handleChooseZone('deep_space')}
-            className="group min-h-[54px] px-6 py-3 rounded-xl -skew-x-6 bg-[#06090F] hover:bg-[#38BDF8] text-[#F8FAFC] hover:text-[#06090F] font-black text-base tracking-wide uppercase border-[3px] border-[#38BDF8] ring-2 ring-[#F8FAFC]/80 shadow-[0_6px_0_#38BDF8,0_0_20px_rgba(56,189,248,0.2)] hover:shadow-[0_6px_0_#F8FAFC,0_0_28px_rgba(56,189,248,0.65)] hover:scale-105 hover:-translate-y-1 active:translate-y-1 active:shadow-[0_2px_0_#38BDF8] transition-all duration-150 focus-visible:outline-4 focus-visible:outline-[#38BDF8]"
+            className="group min-h-[54px] px-6 py-3 rounded-xl -skew-x-6 bg-[#06090F] hover:bg-[#BAE6FD] text-[#F8FAFC] hover:text-[#06090F] font-black text-base tracking-wide uppercase border-[3px] border-[#BAE6FD] ring-2 ring-[#F8FAFC]/80 shadow-[0_6px_0_#BAE6FD,0_0_20px_rgba(186,230,253,0.2)] hover:shadow-[0_6px_0_#F8FAFC,0_0_28px_rgba(186,230,253,0.65)] hover:scale-105 hover:-translate-y-1 active:translate-y-1 active:shadow-[0_2px_0_#BAE6FD] transition-all duration-150 focus-visible:outline-4 focus-visible:outline-[#BAE6FD]"
           >
             <span className="block skew-x-6">Deepspace</span>
           </button>

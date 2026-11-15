@@ -52,7 +52,7 @@ function getZoneMeta(body: Artifact['body']) {
     case 'moon':
       return {
         label: 'MOON',
-        badgeBg: 'bg-[#38BDF8]',
+        badgeBg: 'bg-[#BAE6FD]',
         pinText: 'Lunar Surface Pin',
       };
     case 'mars':
@@ -75,7 +75,7 @@ const INSTRUMENT_TAG_COLORS = [
   'bg-[#E0F2FE] border-[#06090F]',
   'bg-[#EDE9FE] border-[#06090F]',
   'bg-[#F8FAFC] border-[#06090F]',
-  'bg-[#7DD3FC] border-[#06090F]',
+  'bg-[#BAE6FD] border-[#06090F]',
   'bg-[#DDD6FE] border-[#06090F]',
 ];
 
@@ -89,7 +89,7 @@ const MARS_INSTRUMENT_TAG_COLORS = [
 ];
 
 const POSTCARD_SHADOW =
-  'shadow-[0_7px_0_#38BDF8,0_18px_36px_rgba(56,189,248,0.18)]';
+  'shadow-[0_7px_0_#BAE6FD,0_18px_36px_rgba(186,230,253,0.18)]';
 const MARS_POSTCARD_SHADOW =
   'shadow-[0_7px_0_#D97706,0_18px_36px_rgba(0,0,0,0.45)]';
 
@@ -169,7 +169,7 @@ export const StoryDrawer: React.FC<StoryDrawerProps> = ({
       lead: 'My Big Moment:',
       text: artifact.storytellingHook,
       icon: Rocket,
-      iconBg: isMars ? 'bg-[#D97706]' : 'bg-[#38BDF8]',
+      iconBg: isMars ? 'bg-[#D97706]' : 'bg-[#BAE6FD]',
     },
     {
       lead: 'Why I Stayed Behind:',
@@ -181,7 +181,7 @@ export const StoryDrawer: React.FC<StoryDrawerProps> = ({
       lead: 'What I Discovered:',
       text: artifact.scientificDiscoveries,
       icon: Sparkles,
-      iconBg: isMars ? 'bg-[#F5E6D3]' : 'bg-[#7DD3FC]',
+      iconBg: isMars ? 'bg-[#F5E6D3]' : 'bg-[#BAE6FD]',
     },
     ...(artifact.funFacts[0]
       ? [
@@ -204,7 +204,7 @@ export const StoryDrawer: React.FC<StoryDrawerProps> = ({
       style={{
         background: isMars
           ? 'radial-gradient(ellipse at 18% 12%, rgba(217, 119, 6, 0.22) 0%, transparent 50%), radial-gradient(ellipse at 85% 18%, rgba(168, 162, 158, 0.14) 0%, transparent 50%), linear-gradient(155deg, #1C140F 0%, #291D16 55%, #1C140F 100%)'
-          : 'radial-gradient(ellipse at 18% 12%, rgba(56, 189, 248, 0.22) 0%, transparent 50%), radial-gradient(ellipse at 85% 18%, rgba(124, 58, 237, 0.25) 0%, transparent 50%), linear-gradient(155deg, #06090F 0%, #0D131F 55%, #06090F 100%)',
+          : 'radial-gradient(ellipse at 18% 12%, rgba(186, 230, 253, 0.22) 0%, transparent 50%), radial-gradient(ellipse at 85% 18%, rgba(124, 58, 237, 0.25) 0%, transparent 50%), linear-gradient(155deg, #06090F 0%, #0D131F 55%, #06090F 100%)',
       }}
     >
       {/* Subtle Atmospheric Curtain Overlay */}
@@ -213,7 +213,7 @@ export const StoryDrawer: React.FC<StoryDrawerProps> = ({
         style={{
           background: isMars
             ? 'repeating-conic-gradient(from 0deg at 50% 15%, rgba(217,119,6,0.28) 0deg 10deg, transparent 10deg 26deg)'
-            : 'repeating-conic-gradient(from 0deg at 50% 15%, rgba(56,189,248,0.35) 0deg 10deg, transparent 10deg 26deg)',
+            : 'repeating-conic-gradient(from 0deg at 50% 15%, rgba(186,230,253,0.35) 0deg 10deg, transparent 10deg 26deg)',
         }}
         aria-hidden="true"
       />
@@ -226,7 +226,7 @@ export const StoryDrawer: React.FC<StoryDrawerProps> = ({
           className={`rounded-3xl px-5 py-3.5 flex flex-wrap items-center justify-between gap-3 ${
             isMars
               ? 'bg-[#291D16] border-[3px] border-[#57534E] shadow-[0_6px_0_#1C140F,0_14px_32px_rgba(0,0,0,0.45)]'
-              : 'bg-[#F8FAFC] border-[3px] border-[#38BDF8] shadow-[0_6px_0_#38BDF8]'
+              : 'bg-[#F8FAFC] border-[3px] border-[#BAE6FD] shadow-[0_6px_0_#BAE6FD]'
           }`}
         >
           <div className="flex items-center gap-3 min-w-0">
@@ -234,7 +234,7 @@ export const StoryDrawer: React.FC<StoryDrawerProps> = ({
               className={`shrink-0 px-3 py-1 rounded-xl border-2 -rotate-2 flex items-center gap-1 ${
                 isMars
                   ? 'bg-[#D97706] border-[#1C140F] shadow-[0_2px_0_#1C140F]'
-                  : 'bg-[#38BDF8] border-[#06090F] shadow-[0_2px_0_#06090F]'
+                  : 'bg-[#BAE6FD] border-[#06090F] shadow-[0_2px_0_#06090F]'
               }`}
             >
               <span
@@ -309,7 +309,7 @@ export const StoryDrawer: React.FC<StoryDrawerProps> = ({
               className={`min-h-[40px] px-4 py-2 rounded-xl border-2 active:translate-y-0.5 active:shadow-none text-xs font-black flex items-center gap-1.5 transition-all ${
                 isMars
                   ? 'bg-[#F5E6D3] hover:bg-[#D97706] border-[#1C140F] shadow-[0_3px_0_#1C140F] text-[#1C140F]'
-                  : 'bg-[#38BDF8] hover:bg-[#0EA5E9] border-[#06090F] shadow-[0_3px_0_#06090F] text-[#06090F]'
+                  : 'bg-[#BAE6FD] hover:bg-[#E0F2FE] border-[#06090F] shadow-[0_3px_0_#06090F] text-[#06090F]'
               }`}
               title="Back to 3D Map (Esc)"
             >
@@ -332,7 +332,7 @@ export const StoryDrawer: React.FC<StoryDrawerProps> = ({
             className={`flex flex-col rounded-3xl overflow-hidden ${
               isMars
                 ? 'bg-[#F5E6D3] border-[3px] border-[#44403C] shadow-[0_6px_0_#D97706,0_16px_36px_rgba(0,0,0,0.4)]'
-                : 'bg-[#F8FAFC] border-[3px] border-[#38BDF8] shadow-[0_6px_0_#38BDF8]'
+                : 'bg-[#F8FAFC] border-[3px] border-[#BAE6FD] shadow-[0_6px_0_#BAE6FD]'
             }`}
           >
             {/* Photo Box Header */}
@@ -345,7 +345,7 @@ export const StoryDrawer: React.FC<StoryDrawerProps> = ({
                 className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg border-2 text-[11px] font-black uppercase tracking-wider ${
                   isMars
                     ? 'bg-[#D97706] border-[#1C140F] text-[#1C140F]'
-                    : 'bg-[#38BDF8] border-[#06090F] text-[#06090F]'
+                    : 'bg-[#BAE6FD] border-[#06090F] text-[#06090F]'
                 }`}
               >
                 <Camera className="w-3.5 h-3.5" />
@@ -386,7 +386,7 @@ export const StoryDrawer: React.FC<StoryDrawerProps> = ({
                       : 'from-[#0D131F] to-[#06090F] text-[#F8FAFC]'
                   }`}
                 >
-                  <Rocket className={`w-8 h-8 mb-1 ${isMars ? 'text-[#D97706]' : 'text-[#38BDF8]'}`} />
+                  <Rocket className={`w-8 h-8 mb-1 ${isMars ? 'text-[#D97706]' : 'text-[#BAE6FD]'}`} />
                   <p className="text-xs font-black">{artifact.name}</p>
                   <p className={`text-[11px] font-bold ${isMars ? 'text-[#A8A29E]' : 'text-[#E0F2FE]/80'}`}>
                     NASA Archive • {artifact.year}
@@ -415,12 +415,12 @@ export const StoryDrawer: React.FC<StoryDrawerProps> = ({
               className={`flex flex-col rounded-3xl overflow-hidden ${
                 isMars
                   ? 'bg-[#291D16] border-[3px] border-[#44403C] shadow-[0_6px_0_#D97706,0_16px_36px_rgba(0,0,0,0.4)]'
-                  : 'bg-[#0D131F] border-[3px] border-[#38BDF8] shadow-[0_6px_0_#38BDF8]'
+                  : 'bg-[#0D131F] border-[3px] border-[#BAE6FD] shadow-[0_6px_0_#BAE6FD]'
               }`}
             >
               <div
                 className={`px-4 py-2.5 border-b-[3px] flex items-center justify-between gap-2 ${
-                  isMars ? 'bg-[#291D16] border-[#44403C]' : 'bg-[#0D131F] border-[#38BDF8]/40'
+                  isMars ? 'bg-[#291D16] border-[#44403C]' : 'bg-[#0D131F] border-[#BAE6FD]/40'
                 }`}
               >
                 <div
@@ -428,7 +428,7 @@ export const StoryDrawer: React.FC<StoryDrawerProps> = ({
                     isMars ? 'text-[#F5E6D3]' : 'text-[#F8FAFC]'
                   }`}
                 >
-                  <Youtube className={`w-4 h-4 ${isMars ? 'text-[#D97706]' : 'text-[#38BDF8]'}`} />
+                  <Youtube className={`w-4 h-4 ${isMars ? 'text-[#D97706]' : 'text-[#BAE6FD]'}`} />
                   <span>Mission Video Feed</span>
                 </div>
                 {cleanYoutubeUrl && (
@@ -439,7 +439,7 @@ export const StoryDrawer: React.FC<StoryDrawerProps> = ({
                     className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full border text-[10px] font-black transition-colors ${
                       isMars
                         ? 'bg-[#F5E6D3] hover:bg-[#D97706] border-[#1C140F] text-[#1C140F]'
-                        : 'bg-[#F8FAFC] hover:bg-[#38BDF8] border-[#06090F] text-[#06090F]'
+                        : 'bg-[#F8FAFC] hover:bg-[#BAE6FD] border-[#06090F] text-[#06090F]'
                     }`}
                   >
                     <span>Open YouTube</span>
@@ -462,7 +462,7 @@ export const StoryDrawer: React.FC<StoryDrawerProps> = ({
                 className={`px-4 py-3 text-xs font-bold border-t-2 ${
                   isMars
                     ? 'text-[#E7E5E4] bg-[#1C140F] border-[#44403C]'
-                    : 'text-[#E0F2FE] bg-[#06090F] border-[#38BDF8]/25'
+                    : 'text-[#E0F2FE] bg-[#06090F] border-[#BAE6FD]/25'
                 }`}
               >
                 <p className="leading-snug truncate">
@@ -494,7 +494,7 @@ export const StoryDrawer: React.FC<StoryDrawerProps> = ({
               style={{
                 background: isMars
                   ? 'repeating-linear-gradient(135deg, #D97706 0px 14px, #F5E6D3 14px 24px, #44403C 24px 38px, #F5E6D3 38px 48px)'
-                  : 'repeating-linear-gradient(135deg, #38BDF8 0px 14px, #F8FAFC 14px 24px, #7C3AED 24px 38px, #F8FAFC 38px 48px)',
+                  : 'repeating-linear-gradient(135deg, #BAE6FD 0px 14px, #F8FAFC 14px 24px, #7C3AED 24px 38px, #F8FAFC 38px 48px)',
               }}
               aria-hidden="true"
             />
@@ -503,7 +503,7 @@ export const StoryDrawer: React.FC<StoryDrawerProps> = ({
               className={`border-b-[3px] px-6 py-4 flex flex-wrap items-center justify-between gap-4 ${
                 isMars
                   ? 'bg-[#D97706] border-[#44403C]'
-                  : 'bg-gradient-to-r from-[#38BDF8] via-[#0EA5E9] to-[#7DD3FC] border-[#06090F]'
+                  : 'bg-gradient-to-r from-[#BAE6FD] via-[#E0F2FE] to-[#BAE6FD] border-[#06090F]'
               }`}
             >
               <div className="flex items-center gap-3 flex-wrap">
@@ -707,7 +707,7 @@ export const StoryDrawer: React.FC<StoryDrawerProps> = ({
                     isMars ? 'bg-[#1C140F] border-[#44403C]' : 'bg-[#0D131F] border-[#06090F]'
                   }`}
                 >
-                  <MapPin className={`w-5 h-5 ${isMars ? 'text-[#D97706]' : 'text-[#38BDF8]'}`} />
+                  <MapPin className={`w-5 h-5 ${isMars ? 'text-[#D97706]' : 'text-[#BAE6FD]'}`} />
                 </div>
               </div>
 
@@ -755,7 +755,7 @@ export const StoryDrawer: React.FC<StoryDrawerProps> = ({
                 >
                   <span
                     className={`text-[11px] font-black uppercase tracking-wider block ${
-                      isMars ? 'text-[#44403C]' : 'text-[#0284C7]'
+                      isMars ? 'text-[#44403C]' : 'text-[#06090F]/75'
                     }`}
                   >
                     {artifact.hasSurfaceCoordinates
@@ -830,7 +830,7 @@ export const StoryDrawer: React.FC<StoryDrawerProps> = ({
                     isMars ? 'bg-[#1C140F] border-[#D97706]' : 'bg-[#0D131F] border-[#06090F]'
                   }`}
                 >
-                  <Clock className={`w-5 h-5 ${isMars ? 'text-[#D97706]' : 'text-[#38BDF8]'}`} />
+                  <Clock className={`w-5 h-5 ${isMars ? 'text-[#D97706]' : 'text-[#BAE6FD]'}`} />
                 </div>
               </div>
 
@@ -847,7 +847,7 @@ export const StoryDrawer: React.FC<StoryDrawerProps> = ({
                       className={`inline-block px-2 py-0.5 rounded-md border text-[10px] font-black uppercase mb-1 ${
                         isMars
                           ? 'bg-[#D97706] border-[#1C140F] text-[#1C140F]'
-                          : 'bg-[#38BDF8] border-[#06090F] text-[#06090F]'
+                          : 'bg-[#BAE6FD] border-[#06090F] text-[#06090F]'
                       }`}
                     >
                       Launch
@@ -933,7 +933,7 @@ export const StoryDrawer: React.FC<StoryDrawerProps> = ({
                     className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border text-[10px] font-black uppercase ${
                       isMars
                         ? 'bg-[#D97706] border-[#1C140F] text-[#1C140F]'
-                        : 'bg-[#38BDF8] border-[#06090F] text-[#06090F]'
+                        : 'bg-[#BAE6FD] border-[#06090F] text-[#06090F]'
                     }`}
                   >
                     <Sparkles className="w-3 h-3" />
@@ -963,7 +963,7 @@ export const StoryDrawer: React.FC<StoryDrawerProps> = ({
             >
               <div
                 className={`border-b-[3px] px-6 py-4 flex items-center justify-between gap-3 ${
-                  isMars ? 'bg-[#D97706] border-[#44403C]' : 'bg-[#38BDF8] border-[#06090F]'
+                  isMars ? 'bg-[#D97706] border-[#44403C]' : 'bg-[#BAE6FD] border-[#06090F]'
                 }`}
               >
                 <div className="flex items-center gap-3">
@@ -998,7 +998,7 @@ export const StoryDrawer: React.FC<StoryDrawerProps> = ({
                     isMars ? 'bg-[#1C140F] border-[#1C140F]' : 'bg-[#0D131F] border-[#06090F]'
                   }`}
                 >
-                  <Sparkles className={`w-5 h-5 ${isMars ? 'text-[#D97706]' : 'text-[#38BDF8]'}`} />
+                  <Sparkles className={`w-5 h-5 ${isMars ? 'text-[#D97706]' : 'text-[#BAE6FD]'}`} />
                 </div>
               </div>
 
@@ -1103,7 +1103,7 @@ export const StoryDrawer: React.FC<StoryDrawerProps> = ({
                     className={`px-2.5 py-1 rounded-xl border-2 text-xs font-black uppercase ${
                       isMars
                         ? 'bg-[#D97706] border-[#1C140F] text-[#1C140F] shadow-[0_2px_0_#F5E6D3]'
-                        : 'bg-[#38BDF8] border-[#06090F] text-[#06090F] shadow-[0_2px_0_#38BDF8]'
+                        : 'bg-[#BAE6FD] border-[#06090F] text-[#06090F] shadow-[0_2px_0_#BAE6FD]'
                     }`}
                   >
                     05
@@ -1127,7 +1127,7 @@ export const StoryDrawer: React.FC<StoryDrawerProps> = ({
                 </div>
                 <div
                   className={`w-10 h-10 rounded-xl border-2 flex items-center justify-center shrink-0 ${
-                    isMars ? 'bg-[#F5E6D3] border-[#D97706]' : 'bg-[#F8FAFC] border-[#38BDF8]'
+                    isMars ? 'bg-[#F5E6D3] border-[#D97706]' : 'bg-[#F8FAFC] border-[#BAE6FD]'
                   }`}
                 >
                   <Wrench className={`w-5 h-5 ${isMars ? 'text-[#1C140F]' : 'text-[#06090F]'}`} />
@@ -1165,7 +1165,7 @@ export const StoryDrawer: React.FC<StoryDrawerProps> = ({
                   >
                     <div
                       className={`flex items-center gap-1 text-[10px] font-black uppercase ${
-                        isMars ? 'text-[#44403C]' : 'text-[#075985]'
+                        isMars ? 'text-[#44403C]' : 'text-[#06090F]/75'
                       }`}
                     >
                       <Ruler className="w-3.5 h-3.5" />
@@ -1305,7 +1305,7 @@ export const StoryDrawer: React.FC<StoryDrawerProps> = ({
                       className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-2 font-black shrink-0 transition-colors ${
                         isMars
                           ? 'bg-[#E7E5E4] hover:bg-[#D97706] border-[#44403C] text-[#1C140F]'
-                          : 'bg-[#F8FAFC] hover:bg-[#38BDF8] border-[#06090F] text-[#06090F]'
+                          : 'bg-[#F8FAFC] hover:bg-[#BAE6FD] border-[#06090F] text-[#06090F]'
                       }`}
                     >
                       <span>NASA Page</span>
@@ -1327,7 +1327,7 @@ export const StoryDrawer: React.FC<StoryDrawerProps> = ({
             className={`min-h-[44px] px-5 py-2.5 rounded-2xl border-[3px] active:translate-y-0.5 active:shadow-none text-sm font-black flex items-center gap-2 transition-all ${
               isMars
                 ? 'bg-[#291D16] hover:bg-[#D97706] border-[#57534E] hover:border-[#1C140F] shadow-[0_4px_0_#1C140F] text-[#F5E6D3] hover:text-[#1C140F]'
-                : 'bg-[#F8FAFC] hover:bg-[#E0F2FE] border-[#38BDF8] shadow-[0_4px_0_#38BDF8] text-[#06090F]'
+                : 'bg-[#F8FAFC] hover:bg-[#E0F2FE] border-[#BAE6FD] shadow-[0_4px_0_#BAE6FD] text-[#06090F]'
             }`}
           >
             <ChevronLeft className="w-4 h-4 stroke-[2.75]" />
@@ -1342,7 +1342,7 @@ export const StoryDrawer: React.FC<StoryDrawerProps> = ({
             className={`min-h-[42px] px-4 py-2 rounded-2xl border-2 text-xs font-black transition-colors hidden sm:inline-flex ${
               isMars
                 ? 'bg-[#1C140F] hover:bg-[#F5E6D3] border-[#57534E] text-[#F5E6D3] hover:text-[#1C140F]'
-                : 'bg-[#0D131F] hover:bg-[#38BDF8] border-[#38BDF8] text-[#F8FAFC] hover:text-[#06090F]'
+                : 'bg-[#0D131F] hover:bg-[#BAE6FD] border-[#BAE6FD] text-[#F8FAFC] hover:text-[#06090F]'
             }`}
           >
             Back to {zoneMeta.label} Globe
@@ -1353,7 +1353,7 @@ export const StoryDrawer: React.FC<StoryDrawerProps> = ({
             className={`min-h-[44px] px-5 py-2.5 rounded-2xl border-[3px] active:translate-y-0.5 active:shadow-none text-sm font-black flex items-center gap-2 transition-all ${
               isMars
                 ? 'bg-[#F5E6D3] hover:bg-[#D97706] border-[#1C140F] shadow-[0_4px_0_#D97706] text-[#1C140F]'
-                : 'bg-[#38BDF8] hover:bg-[#0EA5E9] border-[#06090F] shadow-[0_4px_0_#7C3AED] text-[#06090F]'
+                : 'bg-[#BAE6FD] hover:bg-[#E0F2FE] border-[#06090F] shadow-[0_4px_0_#7C3AED] text-[#06090F]'
             }`}
           >
             <span>Next Artifact</span>
