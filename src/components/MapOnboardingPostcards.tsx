@@ -66,10 +66,7 @@ export const MapOnboardingPostcards: React.FC<MapOnboardingPostcardsProps> = ({
     setCurrentStepIndex(0);
   }, [body]);
 
-  if (isDismissed || isTemporarilyHidden) {
-    return null;
-  }
-
+  const isHidden = isDismissed || isTemporarilyHidden;
   const currentStep = TUTORIAL_STEPS[currentStepIndex];
   const stepBody = isDeepSpace && currentStep.deepSpaceBody ? currentStep.deepSpaceBody : currentStep.body;
   const StepIcon = currentStep.icon;
@@ -88,7 +85,10 @@ export const MapOnboardingPostcards: React.FC<MapOnboardingPostcardsProps> = ({
   return (
     <aside
       aria-label="Map Exploration Quick Guide"
-      className="pointer-events-none fixed top-16 sm:top-20 right-3 sm:right-5 z-30 w-[calc(100vw-24px)] max-w-[310px] sm:max-w-[330px]"
+      aria-hidden={isHidden}
+      className={`${
+        isHidden ? 'hidden' : 'block'
+      } pointer-events-none fixed top-16 sm:top-20 right-3 sm:right-5 z-30 w-[calc(100vw-24px)] max-w-[310px] sm:max-w-[330px]`}
     >
       <AnimatePresence mode="wait">
         <motion.div

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Compass,
   RotateCcw,
@@ -8,9 +8,10 @@ import {
   ZoomOut,
   ChevronDown,
   ChevronUp,
-  Activity,
 } from 'lucide-react';
 import { Relic } from './CesiumGlobeViewer';
+
+const DESKTOP_MEDIA_QUERY = '(min-width: 1025px) and (pointer: fine)';
 
 interface TelemetryHUDProps {
   selectedBody: 'MOON' | 'MARS' | 'moon' | 'mars';
@@ -34,9 +35,22 @@ export const TelemetryHUD: React.FC<TelemetryHUDProps> = ({
   onZoom,
   className = '',
 }) => {
-  const [isMinimized, setIsMinimized] = useState(false);
+  const [isMinimized, setIsMinimized] = useState<boolean>(() =>
+    typeof window !== 'undefined' ? !window.matchMedia(DESKTOP_MEDIA_QUERY).matches : false
+  );
   const normalizedBody = selectedBody.toUpperCase();
   const isMars = normalizedBody === 'MARS';
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const desktopMql = window.matchMedia(DESKTOP_MEDIA_QUERY);
+    const handleMediaChange = (e: MediaQueryListEvent) => {
+      setIsMinimized(!e.matches);
+    };
+    setIsMinimized(!desktopMql.matches);
+    desktopMql.addEventListener('change', handleMediaChange);
+    return () => desktopMql.removeEventListener('change', handleMediaChange);
+  }, []);
 
   const coordsString = crosshairCoords
     ? `${crosshairCoords.lat >= 0 ? `${crosshairCoords.lat.toFixed(1)}°N` : `${Math.abs(crosshairCoords.lat).toFixed(1)}°S`}, ${crosshairCoords.lon >= 0 ? `${crosshairCoords.lon.toFixed(1)}°E` : `${Math.abs(crosshairCoords.lon).toFixed(1)}°W`}`
@@ -55,200 +69,221 @@ export const TelemetryHUD: React.FC<TelemetryHUDProps> = ({
         isMinimized ? 'w-auto' : 'w-56 sm:w-60'
       } ${className}`}
     >
-      {/* 1. Minimized Mode */}
-      {isMinimized ? (
-        <div
-          className={`flex items-center gap-1 backdrop-blur-xl rounded-full p-0.5 ${
+      {/* 1. Compact Toggle Pill ('NASA MOON ▾' / 'NASA MARS ▾' — Always in DOM) */}
+      <div
+        className={`${
+          isMinimized ? 'flex' : 'hidden'
+        } items-center gap-1 backdrop-blur-xl rounded-xl ${
+          isMars
+            ? 'bg-[rgba(28,20,15,0.88)] border border-[#57534E] shadow-[0_6px_20px_rgba(0,0,0,0.45)]'
+            : 'bg-[rgba(28,29,33,0.92)] border-2 border-[#BAE6FD] shadow-none'
+        }`}
+      >
+        <button
+          type="button"
+          onClick={() => setIsMinimized(false)}
+          aria-expanded={!isMinimized}
+          className={`min-h-[40px] px-3 py-2 flex items-center gap-1.5 rounded-xl text-[11px] font-mono font-bold transition-colors whitespace-nowrap shrink-0 ${
             isMars
-              ? 'bg-[rgba(28,20,15,0.85)] border border-[#57534E] shadow-[0_6px_20px_rgba(0,0,0,0.45)]'
-              : 'bg-[rgba(28,29,33,0.92)] border-2 border-[#BAE6FD] shadow-none'
+              ? 'hover:bg-[#D97706]/20 text-[#F5E6D3]'
+              : 'hover:bg-[#34363C] text-[#F4F4F5]'
+          }`}
+          title={`Expand NASA ${normalizedBody} Telemetry HUD`}
+        >
+          <span
+            className={`w-2 h-2 rounded-full shrink-0 ${
+              isMars ? 'bg-[#D97706]' : 'bg-[#BAE6FD]'
+            }`}
+          />
+          <span className="font-black tracking-wider uppercase">
+            NASA {normalizedBody}
+          </span>
+          <ChevronDown
+            className={`w-3.5 h-3.5 shrink-0 ${
+              isMars ? 'text-[#D97706]' : 'text-[#BAE6FD]'
+            }`}
+          />
+        </button>
+      </div>
+
+      {/* 2. Expanded Telemetry HUD Panel (Always in DOM) */}
+      <div
+        className={`${
+          isMinimized ? 'hidden' : 'flex'
+        } backdrop-blur-xl rounded-2xl p-2.5 flex-col gap-2 ${
+          isMars
+            ? 'bg-[rgba(28,20,15,0.88)] border border-[#57534E] shadow-[0_8px_30px_rgba(0,0,0,0.5)] text-[#F5E6D3]'
+            : 'bg-[rgba(28,29,33,0.92)] border-2 border-[#BAE6FD] shadow-none text-[#F4F4F5]'
+        }`}
+      >
+        {/* Header Bar */}
+        <div
+          className={`flex items-center justify-between pb-1.5 border-b ${
+            isMars ? 'border-[#44403C]' : 'border-[#3F3F46]'
           }`}
         >
-          <button
-            onClick={() => setIsMinimized(false)}
-            className={`px-2.5 py-1 flex items-center gap-1.5 rounded-full text-[10px] font-mono border transition-colors ${
-              isMars
-                ? 'bg-[#291D16] hover:bg-[#D97706]/20 text-[#F5E6D3] border-[#44403C]'
-                : 'bg-[#27282D] hover:bg-[#34363C] text-[#F4F4F5] border-[#52525B]'
-            }`}
-            title="Expand Telemetry HUD"
-          >
-            <Activity className={`w-3 h-3 ${isMars ? 'text-[#D97706]' : 'text-[#D4D4D8]'}`} />
-            <span className="font-black tracking-wider uppercase">
-              HUD • {altitudeString}
+          <div className="flex items-center gap-1.5">
+            <span
+              className={`w-2 h-2 rounded-full ${
+                isMars
+                  ? 'bg-[#D97706] shadow-[0_0_8px_#D97706]'
+                  : 'bg-[#D4D4D8]'
+              }`}
+            />
+            <span
+              className={`text-[10px] font-mono uppercase tracking-widest font-black ${
+                isMars ? 'text-[#F5E6D3]' : 'text-[#F4F4F5]'
+              }`}
+            >
+              NASA {normalizedBody}
             </span>
-            <ChevronDown className={`w-3 h-3 ${isMars ? 'text-[#D97706]' : 'text-[#D4D4D8]'}`} />
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsMinimized(true)}
+            aria-label={`Minimize NASA ${normalizedBody} Telemetry HUD`}
+            className={`p-1 rounded-lg transition-colors ${
+              isMars
+                ? 'hover:bg-[#D97706]/20 text-[#A8A29E] hover:text-[#F5E6D3]'
+                : 'hover:bg-[#34363C] text-[#A1A1AA] hover:text-[#F4F4F5]'
+            }`}
+            title="Minimize Telemetry HUD"
+          >
+            <ChevronUp className="w-3.5 h-3.5" />
           </button>
         </div>
-      ) : (
-        /* 2. Expanded Mode */
+
+        {/* Compact Telemetry Metrics Line */}
         <div
-          className={`backdrop-blur-xl rounded-2xl p-2.5 flex flex-col gap-2 ${
+          className={`rounded-xl px-2.5 py-1.5 border flex items-center justify-between text-[9px] font-mono tabular-nums ${
             isMars
-              ? 'bg-[rgba(28,20,15,0.85)] border border-[#57534E] shadow-[0_8px_30px_rgba(0,0,0,0.5)] text-[#F5E6D3]'
-              : 'bg-[rgba(28,29,33,0.92)] border-2 border-[#BAE6FD] shadow-none text-[#F4F4F5]'
+              ? 'bg-[#291D16] border-[#44403C]'
+              : 'bg-[#27282D] border-[#3F3F46]'
           }`}
         >
-          {/* Header Bar */}
-          <div
-            className={`flex items-center justify-between pb-1.5 border-b ${
-              isMars ? 'border-[#44403C]' : 'border-[#3F3F46]'
+          <span className={`font-bold truncate ${isMars ? 'text-[#F5E6D3]' : 'text-[#F4F4F5]'}`}>
+            {coordsString}
+          </span>
+          <span
+            className={`font-black shrink-0 ml-1 ${
+              isMars ? 'text-[#D97706]' : 'text-[#D4D4D8]'
             }`}
           >
-            <div className="flex items-center gap-1.5">
-              <span
-                className={`w-2 h-2 rounded-full ${
-                  isMars
-                    ? 'bg-[#D97706] shadow-[0_0_8px_#D97706]'
-                    : 'bg-[#D4D4D8]'
-                }`}
-              />
-              <span
-                className={`text-[10px] font-mono uppercase tracking-widest font-black ${
-                  isMars ? 'text-[#F5E6D3]' : 'text-[#F4F4F5]'
-                }`}
-              >
-                NASA {normalizedBody}
-              </span>
-            </div>
-            <button
-              onClick={() => setIsMinimized(true)}
-              className={`p-1 rounded-lg transition-colors ${
-                isMars
-                  ? 'hover:bg-[#D97706]/20 text-[#A8A29E] hover:text-[#F5E6D3]'
-                  : 'hover:bg-[#34363C] text-[#A1A1AA] hover:text-[#F4F4F5]'
-              }`}
-              title="Minimize Telemetry HUD"
-            >
-              <ChevronUp className="w-3.5 h-3.5" />
-            </button>
-          </div>
+            {altitudeString}
+          </span>
+        </div>
 
-          {/* Compact Telemetry Metrics Line */}
-          <div
-            className={`rounded-xl px-2.5 py-1.5 border flex items-center justify-between text-[9px] font-mono tabular-nums ${
+        {/* Camera View Presets */}
+        <div className="grid grid-cols-3 gap-1.5">
+          <button
+            type="button"
+            onClick={() => onFlyToPreset('orbital')}
+            className={`py-1.5 px-1.5 rounded-xl text-[9px] font-mono transition-all flex items-center justify-center gap-1 border ${
               isMars
-                ? 'bg-[#291D16] border-[#44403C]'
-                : 'bg-[#27282D] border-[#3F3F46]'
+                ? activePreset === 'orbital'
+                  ? 'bg-[#D97706] text-[#1C140F] font-black border-[#F5E6D3] shadow-[0_0_12px_rgba(217,119,6,0.4)]'
+                  : 'bg-[#291D16] border-[#44403C] text-[#F5E6D3] font-bold hover:bg-[#D97706]/15 hover:border-[#D97706]'
+                : activePreset === 'orbital'
+                ? 'bg-[#3F4147] text-[#F4F4F5] font-black border-[#BAE6FD] shadow-none'
+                : 'bg-[#27282D] border-[#3F3F46] text-[#D4D4D8] font-bold hover:bg-[#34363C] hover:border-[#BAE6FD]/70 hover:text-[#F4F4F5]'
             }`}
+            title="Orbital Overview"
           >
-            <span className={`font-bold truncate ${isMars ? 'text-[#F5E6D3]' : 'text-[#F4F4F5]'}`}>
-              {coordsString}
-            </span>
-            <span
-              className={`font-black shrink-0 ml-1 ${
-                isMars ? 'text-[#D97706]' : 'text-[#D4D4D8]'
-              }`}
-            >
-              {altitudeString}
-            </span>
-          </div>
+            <RotateCcw className="w-2.5 h-2.5" />
+            <span>Orbit</span>
+          </button>
 
-          {/* Camera View Presets */}
-          <div className="grid grid-cols-3 gap-1.5">
-            <button
-              onClick={() => onFlyToPreset('orbital')}
-              className={`py-1.5 px-1.5 rounded-xl text-[9px] font-mono transition-all flex items-center justify-center gap-1 border ${
-                isMars
-                  ? activePreset === 'orbital'
-                    ? 'bg-[#D97706] text-[#1C140F] font-black border-[#F5E6D3] shadow-[0_0_12px_rgba(217,119,6,0.4)]'
-                    : 'bg-[#291D16] border-[#44403C] text-[#F5E6D3] font-bold hover:bg-[#D97706]/15 hover:border-[#D97706]'
-                  : activePreset === 'orbital'
-                  ? 'bg-[#3F4147] text-[#F4F4F5] font-black border-[#BAE6FD] shadow-none'
-                  : 'bg-[#27282D] border-[#3F3F46] text-[#D4D4D8] font-bold hover:bg-[#34363C] hover:border-[#BAE6FD]/70 hover:text-[#F4F4F5]'
-              }`}
-              title="Orbital Overview"
-            >
-              <RotateCcw className="w-2.5 h-2.5" />
-              <span>Orbit</span>
-            </button>
-
-            <button
-              onClick={() => onFlyToPreset('north')}
-              className={`py-1.5 px-1.5 rounded-xl text-[9px] font-mono transition-all flex items-center justify-center gap-1 border ${
-                isMars
-                  ? activePreset === 'north'
-                    ? 'bg-[#D97706] text-[#1C140F] font-black border-[#F5E6D3] shadow-[0_0_12px_rgba(217,119,6,0.4)]'
-                    : 'bg-[#291D16] border-[#44403C] text-[#F5E6D3] font-bold hover:bg-[#D97706]/15 hover:border-[#D97706]'
-                  : activePreset === 'north'
-                  ? 'bg-[#3F4147] text-[#F4F4F5] font-black border-[#BAE6FD] shadow-none'
-                  : 'bg-[#27282D] border-[#3F3F46] text-[#D4D4D8] font-bold hover:bg-[#34363C] hover:border-[#BAE6FD]/70 hover:text-[#F4F4F5]'
-              }`}
-              title="North Pole"
-            >
-              <Compass className="w-2.5 h-2.5" />
-              <span>North</span>
-            </button>
-
-            <button
-              onClick={() => onFlyToPreset('equator')}
-              className={`py-1.5 px-1.5 rounded-xl text-[9px] font-mono transition-all flex items-center justify-center gap-1 border ${
-                isMars
-                  ? activePreset === 'equator'
-                    ? 'bg-[#D97706] text-[#1C140F] font-black border-[#F5E6D3] shadow-[0_0_12px_rgba(217,119,6,0.4)]'
-                    : 'bg-[#291D16] border-[#44403C] text-[#F5E6D3] font-bold hover:bg-[#D97706]/15 hover:border-[#D97706]'
-                  : activePreset === 'equator'
-                  ? 'bg-[#3F4147] text-[#F4F4F5] font-black border-[#BAE6FD] shadow-none'
-                  : 'bg-[#27282D] border-[#3F3F46] text-[#D4D4D8] font-bold hover:bg-[#34363C] hover:border-[#BAE6FD]/70 hover:text-[#F4F4F5]'
-              }`}
-              title="Equator"
-            >
-              <Globe className="w-2.5 h-2.5" />
-              <span>Equator</span>
-            </button>
-          </div>
-
-          {/* Target Focus & Zoom Row */}
-          <div
-            className={`flex items-center gap-1.5 pt-1.5 border-t ${
-              isMars ? 'border-[#44403C]' : 'border-[#3F3F46]'
+          <button
+            type="button"
+            onClick={() => onFlyToPreset('north')}
+            className={`py-1.5 px-1.5 rounded-xl text-[9px] font-mono transition-all flex items-center justify-center gap-1 border ${
+              isMars
+                ? activePreset === 'north'
+                  ? 'bg-[#D97706] text-[#1C140F] font-black border-[#F5E6D3] shadow-[0_0_12px_rgba(217,119,6,0.4)]'
+                  : 'bg-[#291D16] border-[#44403C] text-[#F5E6D3] font-bold hover:bg-[#D97706]/15 hover:border-[#D97706]'
+                : activePreset === 'north'
+                ? 'bg-[#3F4147] text-[#F4F4F5] font-black border-[#BAE6FD] shadow-none'
+                : 'bg-[#27282D] border-[#3F3F46] text-[#D4D4D8] font-bold hover:bg-[#34363C] hover:border-[#BAE6FD]/70 hover:text-[#F4F4F5]'
             }`}
+            title="North Pole"
           >
-            {activeRelic && (
-              <button
-                onClick={() => onFlyToPreset('target')}
-                className={`flex-1 py-1.5 px-2 rounded-xl text-[9px] font-mono font-black transition-all flex items-center justify-center gap-1 border active:translate-y-0.5 ${
-                  isMars
-                    ? activePreset === 'target'
-                      ? 'bg-[#D97706] text-[#1C140F] border-[#F5E6D3] shadow-[0_0_12px_rgba(217,119,6,0.4)]'
-                      : 'bg-[#291D16] hover:bg-[#D97706]/20 border-[#44403C] hover:border-[#D97706] text-[#F5E6D3]'
-                    : activePreset === 'target'
-                    ? 'bg-[#3F4147] text-[#F4F4F5] border-[#BAE6FD] shadow-none'
-                    : 'bg-[#27282D] hover:bg-[#34363C] border-[#3F3F46] hover:border-[#BAE6FD] text-[#F4F4F5]'
-                }`}
-              >
-                <Crosshair className="w-3 h-3" />
-                <span>Focus</span>
-              </button>
-            )}
+            <Compass className="w-2.5 h-2.5" />
+            <span>North</span>
+          </button>
 
-            <div className="flex items-center gap-1.5 shrink-0 ml-auto">
-              <button
-                onClick={() => onZoom('in')}
-                className={`w-7 h-7 flex items-center justify-center rounded-xl transition-all border active:translate-y-0.5 ${
-                  isMars
-                    ? 'bg-[#291D16] hover:bg-[#D97706] text-[#F5E6D3] hover:text-[#1C140F] border-[#44403C] hover:border-[#F5E6D3]'
-                    : 'bg-[#27282D] hover:bg-[#3F4147] text-[#F4F4F5] border-[#3F3F46] hover:border-[#BAE6FD]'
-                }`}
-                title="Zoom In"
-              >
-                <ZoomIn className="w-3 h-3" />
-              </button>
-              <button
-                onClick={() => onZoom('out')}
-                className={`w-7 h-7 flex items-center justify-center rounded-xl transition-all border active:translate-y-0.5 ${
-                  isMars
-                    ? 'bg-[#291D16] hover:bg-[#D97706] text-[#F5E6D3] hover:text-[#1C140F] border-[#44403C] hover:border-[#F5E6D3]'
-                    : 'bg-[#27282D] hover:bg-[#3F4147] text-[#F4F4F5] border-[#3F3F46] hover:border-[#BAE6FD]'
-                }`}
-                title="Zoom Out"
-              >
-                <ZoomOut className="w-3 h-3" />
-              </button>
-            </div>
+          <button
+            type="button"
+            onClick={() => onFlyToPreset('equator')}
+            className={`py-1.5 px-1.5 rounded-xl text-[9px] font-mono transition-all flex items-center justify-center gap-1 border ${
+              isMars
+                ? activePreset === 'equator'
+                  ? 'bg-[#D97706] text-[#1C140F] font-black border-[#F5E6D3] shadow-[0_0_12px_rgba(217,119,6,0.4)]'
+                  : 'bg-[#291D16] border-[#44403C] text-[#F5E6D3] font-bold hover:bg-[#D97706]/15 hover:border-[#D97706]'
+                : activePreset === 'equator'
+                ? 'bg-[#3F4147] text-[#F4F4F5] font-black border-[#BAE6FD] shadow-none'
+                : 'bg-[#27282D] border-[#3F3F46] text-[#D4D4D8] font-bold hover:bg-[#34363C] hover:border-[#BAE6FD]/70 hover:text-[#F4F4F5]'
+            }`}
+            title="Equator"
+          >
+            <Globe className="w-2.5 h-2.5" />
+            <span>Equator</span>
+          </button>
+        </div>
+
+        {/* Target Focus & Zoom Row */}
+        <div
+          className={`flex items-center gap-1.5 pt-1.5 border-t ${
+            isMars ? 'border-[#44403C]' : 'border-[#3F3F46]'
+          }`}
+        >
+          {activeRelic && (
+            <button
+              type="button"
+              onClick={() => onFlyToPreset('target')}
+              className={`flex-1 py-1.5 px-2 rounded-xl text-[9px] font-mono font-black transition-all flex items-center justify-center gap-1 border active:translate-y-0.5 ${
+                isMars
+                  ? activePreset === 'target'
+                    ? 'bg-[#D97706] text-[#1C140F] border-[#F5E6D3] shadow-[0_0_12px_rgba(217,119,6,0.4)]'
+                    : 'bg-[#291D16] hover:bg-[#D97706]/20 border-[#44403C] hover:border-[#D97706] text-[#F5E6D3]'
+                  : activePreset === 'target'
+                  ? 'bg-[#3F4147] text-[#F4F4F5] border-[#BAE6FD] shadow-none'
+                  : 'bg-[#27282D] hover:bg-[#34363C] border-[#3F3F46] hover:border-[#BAE6FD] text-[#F4F4F5]'
+              }`}
+            >
+              <Crosshair className="w-3 h-3" />
+              <span>Focus</span>
+            </button>
+          )}
+
+          <div className="flex items-center gap-1.5 shrink-0 ml-auto">
+            <button
+              type="button"
+              onClick={() => onZoom('in')}
+              className={`w-7 h-7 flex items-center justify-center rounded-xl transition-all border active:translate-y-0.5 ${
+                isMars
+                  ? 'bg-[#291D16] hover:bg-[#D97706] text-[#F5E6D3] hover:text-[#1C140F] border-[#44403C] hover:border-[#F5E6D3]'
+                  : 'bg-[#27282D] hover:bg-[#3F4147] text-[#F4F4F5] border-[#3F3F46] hover:border-[#BAE6FD]'
+              }`}
+              title="Zoom In"
+            >
+              <ZoomIn className="w-3 h-3" />
+            </button>
+            <button
+              type="button"
+              onClick={() => onZoom('out')}
+              className={`w-7 h-7 flex items-center justify-center rounded-xl transition-all border active:translate-y-0.5 ${
+                isMars
+                  ? 'bg-[#291D16] hover:bg-[#D97706] text-[#F5E6D3] hover:text-[#1C140F] border-[#44403C] hover:border-[#F5E6D3]'
+                  : 'bg-[#27282D] hover:bg-[#3F4147] text-[#F4F4F5] border-[#3F3F46] hover:border-[#BAE6FD]'
+              }`}
+              title="Zoom Out"
+            >
+              <ZoomOut className="w-3 h-3" />
+            </button>
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 };
+

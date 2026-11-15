@@ -21,6 +21,7 @@ import {
   Menu,
   Home,
   Footprints,
+  Compass,
 } from 'lucide-react';
 import { ModelInspectorModal } from './components/ModelInspectorModal';
 import { SurfaceExplorerGame } from './components/SurfaceExplorerGame';
@@ -31,6 +32,8 @@ import {
   playArtifactRememberingWhoosh,
   playWhooshSound,
 } from './utils/audio';
+
+const DESKTOP_MEDIA_QUERY = '(min-width: 1025px) and (pointer: fine)';
 
 export default function App() {
   const [showLanding, setShowLanding] = useState(true);
@@ -44,11 +47,24 @@ export default function App() {
   const [showLandmarks] = useState(true);
   const [inspectingArtifact, setInspectingArtifact] = useState<Artifact | null>(null);
   const [surfaceGameArtifact, setSurfaceGameArtifact] = useState<Artifact | null>(null);
-  const [isTimelineCollapsed, setIsTimelineCollapsed] = useState(false);
+  const [isTimelineCollapsed, setIsTimelineCollapsed] = useState<boolean>(() =>
+    typeof window !== 'undefined' ? !window.matchMedia(DESKTOP_MEDIA_QUERY).matches : false
+  );
   const [isMuted, setIsMuted] = useState(() => getAudioMuted());
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [hasSelectedPlanet, setHasSelectedPlanet] = useState(false);
   const [zoneVisitId, setZoneVisitId] = useState(0);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const desktopMql = window.matchMedia(DESKTOP_MEDIA_QUERY);
+    const handleMediaChange = (e: MediaQueryListEvent) => {
+      setIsTimelineCollapsed(!e.matches);
+    };
+    setIsTimelineCollapsed(!desktopMql.matches);
+    desktopMql.addEventListener('change', handleMediaChange);
+    return () => desktopMql.removeEventListener('change', handleMediaChange);
+  }, []);
 
   useEffect(() => {
     if (!isMenuOpen) return;
@@ -194,58 +210,76 @@ export default function App() {
           </span>
         </button>
 
-        {isMenuOpen && (
-          <div
-            className={`w-64 backdrop-blur-xl rounded-2xl p-1.5 flex flex-col gap-1 animate-in fade-in slide-in-from-top-2 duration-150 ${
+        <div
+          className={`${
+            isMenuOpen ? 'flex' : 'hidden'
+          } w-64 backdrop-blur-xl rounded-2xl p-1.5 flex-col gap-1 animate-in fade-in slide-in-from-top-2 duration-150 ${
+            isMars
+              ? 'bg-[rgba(28,20,15,0.92)] border border-[#57534E] shadow-[0_12px_32px_rgba(0,0,0,0.55)]'
+              : 'bg-[rgba(28,29,33,0.95)] border-2 border-[#BAE6FD] shadow-none'
+          }`}
+        >
+          <button
+            onClick={() => {
+              playPlanetWhoosh();
+              setIsMenuOpen(false);
+              setSelectedArtifact(null);
+              setSelectedLandmark(null);
+              setIsDossierOpen(false);
+              setSurfaceGameArtifact(null);
+              setIsReturningToLobby(true);
+              setShowLanding(true);
+            }}
+            className={`w-full min-h-[40px] px-3 py-2 rounded-xl text-left text-xs font-bold flex items-center gap-2.5 transition-all ${
               isMars
-                ? 'bg-[rgba(28,20,15,0.92)] border border-[#57534E] shadow-[0_12px_32px_rgba(0,0,0,0.55)]'
-                : 'bg-[rgba(28,29,33,0.95)] border-2 border-[#BAE6FD] shadow-none'
+                ? 'text-[#F5E6D3] bg-[#291D16] hover:bg-[#D97706]/15 border border-[#44403C] hover:border-[#D97706]'
+                : 'text-[#F4F4F5] bg-[#27282D] hover:bg-[#34363C] border border-[#52525B] hover:border-[#BAE6FD]'
             }`}
           >
-            <button
-              onClick={() => {
-                playPlanetWhoosh();
-                setIsMenuOpen(false);
-                setSelectedArtifact(null);
-                setSelectedLandmark(null);
-                setIsDossierOpen(false);
-                setSurfaceGameArtifact(null);
-                setIsReturningToLobby(true);
-                setShowLanding(true);
-              }}
-              className={`w-full min-h-[40px] px-3 py-2 rounded-xl text-left text-xs font-bold flex items-center gap-2.5 transition-all ${
-                isMars
-                  ? 'text-[#F5E6D3] bg-[#291D16] hover:bg-[#D97706]/15 border border-[#44403C] hover:border-[#D97706]'
-                  : 'text-[#F4F4F5] bg-[#27282D] hover:bg-[#34363C] border border-[#52525B] hover:border-[#BAE6FD]'
-              }`}
-            >
-              <Home className={`w-4 h-4 shrink-0 ${isMars ? 'text-[#D97706]' : 'text-[#D4D4D8]'}`} />
-              <div>
-                <div className={`font-black ${isMars ? 'text-[#F5E6D3]' : 'text-[#F4F4F5]'}`}>
-                  Back to Main Menu
-                </div>
+            <Home className={`w-4 h-4 shrink-0 ${isMars ? 'text-[#D97706]' : 'text-[#D4D4D8]'}`} />
+            <div>
+              <div className={`font-black ${isMars ? 'text-[#F5E6D3]' : 'text-[#F4F4F5]'}`}>
+                Back to Main Menu
               </div>
-            </button>
+            </div>
+          </button>
 
-            <button
-              onClick={() => {
-                handleToggleMute();
-              }}
-              className={`w-full min-h-[40px] px-3 py-2 rounded-xl text-left text-xs font-bold flex items-center gap-2.5 transition-all ${
-                isMars
-                  ? 'text-[#F5E6D3] bg-[#291D16] hover:bg-[#D97706]/15 border border-[#44403C] hover:border-[#D97706]'
-                  : 'text-[#F4F4F5] bg-[#27282D] hover:bg-[#34363C] border border-[#52525B] hover:border-[#BAE6FD]'
-              }`}
-            >
-              {isMuted ? (
-                <VolumeX className={`w-4 h-4 shrink-0 ${isMars ? 'text-[#A8A29E]' : 'text-[#A1A1AA]'}`} />
-              ) : (
-                <Volume2 className={`w-4 h-4 shrink-0 ${isMars ? 'text-[#D97706]' : 'text-[#D4D4D8]'}`} />
-              )}
-              <span className="font-extrabold">{isMuted ? 'Unmute Audio' : 'Mute Audio'}</span>
-            </button>
-          </div>
-        )}
+          <button
+            onClick={() => {
+              playWhooshSound('in');
+              setIsMenuOpen(false);
+              setSelectedArtifact(null);
+              setSelectedLandmark(null);
+              setZoneVisitId((id) => id + 1);
+            }}
+            className={`w-full min-h-[40px] px-3 py-2 rounded-xl text-left text-xs font-bold flex items-center gap-2.5 transition-all ${
+              isMars
+                ? 'text-[#F5E6D3] bg-[#291D16] hover:bg-[#D97706]/15 border border-[#44403C] hover:border-[#D97706]'
+                : 'text-[#F4F4F5] bg-[#27282D] hover:bg-[#34363C] border border-[#52525B] hover:border-[#BAE6FD]'
+            }`}
+          >
+            <Compass className={`w-4 h-4 shrink-0 ${isMars ? 'text-[#D97706]' : 'text-[#D4D4D8]'}`} />
+            <span className="font-extrabold">Exploration Guide</span>
+          </button>
+
+          <button
+            onClick={() => {
+              handleToggleMute();
+            }}
+            className={`w-full min-h-[40px] px-3 py-2 rounded-xl text-left text-xs font-bold flex items-center gap-2.5 transition-all ${
+              isMars
+                ? 'text-[#F5E6D3] bg-[#291D16] hover:bg-[#D97706]/15 border border-[#44403C] hover:border-[#D97706]'
+                : 'text-[#F4F4F5] bg-[#27282D] hover:bg-[#34363C] border border-[#52525B] hover:border-[#BAE6FD]'
+            }`}
+          >
+            {isMuted ? (
+              <VolumeX className={`w-4 h-4 shrink-0 ${isMars ? 'text-[#A8A29E]' : 'text-[#A1A1AA]'}`} />
+            ) : (
+              <Volume2 className={`w-4 h-4 shrink-0 ${isMars ? 'text-[#D97706]' : 'text-[#D4D4D8]'}`} />
+            )}
+            <span className="font-extrabold">{isMuted ? 'Unmute Audio' : 'Mute Audio'}</span>
+          </button>
+        </div>
       </nav>
 
       {/* 3. Floating Planetary Landmark Card */}
@@ -370,7 +404,7 @@ export default function App() {
             {isTimelineCollapsed ? (
               <>
                 <ChevronUp className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${isMars ? 'text-[#D97706]' : 'text-[#D4D4D8]'}`} />
-                <span>Show Mission Timeline</span>
+                <span>Show Timeline</span>
               </>
             ) : (
               <>
@@ -380,69 +414,69 @@ export default function App() {
             )}
           </button>
 
-          {/* Timeline Carousel Strip: Simplistic & Mobile Friendly */}
-          {!isTimelineCollapsed && (
-            <div
-              className={`pointer-events-auto w-[678px] max-w-full h-[65.7875px] backdrop-blur-xl rounded-xl sm:rounded-2xl p-1 sm:p-1.5 flex items-center gap-1.5 sm:gap-2 overflow-x-auto scrollbar-none snap-x snap-mandatory ${
-                isMars
-                  ? 'bg-[rgba(28,20,15,0.85)] border border-[#57534E] shadow-[0_10px_30px_rgba(0,0,0,0.55)]'
-                  : 'bg-[rgba(28,29,33,0.92)] border-2 border-[#BAE6FD] shadow-none'
-              }`}
-            >
-              {filteredArtifacts.map((artifact: Artifact) => {
-                const isSelected = selectedArtifact?.id === artifact.id;
-                return (
-                  <button
-                    key={artifact.id}
-                    onClick={() => handleSelectArtifact(artifact)}
-                    className={`flex-shrink-0 snap-center min-w-[105px] sm:min-w-[160px] px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-lg sm:rounded-xl border text-left transition-all ${
-                      isMars
-                        ? isSelected
-                          ? 'bg-[#D97706] border-[#F5E6D3] text-[#1C140F] shadow-[0_0_14px_rgba(217,119,6,0.45)] scale-[1.03]'
-                          : 'bg-[#291D16] border-[#44403C] text-[#F5E6D3] hover:bg-[#D97706]/15 hover:border-[#D97706]'
-                        : isSelected
-                        ? 'bg-[#3F4147] border-[#BAE6FD] text-[#F4F4F5] shadow-none scale-[1.03]'
-                        : 'bg-[#27282D] border-[#3F3F46] text-[#E4E4E7] hover:bg-[#34363C] hover:border-[#BAE6FD]/70'
-                    }`}
-                  >
-                    <div className="text-[9px] sm:text-[10px] font-black uppercase tracking-wider mb-0.5 flex items-center gap-1 sm:gap-1.5 font-mono tabular-nums">
-                      <span
-                        className={
-                          isMars
-                            ? isSelected
-                              ? 'text-[#1C140F]'
-                              : 'text-[#D97706]'
-                            : isSelected
-                            ? 'text-[#E4E4E7]'
-                            : 'text-[#A1A1AA]'
-                        }
-                      >
-                        {artifact.year}
-                      </span>
-                      {isSelected && (
-                        <span
-                          className={`w-1.5 h-1.5 rounded-full ${
-                            isMars ? 'bg-[#1C140F]' : 'bg-[#BAE6FD]'
-                          }`}
-                        />
-                      )}
-                    </div>
-                    <h4
-                      className={`text-[11px] sm:text-xs font-extrabold truncate ${
+          {/* Timeline Carousel Strip: Always mounted in the DOM; expanded on desktop, toggled via 'Show Timeline' on mobile */}
+          <div
+            className={`${
+              isTimelineCollapsed ? 'hidden' : 'flex'
+            } pointer-events-auto w-[678px] max-w-full h-[65.7875px] backdrop-blur-xl rounded-xl sm:rounded-2xl p-1 sm:p-1.5 items-center gap-1.5 sm:gap-2 overflow-x-auto scrollbar-none snap-x snap-mandatory ${
+              isMars
+                ? 'bg-[rgba(28,20,15,0.85)] border border-[#57534E] shadow-[0_10px_30px_rgba(0,0,0,0.55)]'
+                : 'bg-[rgba(28,29,33,0.92)] border-2 border-[#BAE6FD] shadow-none'
+            }`}
+          >
+            {filteredArtifacts.map((artifact: Artifact) => {
+              const isSelected = selectedArtifact?.id === artifact.id;
+              return (
+                <button
+                  key={artifact.id}
+                  onClick={() => handleSelectArtifact(artifact)}
+                  className={`flex-shrink-0 snap-center min-w-[105px] sm:min-w-[160px] px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-lg sm:rounded-xl border text-left transition-all ${
+                    isMars
+                      ? isSelected
+                        ? 'bg-[#D97706] border-[#F5E6D3] text-[#1C140F] shadow-[0_0_14px_rgba(217,119,6,0.45)] scale-[1.03]'
+                        : 'bg-[#291D16] border-[#44403C] text-[#F5E6D3] hover:bg-[#D97706]/15 hover:border-[#D97706]'
+                      : isSelected
+                      ? 'bg-[#3F4147] border-[#BAE6FD] text-[#F4F4F5] shadow-none scale-[1.03]'
+                      : 'bg-[#27282D] border-[#3F3F46] text-[#E4E4E7] hover:bg-[#34363C] hover:border-[#BAE6FD]/70'
+                  }`}
+                >
+                  <div className="text-[9px] sm:text-[10px] font-black uppercase tracking-wider mb-0.5 flex items-center gap-1 sm:gap-1.5 font-mono tabular-nums">
+                    <span
+                      className={
                         isMars
                           ? isSelected
                             ? 'text-[#1C140F]'
-                            : 'text-[#F5E6D3]'
-                          : 'text-[#F4F4F5]'
-                      }`}
+                            : 'text-[#D97706]'
+                          : isSelected
+                          ? 'text-[#E4E4E7]'
+                          : 'text-[#A1A1AA]'
+                      }
                     >
-                      {artifact.moniker}
-                    </h4>
-                  </button>
-                );
-              })}
-            </div>
-          )}
+                      {artifact.year}
+                    </span>
+                    {isSelected && (
+                      <span
+                        className={`w-1.5 h-1.5 rounded-full ${
+                          isMars ? 'bg-[#1C140F]' : 'bg-[#BAE6FD]'
+                        }`}
+                      />
+                    )}
+                  </div>
+                  <h4
+                    className={`text-[11px] sm:text-xs font-extrabold truncate ${
+                      isMars
+                        ? isSelected
+                          ? 'text-[#1C140F]'
+                          : 'text-[#F5E6D3]'
+                        : 'text-[#F4F4F5]'
+                    }`}
+                  >
+                    {artifact.moniker}
+                  </h4>
+                </button>
+              );
+            })}
+          </div>
         </div>
       )}
 

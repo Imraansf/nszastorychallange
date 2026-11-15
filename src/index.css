@@ -159,3 +159,50 @@
   -webkit-overflow-scrolling: touch;
 }
 
+/* Surface Mode responsive multi-touch vs. desktop HUD visibility */
+.surface-touch-hud {
+  display: block;
+}
+
+.surface-mobile-only {
+  display: flex;
+}
+
+.surface-desktop-legend {
+  display: none;
+}
+
+.surface-checklist-panel {
+  display: block;
+}
+
+.surface-checklist-panel.is-collapsed {
+  display: none;
+}
+
+@media (min-width: 1025px) and (pointer: fine) {
+  .surface-touch-hud {
+    display: none;
+  }
+
+  .surface-mobile-only {
+    display: none;
+  }
+
+  .surface-desktop-legend {
+    display: flex;
+  }
+
+  .surface-checklist-panel,
+  .surface-checklist-panel.is-collapsed {
+    display: block;
+  }
+}
+
+.surface-touch-control {
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}

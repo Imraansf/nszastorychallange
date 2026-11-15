@@ -5,9 +5,16 @@ import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 import { Artifact } from '../types/space';
 import {
   ArrowLeft,
+  ArrowUp,
+  ChevronDown,
+  ChevronUp,
+  ClipboardList,
+  Eye,
+  Flashlight,
+  HelpCircle,
   Info,
   X,
-  Eye,
+  Zap,
 } from 'lucide-react';
 import {
   playArtifactRememberingWhoosh,
@@ -1537,6 +1544,8 @@ function formatOffsetCoords(
 // ---------------------------------------------------------------------------
 // 6. MAIN SURFACE EXPLORER GAME COMPONENT
 // ---------------------------------------------------------------------------
+const DESKTOP_MEDIA_QUERY = '(min-width: 1025px) and (pointer: fine)';
+
 export const SurfaceExplorerGame: React.FC<SurfaceExplorerGameProps> = ({
   artifact,
   onClose,
@@ -1544,9 +1553,26 @@ export const SurfaceExplorerGame: React.FC<SurfaceExplorerGameProps> = ({
   const mountRef = useRef<HTMLDivElement>(null);
   const isMars = artifact.body === 'mars';
 
+  const [isTouchOrCompact, setIsTouchOrCompact] = useState<boolean>(() =>
+    typeof window !== 'undefined' ? !window.matchMedia(DESKTOP_MEDIA_QUERY).matches : false
+  );
+  const [isChecklistOpen, setIsChecklistOpen] = useState<boolean>(() =>
+    typeof window !== 'undefined' ? window.matchMedia(DESKTOP_MEDIA_QUERY).matches : true
+  );
+  const [isMobileHintVisible, setIsMobileHintVisible] = useState<boolean>(true);
+  const [mobileHintResetCount, setMobileHintResetCount] = useState<number>(0);
+
   // Game UI States
   const [isPointerLocked, setIsPointerLocked] = useState(false);
   const [isFlashlightOn, setIsFlashlightOn] = useState(false);
+  const [isRunToggled, setIsRunToggled] = useState(false);
+  const [isJumpPressed, setIsJumpPressed] = useState(false);
+  const [joystickKnob, setJoystickKnob] = useState<{
+    x: number;
+    y: number;
+    active: boolean;
+    sprinting: boolean;
+  }>({ x: 0, y: 0, active: false, sprinting: false });
   const [hoveredTarget, setHoveredTarget] = useState<InspectableTarget | null>(null);
   const [inspectModalTarget, setInspectModalTarget] = useState<InspectableTarget | null>(null);
   const [hudCoords, setHudCoords] = useState<string>(
@@ -1558,12 +1584,53 @@ export const SurfaceExplorerGame: React.FC<SurfaceExplorerGameProps> = ({
   const [seenPartIds, setSeenPartIds] = useState<string[]>([]);
 
   // Mutable refs for high-frequency game loop
+  const isTouchOrCompactRef = useRef(isTouchOrCompact);
+  isTouchOrCompactRef.current = isTouchOrCompact;
   const flashlightOnRef = useRef(isFlashlightOn);
   flashlightOnRef.current = isFlashlightOn;
+  const runToggleRef = useRef(isRunToggled);
+  runToggleRef.current = isRunToggled;
   const inspectModalRef = useRef(inspectModalTarget);
   inspectModalRef.current = inspectModalTarget;
   const seenItemIdsRef = useRef<Set<string>>(new Set());
   const seenPartIdsRef = useRef<Set<string>>(new Set());
+
+  // Multi-touch pointerId & virtual thumbstick refs
+  const joystickPointerIdRef = useRef<number | null>(null);
+  const actionPointerIdsRef = useRef<Set<number>>(new Set());
+  const joyVecRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const joySprintRef = useRef<boolean>(false);
+  const triggerJumpRef = useRef<() => void>(() => {});
+  const triggerInspectRef = useRef<() => void>(() => {});
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const desktopMql = window.matchMedia(DESKTOP_MEDIA_QUERY);
+    const handleMediaChange = (e: MediaQueryListEvent) => {
+      const mobileOrTouch = !e.matches;
+      setIsTouchOrCompact(mobileOrTouch);
+      setIsChecklistOpen(!mobileOrTouch);
+      if (mobileOrTouch) {
+        setIsMobileHintVisible(true);
+        setMobileHintResetCount((c) => c + 1);
+      }
+    };
+    const initialMobile = !desktopMql.matches;
+    setIsTouchOrCompact(initialMobile);
+    setIsChecklistOpen(!initialMobile);
+    desktopMql.addEventListener('change', handleMediaChange);
+    return () => desktopMql.removeEventListener('change', handleMediaChange);
+  }, []);
+
+  // Auto-fade mobile control hint pill after 6 seconds on touch/compact screens
+  useEffect(() => {
+    setIsMobileHintVisible(true);
+    if (!isTouchOrCompact) return;
+    const timer = window.setTimeout(() => {
+      setIsMobileHintVisible(false);
+    }, 6000);
+    return () => window.clearTimeout(timer);
+  }, [artifact.id, isTouchOrCompact, mobileHintResetCount]);
 
   const handleExit = useCallback(() => {
     playWhooshSound('out');
@@ -1581,26 +1648,77 @@ export const SurfaceExplorerGame: React.FC<SurfaceExplorerGameProps> = ({
     });
   }, []);
 
-  const openInspection = useCallback((target: InspectableTarget) => {
-    playArtifactRememberingWhoosh();
-    if (target.type === 'site_item') {
-      if (!seenItemIdsRef.current.has(target.id)) {
-        seenItemIdsRef.current.add(target.id);
-        setSeenItemIds(Array.from(seenItemIdsRef.current));
-      }
-    } else if (!seenPartIdsRef.current.has(target.id)) {
-      seenPartIdsRef.current.add(target.id);
-      setSeenPartIds(Array.from(seenPartIdsRef.current));
-    }
-    setInspectModalTarget(target);
+  const toggleRun = useCallback(() => {
+    setIsRunToggled((prev) => {
+      const next = !prev;
+      playWhooshSound('ui');
+      return next;
+    });
   }, []);
+
+  const resetJoystick = useCallback(() => {
+    joystickPointerIdRef.current = null;
+    joyVecRef.current = { x: 0, y: 0 };
+    joySprintRef.current = false;
+    setJoystickKnob({ x: 0, y: 0, active: false, sprinting: false });
+  }, []);
+
+  const openInspection = useCallback(
+    (target: InspectableTarget) => {
+      playArtifactRememberingWhoosh();
+      resetJoystick();
+      if (target.type === 'site_item') {
+        if (!seenItemIdsRef.current.has(target.id)) {
+          seenItemIdsRef.current.add(target.id);
+          setSeenItemIds(Array.from(seenItemIdsRef.current));
+        }
+      } else if (!seenPartIdsRef.current.has(target.id)) {
+        seenPartIdsRef.current.add(target.id);
+        setSeenPartIds(Array.from(seenPartIdsRef.current));
+      }
+      setInspectModalTarget(target);
+    },
+    [resetJoystick]
+  );
 
   const closeInspection = useCallback(() => {
     playWhooshSound('out');
     setInspectModalTarget(null);
-    const canvas = mountRef.current?.querySelector('canvas');
-    canvas?.requestPointerLock?.();
+    if (!isTouchOrCompactRef.current) {
+      const canvas = mountRef.current?.querySelector('canvas');
+      canvas?.requestPointerLock?.();
+    }
   }, []);
+
+  const updateJoystickFromPointer = useCallback(
+    (clientX: number, clientY: number, baseEl: HTMLElement) => {
+      const rect = baseEl.getBoundingClientRect();
+      const cx = rect.left + rect.width / 2;
+      const cy = rect.top + rect.height / 2;
+      const maxRadius = rect.width / 2;
+      const knobTravel = Math.max(20, maxRadius - 14);
+      const rawDx = clientX - cx;
+      const rawDy = clientY - cy;
+      const rawDist = Math.hypot(rawDx, rawDy);
+      const clampedDist = Math.min(rawDist, knobTravel);
+      const angle = rawDist > 0.001 ? Math.atan2(rawDy, rawDx) : 0;
+      const visX = Math.cos(angle) * clampedDist;
+      const visY = Math.sin(angle) * clampedDist;
+
+      const normDist = Math.min(1, rawDist / knobTravel);
+      const deadzone = 0.08;
+      const effectiveMag =
+        normDist < deadzone ? 0 : (normDist - deadzone) / (1 - deadzone);
+      const nx = rawDist > 0.001 ? (rawDx / rawDist) * effectiveMag : 0;
+      const ny = rawDist > 0.001 ? -(rawDy / rawDist) * effectiveMag : 0;
+
+      const sprinting = rawDist >= maxRadius * 0.85 || normDist >= 0.85;
+      joyVecRef.current = { x: nx, y: ny };
+      joySprintRef.current = sprinting;
+      setJoystickKnob({ x: visX, y: visY, active: true, sprinting });
+    },
+    []
+  );
 
   useEffect(() => {
     const container = mountRef.current;
@@ -1640,6 +1758,19 @@ export const SurfaceExplorerGame: React.FC<SurfaceExplorerGameProps> = ({
     renderer.shadowMap.enabled = !isSoftwareGl;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
+    renderer.domElement.style.touchAction = 'none';
+    renderer.domElement.style.userSelect = 'none';
+    (
+      renderer.domElement.style as CSSStyleDeclaration & {
+        webkitUserSelect?: string;
+        webkitTouchCallout?: string;
+      }
+    ).webkitUserSelect = 'none';
+    (
+      renderer.domElement.style as CSSStyleDeclaration & {
+        webkitTouchCallout?: string;
+      }
+    ).webkitTouchCallout = 'none';
     container.innerHTML = '';
     container.appendChild(renderer.domElement);
 
@@ -2056,14 +2187,42 @@ export const SurfaceExplorerGame: React.FC<SurfaceExplorerGameProps> = ({
     };
 
     const keys: Record<string, boolean> = {};
-    let isDraggingLook = false;
-    let lastDragX = 0;
-    let lastDragY = 0;
+    let mouseLookActive = false;
+    let lastMouseX = 0;
+    let lastMouseY = 0;
+    let touchLookPointerId: number | null = null;
+    let lastTouchLookX = 0;
+    let lastTouchLookY = 0;
 
     // Raycaster for Crosshair Point-and-Inspect
     const raycaster = new THREE.Raycaster();
     raycaster.far = 12;
-    const screenCenter = new THREE.Vector2(0, 0);
+    const probeOffsets = [
+      new THREE.Vector2(0, 0),
+      new THREE.Vector2(0.032, 0),
+      new THREE.Vector2(-0.032, 0),
+      new THREE.Vector2(0, 0.032),
+      new THREE.Vector2(0, -0.032),
+    ];
+    const _camFwd = new THREE.Vector3();
+    const _dVec = new THREE.Vector3();
+
+    const triggerJump = () => {
+      if (player.onGround) {
+        player.vel.y = isMars ? 3.8 : 3.4;
+        player.onGround = false;
+      }
+    };
+    triggerJumpRef.current = triggerJump;
+
+    const triggerInspect = () => {
+      if (inspectModalRef.current) {
+        closeInspection();
+      } else if (activeTargetRef.current) {
+        openInspection(activeTargetRef.current);
+      }
+    };
+    triggerInspectRef.current = triggerInspect;
 
     const onKeyDown = (e: KeyboardEvent) => {
       keys[e.code] = true;
@@ -2071,16 +2230,11 @@ export const SurfaceExplorerGame: React.FC<SurfaceExplorerGameProps> = ({
         toggleFlashlight();
       }
       if (e.code === 'KeyE') {
-        if (inspectModalRef.current) {
-          closeInspection();
-        } else if (activeTargetRef.current) {
-          openInspection(activeTargetRef.current);
-        }
+        triggerInspect();
       }
       if (e.code === 'Space' && player.onGround) {
         e.preventDefault();
-        player.vel.y = isMars ? 3.8 : 3.4;
-        player.onGround = false;
+        triggerJump();
       }
     };
 
@@ -2088,37 +2242,83 @@ export const SurfaceExplorerGame: React.FC<SurfaceExplorerGameProps> = ({
       keys[e.code] = false;
     };
 
-    const onMouseMove = (e: MouseEvent) => {
-      if (document.pointerLockElement === renderer.domElement) {
-        player.yaw -= e.movementX * 0.0022;
-        player.pitch = THREE.MathUtils.clamp(
-          player.pitch - e.movementY * 0.0022,
-          -1.45,
-          1.45
-        );
-      } else if (isDraggingLook) {
-        const dx = e.clientX - lastDragX;
-        const dy = e.clientY - lastDragY;
-        lastDragX = e.clientX;
-        lastDragY = e.clientY;
-        player.yaw -= dx * 0.0032;
-        player.pitch = THREE.MathUtils.clamp(player.pitch - dy * 0.0032, -1.45, 1.45);
-      }
-    };
-
-    const onMouseDown = (e: MouseEvent) => {
-      if (e.target === renderer.domElement) {
-        isDraggingLook = true;
-        lastDragX = e.clientX;
-        lastDragY = e.clientY;
-        if (document.pointerLockElement !== renderer.domElement) {
+    const onCanvasPointerDown = (e: PointerEvent) => {
+      if (e.target !== renderer.domElement) return;
+      if (e.pointerType === 'mouse') {
+        if (e.button !== 0) return;
+        mouseLookActive = true;
+        lastMouseX = e.clientX;
+        lastMouseY = e.clientY;
+        if (!isTouchOrCompactRef.current && document.pointerLockElement !== renderer.domElement) {
           renderer.domElement.requestPointerLock?.();
+        }
+      } else {
+        if (
+          e.pointerId === joystickPointerIdRef.current ||
+          actionPointerIdsRef.current.has(e.pointerId)
+        ) {
+          return;
+        }
+        if (touchLookPointerId === null) {
+          e.preventDefault();
+          touchLookPointerId = e.pointerId;
+          lastTouchLookX = e.clientX;
+          lastTouchLookY = e.clientY;
+          try {
+            renderer.domElement.setPointerCapture(e.pointerId);
+          } catch {
+            // Ignore capture failures on synthetic events
+          }
         }
       }
     };
 
-    const onMouseUp = () => {
-      isDraggingLook = false;
+    const onWindowPointerMove = (e: PointerEvent) => {
+      if (e.pointerType === 'mouse') {
+        if (document.pointerLockElement === renderer.domElement) {
+          player.yaw -= e.movementX * 0.0022;
+          player.pitch = THREE.MathUtils.clamp(
+            player.pitch - e.movementY * 0.0022,
+            -1.45,
+            1.45
+          );
+        } else if (mouseLookActive) {
+          const dx = e.clientX - lastMouseX;
+          const dy = e.clientY - lastMouseY;
+          lastMouseX = e.clientX;
+          lastMouseY = e.clientY;
+          player.yaw -= dx * 0.0032;
+          player.pitch = THREE.MathUtils.clamp(player.pitch - dy * 0.0032, -1.45, 1.45);
+        }
+      } else if (e.pointerId === touchLookPointerId) {
+        const dx = e.clientX - lastTouchLookX;
+        const dy = e.clientY - lastTouchLookY;
+        lastTouchLookX = e.clientX;
+        lastTouchLookY = e.clientY;
+        player.yaw -= dx * 0.0036;
+        player.pitch = THREE.MathUtils.clamp(player.pitch - dy * 0.0036, -1.45, 1.45);
+      }
+    };
+
+    const onWindowPointerEnd = (e: PointerEvent) => {
+      if (e.pointerType === 'mouse') {
+        mouseLookActive = false;
+      } else if (e.pointerId === touchLookPointerId) {
+        touchLookPointerId = null;
+        try {
+          if (renderer.domElement.hasPointerCapture(e.pointerId)) {
+            renderer.domElement.releasePointerCapture(e.pointerId);
+          }
+        } catch {
+          // Ignore release failures
+        }
+      }
+    };
+
+    const onLostPointerCapture = (e: PointerEvent) => {
+      if (e.pointerId === touchLookPointerId) {
+        touchLookPointerId = null;
+      }
     };
 
     const onPointerLockChange = () => {
@@ -2127,9 +2327,11 @@ export const SurfaceExplorerGame: React.FC<SurfaceExplorerGameProps> = ({
 
     window.addEventListener('keydown', onKeyDown);
     window.addEventListener('keyup', onKeyUp);
-    window.addEventListener('mousemove', onMouseMove);
-    renderer.domElement.addEventListener('mousedown', onMouseDown);
-    window.addEventListener('mouseup', onMouseUp);
+    renderer.domElement.addEventListener('pointerdown', onCanvasPointerDown);
+    renderer.domElement.addEventListener('lostpointercapture', onLostPointerCapture);
+    window.addEventListener('pointermove', onWindowPointerMove);
+    window.addEventListener('pointerup', onWindowPointerEnd);
+    window.addEventListener('pointercancel', onWindowPointerEnd);
     document.addEventListener('pointerlockchange', onPointerLockChange);
 
     // 13. RESIZE OBSERVER
@@ -2187,22 +2389,31 @@ export const SurfaceExplorerGame: React.FC<SurfaceExplorerGameProps> = ({
       const dt = Math.min(0.05, Math.max(0.001, (now - prevTime) / 1000));
       prevTime = now;
 
-      // Player movement
-      const fw =
+      // Player movement (Desktop Keyboard + Mobile Virtual Thumbstick)
+      const keyFw =
         (keys['KeyW'] || keys['ArrowUp'] ? 1 : 0) -
         (keys['KeyS'] || keys['ArrowDown'] ? 1 : 0);
-      const st =
+      const keySt =
         (keys['KeyD'] || keys['ArrowRight'] ? 1 : 0) -
         (keys['KeyA'] || keys['ArrowLeft'] ? 1 : 0);
-      const sp = keys['ShiftLeft'] || keys['ShiftRight'] ? 6.5 : 3.2;
+      const fw = Math.max(-1, Math.min(1, keyFw + joyVecRef.current.y));
+      const st = Math.max(-1, Math.min(1, keySt + joyVecRef.current.x));
+      const isRunning = Boolean(
+        keys['ShiftLeft'] ||
+          keys['ShiftRight'] ||
+          runToggleRef.current ||
+          joySprintRef.current
+      );
+      const sp = isRunning ? 6.5 : 3.2;
 
       const wx = -Math.sin(player.yaw) * fw + Math.cos(player.yaw) * st;
       const wz = -Math.cos(player.yaw) * fw - Math.sin(player.yaw) * st;
       const n = Math.hypot(wx, wz) || 1;
+      const moveMag = Math.min(1, Math.hypot(fw, st));
       const k = player.onGround ? Math.min(1, dt * 7) : dt * 0.25;
 
-      player.vel.x += ((wx / n) * sp * (fw || st ? 1 : 0) - player.vel.x) * k;
-      player.vel.z += ((wz / n) * sp * (fw || st ? 1 : 0) - player.vel.z) * k;
+      player.vel.x += ((wx / n) * sp * moveMag - player.vel.x) * k;
+      player.vel.z += ((wz / n) * sp * moveMag - player.vel.z) * k;
 
       const gravity = isMars ? 3.72 : 1.62;
       player.vel.y -= gravity * dt;
@@ -2253,46 +2464,53 @@ export const SurfaceExplorerGame: React.FC<SurfaceExplorerGameProps> = ({
       if ((probeTimer += dt) > 0.04) {
         probeTimer = 0;
         camera.updateMatrixWorld();
-        raycaster.setFromCamera(screenCenter, camera);
 
         let detectedTarget: InspectableTarget | null = null;
 
         // 1. Raycast spacecraft components if within 22 meters
         const distToCraft = Math.hypot(player.pos.x - craftBounds.cx, player.pos.z - craftBounds.cz);
-        if (
-          distToCraft < 22 &&
-          craftSphere &&
-          raycaster.ray.intersectsSphere(craftSphere) &&
-          craftMeshes.length > 0
-        ) {
-          const hits = raycaster.intersectObjects(craftMeshes, false);
-          if (hits.length > 0) {
-            const h = hits[0];
-            const partId = classifyCraftHit(artifact, h.object as THREE.Mesh, h.point, craftBounds);
-            const part = craftPartsMap[partId];
-            if (part) {
-              detectedTarget = {
-                type: 'craft_part',
-                id: partId,
-                name: part.name,
-                text: part.text,
-                why: part.why,
-                mesh: h.object as THREE.Mesh,
-              };
+        if (distToCraft < 22 && craftSphere && craftMeshes.length > 0) {
+          const probeCount = isTouchOrCompactRef.current ? probeOffsets.length : 1;
+          for (let p = 0; p < probeCount; p++) {
+            raycaster.setFromCamera(probeOffsets[p], camera);
+            if (!raycaster.ray.intersectsSphere(craftSphere)) continue;
+            const hits = raycaster.intersectObjects(craftMeshes, false);
+            if (hits.length > 0) {
+              const h = hits[0];
+              const partId = classifyCraftHit(
+                artifact,
+                h.object as THREE.Mesh,
+                h.point,
+                craftBounds
+              );
+              const part = craftPartsMap[partId];
+              if (part) {
+                detectedTarget = {
+                  type: 'craft_part',
+                  id: partId,
+                  name: part.name,
+                  text: part.text,
+                  why: part.why,
+                  mesh: h.object as THREE.Mesh,
+                };
+                break;
+              }
             }
           }
         }
 
         // 2. Check companion ground items if spacecraft not hit
         if (!detectedTarget) {
-          const camFwd = new THREE.Vector3(0, 0, -1).applyEuler(camera.rotation);
+          _camFwd.set(0, 0, -1).applyEuler(camera.rotation);
+          const dotThreshold = isTouchOrCompactRef.current ? 0.88 : 0.92;
+          const extraRange = isTouchOrCompactRef.current ? 4.8 : 4.0;
           let bestScore = 0;
           for (const item of siteItems) {
-            const dVec = item.center.clone().sub(player.pos);
-            const dist = dVec.length();
-            if (dist > item.radius + 4.0) continue;
-            const dot = dVec.normalize().dot(camFwd);
-            if (dot > 0.92 && dot > bestScore) {
+            _dVec.copy(item.center).sub(player.pos);
+            const dist = _dVec.length();
+            if (dist > item.radius + extraRange) continue;
+            const dot = _dVec.normalize().dot(_camFwd);
+            if (dot > dotThreshold && dot > bestScore) {
               bestScore = dot;
               detectedTarget = {
                 type: 'site_item',
@@ -2310,10 +2528,11 @@ export const SurfaceExplorerGame: React.FC<SurfaceExplorerGameProps> = ({
         const nextTargetKey = detectedTarget
           ? `${detectedTarget.type}:${detectedTarget.id}`
           : '';
-        lastLockedTargetKey = nextTargetKey;
-
         activeTargetRef.current = detectedTarget;
-        setHoveredTarget(detectedTarget);
+        if (nextTargetKey !== lastLockedTargetKey) {
+          lastLockedTargetKey = nextTargetKey;
+          setHoveredTarget(detectedTarget);
+        }
         setHL(detectedTarget && !inspectModalRef.current ? detectedTarget.mesh || null : null);
       }
 
@@ -2354,13 +2573,17 @@ export const SurfaceExplorerGame: React.FC<SurfaceExplorerGameProps> = ({
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('keyup', onKeyUp);
-      window.removeEventListener('mousemove', onMouseMove);
-      renderer.domElement.removeEventListener('mousedown', onMouseDown);
-      window.removeEventListener('mouseup', onMouseUp);
+      renderer.domElement.removeEventListener('pointerdown', onCanvasPointerDown);
+      renderer.domElement.removeEventListener('lostpointercapture', onLostPointerCapture);
+      window.removeEventListener('pointermove', onWindowPointerMove);
+      window.removeEventListener('pointerup', onWindowPointerEnd);
+      window.removeEventListener('pointercancel', onWindowPointerEnd);
       document.removeEventListener('pointerlockchange', onPointerLockChange);
       if (document.pointerLockElement === renderer.domElement) {
         document.exitPointerLock?.();
       }
+      triggerJumpRef.current = () => {};
+      triggerInspectRef.current = () => {};
 
       disposeObject3D(craftGroup);
       if (gltfRoot) disposeObject3D(gltfRoot);
@@ -2398,27 +2621,83 @@ export const SurfaceExplorerGame: React.FC<SurfaceExplorerGameProps> = ({
     ? 'bg-[#F5E6D3] hover:bg-[#D97706] text-[#1C140F] shadow-[0_4px_14px_rgba(0,0,0,0.35)]'
     : 'bg-[#BAE6FD] hover:bg-[#E0F2FE] text-[#1C1D21] shadow-none';
 
+  const seenTotal = seenItemIds.length + seenPartIds.length;
+  const totalLogs = siteItemsList.length + craftPartsList.length;
+
   return (
-    <div className="fixed inset-0 z-50 w-screen h-screen overflow-hidden bg-black select-none">
+    <div
+      className="fixed inset-0 z-50 w-screen h-screen overflow-hidden overscroll-none bg-black select-none touch-none"
+      onContextMenu={(e) => e.preventDefault()}
+    >
       {/* 3D WebGL Canvas Viewport */}
       <div
         ref={mountRef}
-        className="w-full h-full cursor-crosshair"
+        className="w-full h-full cursor-crosshair touch-none select-none"
         aria-label={`3D surface exploration of ${artifact.name}`}
       />
 
-      {/* Top-Left: Exit Button + Minimalist Blue Checklist HUD */}
-      <div className="absolute top-3 left-2 sm:top-4 sm:left-4 z-30 pointer-events-none flex flex-col items-start gap-2.5">
-        <button
-          onClick={handleExit}
-          className="pointer-events-auto min-h-[40px] px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-2 active:translate-y-0.5 transition-all bg-[rgba(28,29,33,0.94)] hover:bg-[#2A2C32] border-2 border-[#BAE6FD] text-[#F4F4F5] shadow-none"
-        >
-          <ArrowLeft className="w-4 h-4 text-[#BAE6FD]" />
-          <span>Exit Surface / Return to Orbit</span>
-        </button>
+      {/* Top-Left: Exit Button + Mission Checklist HUD (Always in DOM; expanded on desktop, collapsible 'Checklist ▾' pill on mobile) */}
+      <div className="absolute top-3 left-3 sm:top-4 sm:left-4 z-30 pointer-events-none flex flex-col items-start gap-2">
+        <div className="flex flex-wrap items-center gap-2 pointer-events-auto">
+          <button
+            onClick={handleExit}
+            className="min-h-[40px] px-3 sm:px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-2 active:translate-y-0.5 transition-all bg-[rgba(28,29,33,0.94)] hover:bg-[#2A2C32] border-2 border-[#BAE6FD] text-[#F4F4F5] shadow-none whitespace-nowrap shrink-0"
+          >
+            <ArrowLeft className="w-4 h-4 text-[#BAE6FD]" />
+            <span className="sm:hidden">Exit Surface</span>
+            <span className="hidden sm:inline">Exit Surface / Return to Orbit</span>
+          </button>
 
-        {/* Left Checklist Panel (Clean Blue #BAE6FD Headers & White Lists in Website Typography) */}
-        <div className="pointer-events-auto px-0 py-0 w-[265px] sm:w-[295px] max-h-[calc(100vh-145px)] overflow-y-auto scrollbar-none bg-transparent border-0 text-[#BAE6FD] shadow-none font-sans">
+          {/* Mobile/Tablet Checklist Toggle Pill ('Checklist ▾') */}
+          <button
+            type="button"
+            onClick={() => {
+              playWhooshSound('ui');
+              setIsChecklistOpen((prev) => !prev);
+            }}
+            aria-expanded={isChecklistOpen}
+            className="surface-mobile-only surface-touch-control min-h-[40px] px-3 py-2 rounded-xl text-xs font-bold items-center gap-1.5 transition-colors bg-[rgba(28,29,33,0.94)] border-2 border-[#BAE6FD] text-[#BAE6FD] whitespace-nowrap shrink-0"
+          >
+            <ClipboardList className="w-4 h-4 shrink-0" />
+            <span>Checklist</span>
+            <span className="tabular-nums text-[11px] text-[#F4F4F5]">
+              ({seenTotal}/{totalLogs})
+            </span>
+            {isChecklistOpen ? (
+              <ChevronUp className="w-3.5 h-3.5 shrink-0" />
+            ) : (
+              <ChevronDown className="w-3.5 h-3.5 shrink-0" />
+            )}
+          </button>
+
+          {/* Subtle re-open button when the mobile control hint pill has auto-faded */}
+          <button
+            type="button"
+            onClick={() => {
+              playWhooshSound('ui');
+              setIsMobileHintVisible(true);
+              setMobileHintResetCount((c) => c + 1);
+            }}
+            aria-label="Show touch control instructions"
+            title="Show touch control instructions"
+            className={`surface-mobile-only surface-touch-control min-h-[40px] w-[40px] rounded-xl items-center justify-center transition-all bg-[rgba(28,29,33,0.92)] border border-[#BAE6FD]/70 text-[#BAE6FD] shrink-0 ${
+              isMobileHintVisible ? 'opacity-0 pointer-events-none scale-90 w-0 min-w-0 px-0 border-0 overflow-hidden' : 'opacity-100 pointer-events-auto scale-100'
+            }`}
+          >
+            <HelpCircle className="w-4 h-4 shrink-0" />
+          </button>
+        </div>
+
+        {/* Checklist Panel: Always mounted in the DOM! Expanded on desktop; toggled via 'Checklist ▾' on mobile/tablet */}
+        <div
+          className={`surface-checklist-panel ${
+            !isChecklistOpen ? 'is-collapsed' : ''
+          } pointer-events-auto scrollbar-none font-sans ${
+            isTouchOrCompact
+              ? 'w-[260px] max-h-[calc(100dvh-235px)] overflow-y-auto rounded-xl px-3 py-2.5 bg-[rgba(14,17,24,0.90)] border border-[#BAE6FD]/45 text-[#BAE6FD]'
+              : 'px-0 py-0 w-[265px] sm:w-[295px] max-h-[calc(100vh-145px)] overflow-y-auto bg-transparent border-0 text-[#BAE6FD]'
+          }`}
+        >
           <h3 className="text-xs sm:text-sm font-bold truncate text-[#BAE6FD]">
             {artifact.moniker} ({artifact.year})
           </h3>
@@ -2487,10 +2766,37 @@ export const SurfaceExplorerGame: React.FC<SurfaceExplorerGameProps> = ({
         </div>
       </div>
 
+      {/* Top-Right Mobile/Tablet Control Hint Pill (Always in DOM; auto-fades after 6s or when tapped) */}
+      <div
+        aria-hidden={!isMobileHintVisible}
+        className={`surface-mobile-only fixed top-14 md:top-4 right-3 sm:right-4 z-30 max-w-[calc(100vw-24px)] md:max-w-[calc(100vw-420px)] justify-end transition-all duration-500 ${
+          isMobileHintVisible && !inspectModalTarget
+            ? 'opacity-100 translate-y-0 pointer-events-auto'
+            : 'opacity-0 -translate-y-1.5 pointer-events-none'
+        }`}
+      >
+        <button
+          type="button"
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={() => setIsMobileHintVisible(false)}
+          className={`surface-touch-control px-3.5 py-1.5 rounded-full text-[11px] sm:text-xs font-sans font-medium flex items-center gap-2 text-center leading-snug ${panelBgClass}`}
+        >
+          <span>
+            <strong className={accentTextClass}>WASD:</strong> move,{' '}
+            <strong className={accentTextClass}>Drag screen:</strong> Look,{' '}
+            <strong className={accentTextClass}>G:</strong> Flashlight,{' '}
+            <strong className={accentTextClass}>E:</strong> Interact,{' '}
+            <strong className={accentTextClass}>SPACE:</strong> Jump,{' '}
+            <strong className={accentTextClass}>SHIFT:</strong> Run
+          </span>
+          <X className={`w-3.5 h-3.5 shrink-0 ${mutedTextClass}`} />
+        </button>
+      </div>
+
       {/* Center Reticle & Dynamic Point-to-Inspect Prompt */}
       {!inspectModalTarget && (
         <div className="absolute inset-0 pointer-events-none flex items-center justify-center z-10">
-          <div className="relative flex flex-col items-center">
+          <div className="relative flex flex-col items-center px-4">
             {/* Crosshair dot with dynamic targeting highlight */}
             <div
               className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
@@ -2512,19 +2818,27 @@ export const SurfaceExplorerGame: React.FC<SurfaceExplorerGameProps> = ({
               />
             </div>
 
-            {/* Point-to-Inspect Notification: Clickable or press E */}
+            {/* Point-to-Inspect Notification: Clickable or press E / Inspect */}
             {hoveredTarget && (
               <button
                 onClick={() => openInspection(hoveredTarget)}
-                className={`mt-4 px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold tracking-wide pointer-events-auto flex items-center gap-2 cursor-pointer transition-all active:scale-95 ${
+                className={`mt-4 px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold tracking-wide pointer-events-auto flex items-center gap-2 cursor-pointer transition-all active:scale-95 max-w-[85vw] ${
                   isMars
                     ? 'bg-[rgba(28,20,15,0.92)] border border-[#57534E] text-[#F5E6D3] shadow-[0_8px_24px_rgba(0,0,0,0.6)]'
                     : 'bg-[rgba(28,29,33,0.92)] border-2 border-[#BAE6FD] text-[#F4F4F5] shadow-none'
                 }`}
               >
-                <Eye className={`w-4 h-4 ${accentTextClass}`} />
-                <span>
-                  Press <strong className={accentTextClass}>[E]</strong> to hear about {hoveredTarget.name}
+                <Eye className={`w-4 h-4 shrink-0 ${accentTextClass}`} />
+                <span className="truncate">
+                  {isTouchOrCompact ? (
+                    <>
+                      Tap <strong className={accentTextClass}>Inspect</strong> · {hoveredTarget.name}
+                    </>
+                  ) : (
+                    <>
+                      Press <strong className={accentTextClass}>[E]</strong> to hear about {hoveredTarget.name}
+                    </>
+                  )}
                 </span>
               </button>
             )}
@@ -2534,7 +2848,7 @@ export const SurfaceExplorerGame: React.FC<SurfaceExplorerGameProps> = ({
 
       {/* Point-and-Inspect Educational Modal / Plaque */}
       {inspectModalTarget && (
-        <div className="absolute inset-x-4 bottom-20 sm:bottom-24 z-30 flex justify-center pointer-events-none font-sans">
+        <div className="absolute inset-x-4 bottom-6 sm:bottom-24 z-30 flex justify-center pointer-events-none font-sans">
           <div
             className={`pointer-events-auto w-full max-w-xl rounded-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 ${panelBgClass}`}
           >
@@ -2595,7 +2909,13 @@ export const SurfaceExplorerGame: React.FC<SurfaceExplorerGameProps> = ({
                 className={`mt-4 pt-3 border-t ${dividerClass} flex items-center justify-between gap-2 text-[11px] font-sans`}
               >
                 <span className={mutedTextClass}>
-                  Press <strong className={accentTextClass}>[E]</strong> or click button to close
+                  {isTouchOrCompact ? (
+                    'Tap button to continue'
+                  ) : (
+                    <>
+                      Press <strong className={accentTextClass}>[E]</strong> or click button to close
+                    </>
+                  )}
                 </span>
                 <button
                   onClick={closeInspection}
@@ -2609,8 +2929,304 @@ export const SurfaceExplorerGame: React.FC<SurfaceExplorerGameProps> = ({
         </div>
       )}
 
-      {/* Bottom Controls Hint Bar (Ergonomic, non-obstructive) */}
-      <div className="absolute bottom-4 inset-x-4 z-20 flex justify-center pointer-events-none">
+      {/* Roblox-Style Multi-Touch Controls HUD (Always in DOM; shown on <= 1024px / coarse pointer) */}
+      <div
+        aria-hidden={Boolean(inspectModalTarget)}
+        className={`surface-touch-hud pointer-events-none fixed inset-0 z-20 transition-opacity duration-150 ${
+          inspectModalTarget ? 'opacity-0 invisible' : 'opacity-100 visible'
+        }`}
+      >
+          {/* Bottom-Left Virtual Thumbstick (120px base + 50px draggable knob) */}
+          <div
+            role="application"
+            aria-label="Movement thumbstick"
+            onPointerDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              if (joystickPointerIdRef.current !== null) return;
+              joystickPointerIdRef.current = e.pointerId;
+              try {
+                e.currentTarget.setPointerCapture(e.pointerId);
+              } catch {
+                // Ignore capture failures
+              }
+              updateJoystickFromPointer(e.clientX, e.clientY, e.currentTarget);
+            }}
+            onPointerMove={(e) => {
+              if (e.pointerId !== joystickPointerIdRef.current) return;
+              e.preventDefault();
+              e.stopPropagation();
+              updateJoystickFromPointer(e.clientX, e.clientY, e.currentTarget);
+            }}
+            onPointerUp={(e) => {
+              if (e.pointerId !== joystickPointerIdRef.current) return;
+              e.preventDefault();
+              e.stopPropagation();
+              try {
+                if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+                  e.currentTarget.releasePointerCapture(e.pointerId);
+                }
+              } catch {
+                // Ignore release failures
+              }
+              resetJoystick();
+            }}
+            onPointerCancel={(e) => {
+              if (e.pointerId !== joystickPointerIdRef.current) return;
+              e.preventDefault();
+              e.stopPropagation();
+              try {
+                if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+                  e.currentTarget.releasePointerCapture(e.pointerId);
+                }
+              } catch {
+                // Ignore release failures
+              }
+              resetJoystick();
+            }}
+            onLostPointerCapture={(e) => {
+              if (e.pointerId === joystickPointerIdRef.current) {
+                resetJoystick();
+              }
+            }}
+            className={`surface-touch-control pointer-events-auto absolute bottom-5 left-5 w-[120px] h-[120px] rounded-full flex items-center justify-center border-2 transition-colors ${
+              joystickKnob.sprinting
+                ? isMars
+                  ? 'bg-[rgba(217,119,6,0.22)] border-[#D97706]'
+                  : 'bg-[rgba(186,230,253,0.2)] border-[#BAE6FD]'
+                : joystickKnob.active
+                ? 'bg-[rgba(255,255,255,0.14)] border-white/50'
+                : 'bg-[rgba(15,18,24,0.48)] border-white/25'
+            }`}
+          >
+            {/* Subtle 85% sprint threshold guide ring */}
+            <div className="pointer-events-none absolute inset-[9px] rounded-full border border-dashed border-white/15" />
+
+            {/* Draggable Inner Knob (50px) */}
+            <div
+              style={{
+                transform: `translate3d(${joystickKnob.x}px, ${joystickKnob.y}px, 0)`,
+              }}
+              className={`pointer-events-none w-[50px] h-[50px] rounded-full border-2 flex items-center justify-center ${
+                joystickKnob.active ? 'transition-none' : 'transition-transform duration-150 ease-out'
+              } ${
+                joystickKnob.sprinting
+                  ? isMars
+                    ? 'bg-[#D97706] border-[#F5E6D3] shadow-[0_0_14px_rgba(217,119,6,0.7)]'
+                    : 'bg-[#BAE6FD] border-white shadow-[0_0_14px_rgba(186,230,253,0.7)]'
+                  : joystickKnob.active
+                  ? 'bg-white/40 border-white/85'
+                  : 'bg-white/25 border-white/55'
+              }`}
+            >
+              {joystickKnob.sprinting && (
+                <span className="text-[9px] font-bold tracking-wider uppercase text-[#111318]">
+                  RUN
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Bottom-Right Action Button Cluster */}
+          <div className="surface-touch-control pointer-events-none absolute bottom-5 right-5 w-[156px] h-[156px]">
+            {/* Inspect (E): Medium 54px circular button positioned above Jump */}
+            <button
+              type="button"
+              aria-label="Inspect targeted object"
+              onPointerDown={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                actionPointerIdsRef.current.add(e.pointerId);
+                try {
+                  e.currentTarget.setPointerCapture(e.pointerId);
+                } catch {
+                  // Ignore capture failures
+                }
+                triggerInspectRef.current();
+              }}
+              onPointerUp={(e) => {
+                e.stopPropagation();
+                actionPointerIdsRef.current.delete(e.pointerId);
+                try {
+                  if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+                    e.currentTarget.releasePointerCapture(e.pointerId);
+                  }
+                } catch {
+                  // Ignore release failures
+                }
+              }}
+              onPointerCancel={(e) => {
+                e.stopPropagation();
+                actionPointerIdsRef.current.delete(e.pointerId);
+              }}
+              onLostPointerCapture={(e) => {
+                actionPointerIdsRef.current.delete(e.pointerId);
+              }}
+              className={`surface-touch-control pointer-events-auto absolute bottom-[92px] right-[11px] w-[54px] h-[54px] rounded-full border-2 flex flex-col items-center justify-center gap-0.5 transition-all active:scale-90 ${
+                hoveredTarget
+                  ? isMars
+                    ? 'bg-[rgba(217,119,6,0.92)] border-[#F5E6D3] text-[#1C140F] shadow-[0_0_20px_rgba(217,119,6,0.75)] scale-105'
+                    : 'bg-[rgba(186,230,253,0.94)] border-white text-[#1C1D21] shadow-[0_0_20px_rgba(186,230,253,0.75)] scale-105'
+                  : 'bg-[rgba(15,18,24,0.58)] border-white/25 text-white/60'
+              }`}
+            >
+              <Eye className="w-4 h-4" />
+              <span className="text-[9px] font-bold tracking-wider uppercase leading-none">
+                Inspect
+              </span>
+            </button>
+
+            {/* Run (Shift): Medium 54px toggle button positioned upper-left of Jump */}
+            <button
+              type="button"
+              aria-label="Toggle run"
+              aria-pressed={isRunToggled}
+              onPointerDown={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                actionPointerIdsRef.current.add(e.pointerId);
+                try {
+                  e.currentTarget.setPointerCapture(e.pointerId);
+                } catch {
+                  // Ignore capture failures
+                }
+                toggleRun();
+              }}
+              onPointerUp={(e) => {
+                e.stopPropagation();
+                actionPointerIdsRef.current.delete(e.pointerId);
+                try {
+                  if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+                    e.currentTarget.releasePointerCapture(e.pointerId);
+                  }
+                } catch {
+                  // Ignore release failures
+                }
+              }}
+              onPointerCancel={(e) => {
+                e.stopPropagation();
+                actionPointerIdsRef.current.delete(e.pointerId);
+              }}
+              onLostPointerCapture={(e) => {
+                actionPointerIdsRef.current.delete(e.pointerId);
+              }}
+              className={`surface-touch-control pointer-events-auto absolute bottom-[78px] right-[78px] w-[54px] h-[54px] rounded-full border-2 flex flex-col items-center justify-center gap-0.5 transition-all active:scale-90 ${
+                isRunToggled
+                  ? isMars
+                    ? 'bg-[#D97706] border-[#F5E6D3] text-[#1C140F] shadow-[0_0_14px_rgba(217,119,6,0.55)]'
+                    : 'bg-[#BAE6FD] border-white text-[#1C1D21] shadow-[0_0_14px_rgba(186,230,253,0.55)]'
+                  : 'bg-[rgba(15,18,24,0.6)] border-white/30 text-white/85'
+              }`}
+            >
+              <Zap className="w-4 h-4" />
+              <span className="text-[9px] font-bold tracking-wider uppercase leading-none">
+                Run
+              </span>
+            </button>
+
+            {/* Flashlight (G): Medium 54px toggle button positioned left of Jump */}
+            <button
+              type="button"
+              aria-label="Toggle flashlight"
+              aria-pressed={isFlashlightOn}
+              onPointerDown={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                actionPointerIdsRef.current.add(e.pointerId);
+                try {
+                  e.currentTarget.setPointerCapture(e.pointerId);
+                } catch {
+                  // Ignore capture failures
+                }
+                toggleFlashlight();
+              }}
+              onPointerUp={(e) => {
+                e.stopPropagation();
+                actionPointerIdsRef.current.delete(e.pointerId);
+                try {
+                  if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+                    e.currentTarget.releasePointerCapture(e.pointerId);
+                  }
+                } catch {
+                  // Ignore release failures
+                }
+              }}
+              onPointerCancel={(e) => {
+                e.stopPropagation();
+                actionPointerIdsRef.current.delete(e.pointerId);
+              }}
+              onLostPointerCapture={(e) => {
+                actionPointerIdsRef.current.delete(e.pointerId);
+              }}
+              className={`surface-touch-control pointer-events-auto absolute bottom-[11px] right-[92px] w-[54px] h-[54px] rounded-full border-2 flex flex-col items-center justify-center gap-0.5 transition-all active:scale-90 ${
+                isFlashlightOn
+                  ? isMars
+                    ? 'bg-[#D97706] border-[#F5E6D3] text-[#1C140F] shadow-[0_0_14px_rgba(217,119,6,0.55)]'
+                    : 'bg-[#BAE6FD] border-white text-[#1C1D21] shadow-[0_0_14px_rgba(186,230,253,0.55)]'
+                  : 'bg-[rgba(15,18,24,0.6)] border-white/30 text-white/85'
+              }`}
+            >
+              <Flashlight className="w-4 h-4" />
+              <span className="text-[9px] font-bold tracking-wider uppercase leading-none">
+                Light
+              </span>
+            </button>
+
+            {/* Jump (Space): Large 76px circular button anchored bottom-right */}
+            <button
+              type="button"
+              aria-label="Jump"
+              onPointerDown={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                actionPointerIdsRef.current.add(e.pointerId);
+                setIsJumpPressed(true);
+                try {
+                  e.currentTarget.setPointerCapture(e.pointerId);
+                } catch {
+                  // Ignore capture failures
+                }
+                triggerJumpRef.current();
+              }}
+              onPointerUp={(e) => {
+                e.stopPropagation();
+                actionPointerIdsRef.current.delete(e.pointerId);
+                setIsJumpPressed(false);
+                try {
+                  if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+                    e.currentTarget.releasePointerCapture(e.pointerId);
+                  }
+                } catch {
+                  // Ignore release failures
+                }
+              }}
+              onPointerCancel={(e) => {
+                e.stopPropagation();
+                actionPointerIdsRef.current.delete(e.pointerId);
+                setIsJumpPressed(false);
+              }}
+              onLostPointerCapture={(e) => {
+                actionPointerIdsRef.current.delete(e.pointerId);
+                setIsJumpPressed(false);
+              }}
+              className={`surface-touch-control pointer-events-auto absolute bottom-0 right-0 w-[76px] h-[76px] rounded-full border-2 flex flex-col items-center justify-center gap-0.5 transition-transform ${
+                isJumpPressed
+                  ? isMars
+                    ? 'scale-92 bg-[#D97706]/85 border-[#F5E6D3] text-[#1C140F]'
+                    : 'scale-92 bg-[#BAE6FD]/85 border-white text-[#1C1D21]'
+                  : 'bg-[rgba(15,18,24,0.62)] border-white/40 text-white'
+              }`}
+            >
+              <ArrowUp className="w-6 h-6" />
+              <span className="text-[10px] font-bold tracking-wider uppercase leading-none">
+                Jump
+              </span>
+            </button>
+          </div>
+      </div>
+
+      {/* Bottom Controls Hint Bar (Always in DOM; shown on desktop > 1024px & pointer: fine) */}
+      <div className="surface-desktop-legend absolute bottom-4 inset-x-4 z-20 justify-center pointer-events-none">
         <div
           className={`px-4 py-2 rounded-xl text-[11px] sm:text-xs font-sans flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 ${panelBgClass}`}
         >
@@ -2644,7 +3260,8 @@ export const SurfaceExplorerGame: React.FC<SurfaceExplorerGameProps> = ({
                 : 'border-[#BAE6FD] text-[#F4F4F5]'
             }`}
           >
-            <strong className={accentTextClass}>G</strong> Flashlight ({isFlashlightOn ? 'ON' : 'OFF'})
+            <strong className={isFlashlightOn ? 'font-extrabold' : accentTextClass}>G</strong>{' '}
+            Flashlight ({isFlashlightOn ? 'ON' : 'OFF'})
           </button>
         </div>
       </div>

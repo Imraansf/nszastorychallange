@@ -19,7 +19,7 @@ export const MissionTimelineBar: React.FC<MissionTimelineBarProps> = ({
   onSelectArtifact,
   isCollapsed,
   onToggleCollapse,
-  toggleShowLabel = 'Show Mission Timeline',
+  toggleShowLabel = 'Show Timeline',
   toggleHideLabel = 'Hide Timeline',
 }) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -93,12 +93,13 @@ export const MissionTimelineBar: React.FC<MissionTimelineBarProps> = ({
         )}
       </button>
 
-      {/* Cohesive Deep-Space Glass Timeline Bar with Smooth Left/Right Scroll Arrows */}
-      {!isCollapsed && (
-        <div
-          className="pointer-events-auto w-full max-w-4xl rounded-2xl p-1.5 sm:p-2 border-[3px] border-[#fde047] shadow-[0_6px_0_#020617,0_14px_28px_rgba(2,6,23,0.65)] backdrop-blur-md flex items-center gap-1.5 sm:gap-2"
-          style={{ backgroundColor: 'rgba(15, 23, 42, 0.88)' }}
-        >
+      {/* Cohesive Deep-Space Glass Timeline Bar with Smooth Left/Right Scroll Arrows (Always in DOM) */}
+      <div
+        className={`${
+          isCollapsed ? 'hidden' : 'flex'
+        } pointer-events-auto w-full max-w-4xl rounded-2xl p-1.5 sm:p-2 border-[3px] border-[#fde047] shadow-[0_6px_0_#020617,0_14px_28px_rgba(2,6,23,0.65)] backdrop-blur-md items-center gap-1.5 sm:gap-2`}
+        style={{ backgroundColor: 'rgba(15, 23, 42, 0.88)' }}
+      >
           {/* Left Arrow Button */}
           <button
             type="button"
@@ -174,7 +175,6 @@ export const MissionTimelineBar: React.FC<MissionTimelineBarProps> = ({
             <ChevronRight className="w-5 h-5 stroke-[2.75]" />
           </button>
         </div>
-      )}
     </div>
   );
 };

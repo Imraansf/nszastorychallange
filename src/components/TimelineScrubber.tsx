@@ -59,7 +59,7 @@ export const TimelineScrubber: React.FC<TimelineScrubberProps> = ({
         {isCollapsed ? (
           <>
             <ChevronUp className="w-3.5 h-3.5 text-[#38BDF8]" />
-            <span>Timeline • {sortedArtifacts.length} Missions</span>
+            <span>Show Timeline</span>
           </>
         ) : (
           <>
@@ -69,9 +69,12 @@ export const TimelineScrubber: React.FC<TimelineScrubberProps> = ({
         )}
       </button>
 
-      {/* 2. Timeline Carousel / Scrubber Strip */}
-      {!isCollapsed && (
-        <div className="pointer-events-auto w-full max-w-4xl bg-[rgba(6,9,15,0.90)] border-2 border-[#38BDF8] rounded-2xl p-1.5 backdrop-blur-xl shadow-[0_0_24px_rgba(56,189,248,0.22)] flex flex-col gap-1">
+      {/* 2. Timeline Carousel / Scrubber Strip (Always mounted in DOM) */}
+      <div
+        className={`${
+          isCollapsed ? 'hidden' : 'flex'
+        } pointer-events-auto w-full max-w-4xl bg-[rgba(6,9,15,0.90)] border-2 border-[#38BDF8] rounded-2xl p-1.5 backdrop-blur-xl shadow-[0_0_24px_rgba(56,189,248,0.22)] flex-col gap-1`}
+      >
           {/* Mobile Single-Line Active Relic Label Overlay (< sm) */}
           <div className="sm:hidden flex items-center justify-between px-2 pt-0.5 text-[10px] font-mono text-[#E0F2FE]/80">
             <span className="flex items-center gap-1">
@@ -157,7 +160,6 @@ export const TimelineScrubber: React.FC<TimelineScrubberProps> = ({
             })}
           </div>
         </div>
-      )}
     </div>
   );
 };

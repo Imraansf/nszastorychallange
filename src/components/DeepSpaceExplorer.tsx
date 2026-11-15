@@ -265,8 +265,29 @@ export const DeepSpaceExplorer: React.FC<DeepSpaceExplorerProps> = React.memo(({
   const [hoveredPlanet, setHoveredPlanet] = useState<SolarPlanetData | null>(null);
   const [selectedPlanet, setSelectedPlanet] = useState<SolarPlanetData | null>(null);
   const [showOrbits, setShowOrbits] = useState(true);
-  const [isTimelineCollapsed, setIsTimelineCollapsed] = useState(false);
-  const [isDockVisible, setIsDockVisible] = useState(true);
+  const [isTimelineCollapsed, setIsTimelineCollapsed] = useState<boolean>(() =>
+    typeof window !== 'undefined'
+      ? !window.matchMedia('(min-width: 1025px) and (pointer: fine)').matches
+      : false
+  );
+  const [isDockVisible, setIsDockVisible] = useState<boolean>(() =>
+    typeof window !== 'undefined'
+      ? window.matchMedia('(min-width: 1025px) and (pointer: fine)').matches
+      : true
+  );
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const desktopMql = window.matchMedia('(min-width: 1025px) and (pointer: fine)');
+    const handleMediaChange = (e: MediaQueryListEvent) => {
+      setIsDockVisible(e.matches);
+      setIsTimelineCollapsed(!e.matches);
+    };
+    setIsDockVisible(desktopMql.matches);
+    setIsTimelineCollapsed(!desktopMql.matches);
+    desktopMql.addEventListener('change', handleMediaChange);
+    return () => desktopMql.removeEventListener('change', handleMediaChange);
+  }, []);
 
   // Live telemetry state for selected item
   const [liveTelemetry, setLiveTelemetry] = useState<{
@@ -1762,21 +1783,21 @@ export const DeepSpaceExplorer: React.FC<DeepSpaceExplorerProps> = React.memo(({
         </div>
       )}
 
-      {/* 3. Floating Restore Dock Button */}
+      {/* 3. Floating System Orrery Toggle Pill (when collapsed) */}
       <button
         onClick={() => setIsDockVisible(true)}
-        className={`absolute top-16 left-4 z-20 w-[172.2px] h-[43.2px] flex items-center gap-2.5 px-4 py-3 rounded-2xl bg-[rgba(28,29,33,0.92)] border-2 border-[#BAE6FD] text-[#F4F4F5] shadow-none backdrop-blur-xl transition-all duration-500 ease-in-out active:scale-95 ${
-          isDockVisible ? '-translate-x-32 opacity-0 pointer-events-none' : 'translate-x-0 opacity-100 pointer-events-auto'
+        className={`absolute top-3 right-2 sm:top-16 sm:left-4 sm:right-auto z-20 min-h-[40px] flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[rgba(28,29,33,0.92)] border-2 border-[#BAE6FD] text-[#F4F4F5] shadow-none backdrop-blur-xl transition-all duration-300 ease-in-out active:scale-95 whitespace-nowrap shrink-0 ${
+          isDockVisible ? 'opacity-0 pointer-events-none scale-95' : 'opacity-100 pointer-events-auto scale-100'
         }`}
-        aria-label="Restore controls"
+        aria-label="Open System Orrery controls"
       >
-        <div className="w-2 h-2 rounded-full bg-[#D4D4D8]" />
-        <span className="text-[10px] font-bold font-mono tracking-widest uppercase">Restore Controls</span>
-        <ChevronRight className="w-4 h-4 text-[#D4D4D8]" />
+        <div className="w-2 h-2 rounded-full bg-[#BAE6FD]" />
+        <span className="text-[11px] font-bold font-mono tracking-wider uppercase">System Orrery</span>
+        <ChevronDown className="w-3.5 h-3.5 text-[#BAE6FD]" />
       </button>
 
       {/* 4. Filter Category Tabs */}
-      <div className="absolute top-3 sm:top-4 left-1/2 -translate-x-1/2 z-20 pointer-events-auto flex items-center gap-1 bg-[rgba(28,29,33,0.92)] backdrop-blur-xl border-2 border-[#BAE6FD] p-1 rounded-2xl shadow-none overflow-x-auto max-w-[calc(100vw-32px)]">
+      <div className="absolute top-14 sm:top-4 left-1/2 -translate-x-1/2 z-20 pointer-events-auto flex items-center gap-1 bg-[rgba(28,29,33,0.92)] backdrop-blur-xl border-2 border-[#BAE6FD] p-1 rounded-2xl shadow-none overflow-x-auto max-w-[calc(100vw-24px)]">
         {[
           { id: 'all', label: 'All', count: artifacts.length },
           {
@@ -1896,44 +1917,46 @@ export const DeepSpaceExplorer: React.FC<DeepSpaceExplorerProps> = React.memo(({
           )}
         </button>
 
-        {/* Carousel Strip */}
-        {!isTimelineCollapsed && (
-          <div className="pointer-events-auto w-full max-w-3xl bg-[rgba(28,29,33,0.92)] backdrop-blur-xl border-2 border-[#BAE6FD] rounded-2xl p-1.5 shadow-none flex items-center gap-2 overflow-x-auto scrollbar-none snap-x snap-mandatory">
-            {filteredArtifacts.map((artifact) => {
-              const isSelected = selectedArtifact?.id === artifact.id;
-              return (
-                <button
-                  key={artifact.id}
-                  onClick={() => {
-                    onSelectArtifact(artifact);
-                    setSelectedPlanet(null);
-                  }}
-                  className={`flex-shrink-0 snap-center min-w-[120px] sm:min-w-[160px] px-3 py-2 rounded-xl border-2 text-left transition-all ${
-                    isSelected
-                      ? 'bg-[#3F4147] border-[#BAE6FD] text-[#F4F4F5] shadow-none scale-[1.03]'
-                      : 'bg-[#27282D] border-[#3F3F46] text-[#E4E4E7] hover:bg-[#34363C] hover:border-[#BAE6FD]/70'
-                  }`}
-                >
-                  <div className="text-[10px] font-black uppercase tracking-wider mb-0.5 flex items-center gap-1.5">
-                    <span
-                      className={`font-mono tabular-nums ${
-                        isSelected ? 'text-[#E4E4E7]' : 'text-[#A1A1AA]'
-                      }`}
-                    >
-                      {artifact.year}
-                    </span>
-                    {isSelected && (
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#BAE6FD]" />
-                    )}
-                  </div>
-                  <h4 className="text-xs font-extrabold truncate text-[#F4F4F5]">
-                    {artifact.moniker}
-                  </h4>
-                </button>
-              );
-            })}
-          </div>
-        )}
+        {/* Carousel Strip (Always mounted in the DOM; toggled via 'Show Timeline') */}
+        <div
+          className={`${
+            isTimelineCollapsed ? 'hidden' : 'flex'
+          } pointer-events-auto w-full max-w-3xl bg-[rgba(28,29,33,0.92)] backdrop-blur-xl border-2 border-[#BAE6FD] rounded-2xl p-1.5 shadow-none items-center gap-2 overflow-x-auto scrollbar-none snap-x snap-mandatory`}
+        >
+          {filteredArtifacts.map((artifact) => {
+            const isSelected = selectedArtifact?.id === artifact.id;
+            return (
+              <button
+                key={artifact.id}
+                onClick={() => {
+                  onSelectArtifact(artifact);
+                  setSelectedPlanet(null);
+                }}
+                className={`flex-shrink-0 snap-center min-w-[120px] sm:min-w-[160px] px-3 py-2 rounded-xl border-2 text-left transition-all ${
+                  isSelected
+                    ? 'bg-[#3F4147] border-[#BAE6FD] text-[#F4F4F5] shadow-none scale-[1.03]'
+                    : 'bg-[#27282D] border-[#3F3F46] text-[#E4E4E7] hover:bg-[#34363C] hover:border-[#BAE6FD]/70'
+                }`}
+              >
+                <div className="text-[10px] font-black uppercase tracking-wider mb-0.5 flex items-center gap-1.5">
+                  <span
+                    className={`font-mono tabular-nums ${
+                      isSelected ? 'text-[#E4E4E7]' : 'text-[#A1A1AA]'
+                    }`}
+                  >
+                    {artifact.year}
+                  </span>
+                  {isSelected && (
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#BAE6FD]" />
+                  )}
+                </div>
+                <h4 className="text-xs font-extrabold truncate text-[#F4F4F5]">
+                  {artifact.moniker}
+                </h4>
+              </button>
+            );
+          })}
+        </div>
       </div>
     </div>
   );

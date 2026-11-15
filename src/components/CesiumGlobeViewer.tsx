@@ -1088,8 +1088,8 @@ export const CesiumGlobeViewer: React.FC<CesiumGlobeViewerProps> = React.memo(({
         </div>
       )}
 
-      {/* Mobile-Optimized Telemetry HUD & Viewport Controls (< 25-30% screen) */}
-      <div className="absolute top-1/2 -translate-y-1/2 left-2 sm:left-4 z-30 flex flex-col gap-2 pointer-events-none">
+      {/* Mobile-Optimized Telemetry HUD & Viewport Controls (Top-right 'NASA MOON ▾' pill on <=1024px; mid-left dock on desktop) */}
+      <div className="absolute top-3 right-2 sm:top-4 sm:right-4 lg:top-1/2 lg:-translate-y-1/2 lg:left-4 lg:right-auto z-40 lg:z-30 flex flex-col items-end lg:items-start gap-2 pointer-events-none">
         <TelemetryHUD
           selectedBody={selectedBody}
           activeRelic={activeRelic}
