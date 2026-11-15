@@ -76,6 +76,7 @@ export function useNASAVoice(options: UseNASAVoiceOptions = {}): UseNASAVoiceRet
   const audioCtxRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const audioElRef = useRef<HTMLAudioElement | null>(null);
+  const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const audioUrlCacheRef = useRef<Map<string, string>>(new Map());
   const isSpeakingRef = useRef<boolean>(false);
@@ -145,6 +146,14 @@ export function useNASAVoice(options: UseNASAVoiceOptions = {}): UseNASAVoiceRet
       audioElRef.current.currentTime = 0;
       audioElRef.current = null;
     }
+    if (utteranceRef.current) {
+      utteranceRef.current.onend = null;
+      utteranceRef.current.onerror = null;
+      utteranceRef.current = null;
+      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
+    }
     if (filterEnabled && isSpeakingRef.current) {
       playQuindarTone(2475, 0.025);
     }
@@ -158,6 +167,14 @@ export function useNASAVoice(options: UseNASAVoiceOptions = {}): UseNASAVoiceRet
     if (audioElRef.current && !audioElRef.current.paused) {
       audioElRef.current.pause();
       setIsPaused(true);
+    } else if (
+      utteranceRef.current &&
+      typeof window !== 'undefined' &&
+      'speechSynthesis' in window &&
+      window.speechSynthesis.speaking
+    ) {
+      window.speechSynthesis.pause();
+      setIsPaused(true);
     }
   }, []);
 
@@ -165,22 +182,109 @@ export function useNASAVoice(options: UseNASAVoiceOptions = {}): UseNASAVoiceRet
     if (audioElRef.current && audioElRef.current.paused) {
       audioElRef.current.play().catch(() => {});
       setIsPaused(false);
+    } else if (
+      utteranceRef.current &&
+      typeof window !== 'undefined' &&
+      'speechSynthesis' in window &&
+      window.speechSynthesis.paused
+    ) {
+      window.speechSynthesis.resume();
+      setIsPaused(false);
     }
   }, []);
 
   const toggleMute = useCallback(() => {
     setIsMuted((prev) => {
       const next = !prev;
-      if (next && audioElRef.current) {
-        audioElRef.current.pause();
-        audioElRef.current.currentTime = 0;
-        audioElRef.current = null;
+      if (next) {
+        if (audioElRef.current) {
+          audioElRef.current.pause();
+          audioElRef.current.currentTime = 0;
+          audioElRef.current = null;
+        }
+        if (utteranceRef.current) {
+          utteranceRef.current.onend = null;
+          utteranceRef.current.onerror = null;
+          utteranceRef.current = null;
+          if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+          }
+        }
         setIsSpeaking(false);
         setIsPaused(false);
       }
       return next;
     });
   }, []);
+
+  const speakWithBrowserFallback = useCallback(
+    (
+      originalText: string,
+      cleanedText: string,
+      effectiveFilter: boolean,
+      effectiveVoice: ArtifactVoiceName
+    ): boolean => {
+      if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
+        return false;
+      }
+
+      const synth = window.speechSynthesis;
+      synth.cancel();
+
+      const utterance = new SpeechSynthesisUtterance(cleanedText);
+      const availableVoices = synth.getVoices().filter((v) => v.lang.startsWith('en'));
+      if (availableVoices.length > 0) {
+        const prefersBrightVoice = effectiveVoice === 'Riko';
+        const matched = availableVoices.find((v) => {
+          const name = v.name.toLowerCase();
+          return prefersBrightVoice
+            ? /aria|jenny|samantha|victoria|karen|zira|female|natural/.test(name)
+            : /guy|davis|alex|daniel|mark|david|male|natural/.test(name);
+        });
+        utterance.voice =
+          matched ||
+          availableVoices[prefersBrightVoice && availableVoices.length > 1 ? 1 : 0];
+      }
+
+      utterance.pitch = effectiveVoice === 'Riko' ? Math.min(1.25, pitch * 1.05) : pitch;
+      utterance.rate = rate;
+      utterance.volume = volume;
+      utteranceRef.current = utterance;
+
+      if (effectiveFilter) {
+        playQuindarTone(2525, 0.028);
+      }
+
+      setIsLoading(false);
+      setIsSpeaking(true);
+      setIsPaused(false);
+      setCurrentText(originalText);
+
+      utterance.onend = () => {
+        if (utteranceRef.current !== utterance) return;
+        utteranceRef.current = null;
+        if (effectiveFilter) {
+          playQuindarTone(2475, 0.028);
+        }
+        setIsSpeaking(false);
+        setIsPaused(false);
+        setCurrentText(null);
+      };
+
+      utterance.onerror = () => {
+        if (utteranceRef.current !== utterance) return;
+        utteranceRef.current = null;
+        setIsSpeaking(false);
+        setIsPaused(false);
+        setCurrentText(null);
+        setVoiceError('Unable to play browser voice narration.');
+      };
+
+      synth.speak(utterance);
+      return true;
+    },
+    [pitch, playQuindarTone, rate, volume]
+  );
 
   const speakMissionLog = useCallback(
     async (
@@ -226,13 +330,32 @@ export function useNASAVoice(options: UseNASAVoiceOptions = {}): UseNASAVoiceRet
             signal: controller.signal,
           });
 
-          const payload = await response.json().catch(() => ({}));
+          const payload = await response.json().catch(() => null);
+          const serverError =
+            typeof payload?.error === 'string' && payload.error.trim()
+              ? payload.error.trim()
+              : '';
+
           if (!response.ok) {
-            throw new Error(
-              typeof payload?.error === 'string' && payload.error
-                ? payload.error
-                : `Voice synthesis failed (${response.status})`
-            );
+            // Only fall back to browser speech when the /api/tts route itself is absent
+            // (404 from a static-only host with no Express backend error JSON).
+            if (response.status === 404 && !serverError) {
+              abortControllerRef.current = null;
+              if (
+                speakWithBrowserFallback(
+                  text,
+                  cleanedText,
+                  effectiveFilter,
+                  effectiveVoice
+                )
+              ) {
+                return;
+              }
+              throw new Error(
+                'Voice synthesis endpoint (/api/tts) returned 404. Ensure the Node server (npm start) is running.'
+              );
+            }
+            throw new Error(serverError || `Voice synthesis failed (${response.status})`);
           }
 
           if (typeof payload?.audioBase64 !== 'string' || !payload.audioBase64) {
@@ -298,7 +421,16 @@ export function useNASAVoice(options: UseNASAVoiceOptions = {}): UseNASAVoiceRet
         );
       }
     },
-    [defaultVoiceName, filterEnabled, isMuted, playQuindarTone, rate, stop, volume]
+    [
+      defaultVoiceName,
+      filterEnabled,
+      isMuted,
+      playQuindarTone,
+      rate,
+      speakWithBrowserFallback,
+      stop,
+      volume,
+    ]
   );
 
   // Sync live volume/playbackRate if updated while playing
@@ -321,6 +453,14 @@ export function useNASAVoice(options: UseNASAVoiceOptions = {}): UseNASAVoiceRet
         audioElRef.current.onerror = null;
         audioElRef.current.pause();
         audioElRef.current = null;
+      }
+      if (utteranceRef.current) {
+        utteranceRef.current.onend = null;
+        utteranceRef.current.onerror = null;
+        utteranceRef.current = null;
+        if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+          window.speechSynthesis.cancel();
+        }
       }
       audioUrlCacheRef.current.forEach((url) => URL.revokeObjectURL(url));
       audioUrlCacheRef.current.clear();

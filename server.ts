@@ -99,6 +99,13 @@ async function generateTtsWithRetry(
   throw lastError;
 }
 
+app.get('/api/health', (_req: Request, res: Response) => {
+  res.json({
+    ok: true,
+    ttsConfigured: Boolean(process.env.GEMINI_API_KEY),
+  });
+});
+
 app.post('/api/tts', async (req: Request, res: Response) => {
   try {
     const rawText = typeof req.body?.text === 'string' ? req.body.text.trim() : '';
